@@ -2,13 +2,14 @@
 
 type ModalMode = "create" | "edit";
 
-type SubjectFormData = {
+export type SubjectFormData = {
   name?: string;
   code?: string;
   level?: string;
   description?: string;
   teacherIds?: string[];
   status?: "active" | "inactive";
+  classId?: string;
 
   ca?: number | string;
   exam?: number | string;

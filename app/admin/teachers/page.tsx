@@ -1,32 +1,111 @@
 import Pagination from "@/components/Pagination";
 import { CalendarCheck, Edit2, Eye, Plus, Search, UserCheck, UserPlus, Users } from "lucide-react";
 import Image from "next/image";
-import { StudentRow } from "@/utils/types";
-import { classes, students, teachers } from "@/utils/students";
 import Link from "next/link";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import FormButton from "@/components/buttons/FormButton";
+import { prisma } from "@/lib/prisma";
+import { StudentFormClasses } from "@/components/modals/forms/StudentForm";
+import { Class, Prisma, Teacher } from "@/generated/prisma/client";
+import StudentSearchInput from "@/components/StudentSearchInput";
+import FilterSelect from "@/components/SelectFilter";
+import { ITEM_PER_PAGE } from "@/lib/utils";
 
-export default function page() {
+type SearchParams = {
+    classId?: string | string[];
+    search?: string | string[];
+    page?: string | string[];
+};
+
+type teacherList = Teacher & { class: Class }
+
+
+
+export default async function page({ searchParams,
+}: {
+    searchParams?: SearchParams | Promise<SearchParams>;
+}) {
+
+
+    const resolvedSearchParams = await searchParams;
+    const classId = Array.isArray(resolvedSearchParams?.classId) ? resolvedSearchParams?.classId[0] : resolvedSearchParams?.classId;
+    const search = Array.isArray(resolvedSearchParams?.search) ? resolvedSearchParams?.search[0] : resolvedSearchParams?.search;
+    const pageParam = Array.isArray(resolvedSearchParams?.page) ? resolvedSearchParams?.page[0] : resolvedSearchParams?.page;
+    const page = pageParam ? parseInt(pageParam, 10) || 1 : 1;
+
+    const classes = await prisma.class.findMany({
+        orderBy: [{ name: "asc" }],
+        select: { id: true, name: true },
+    });
+    const classOptions = classes satisfies StudentFormClasses;
+
+
+    const query: Prisma.TeacherWhereInput = {};
+
+
+
+    const paramEntries: [string, string | undefined][] = [
+        ["classId", classId],
+        ["search", search],
+    ];
+
+    for (const [key, value] of paramEntries) {
+        if (!value) continue;
+        switch (key) {
+            case "classId":
+                query.classId = classId;
+                break;
+            case "search":
+                query.OR = [
+                    { user: { firstName: { contains: value, mode: "insensitive" } } },
+                    { user: { lastName: { contains: value, mode: "insensitive" } } },
+                    { user: { email: { contains: value, mode: "insensitive" } } },
+                    { teacherId: { contains: value, mode: "insensitive" } },
+                    { department: { contains: value, mode: "insensitive" } },
+                    { class: { name: { contains: value, mode: "insensitive" } } },
+                ];
+                break;
+            default:
+                break;
+        }
+    }
+
+    const [teachers, total] = await Promise.all([
+        prisma.teacher.findMany({
+            where: query,
+            orderBy: [{ createdAt: "desc" }],
+            take: ITEM_PER_PAGE,
+            skip: ITEM_PER_PAGE * (page - 1),
+            select: {
+                id: true,
+                class: { select: { id: true, name: true } },
+                department: true,
+                teacherId: true,
+                user: { select: { status: true, firstName: true, lastName: true, phone: true } },
+            },
+        }),
+        prisma.teacher.count({ where: query }),
+    ]);
+
+
+    const active = await prisma.teacher.count({
+        where: { user: { status: 'ACTIVE' } }
+    })
+
+    const allTeachers = await prisma.teacher.count()
+
+
+
     return (
         <div className="">
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                     <div className="flex items-center justify-between mb-4">
                         <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                             <Users className="w-6 h-6 text-blue-600" />
                         </div>
                     </div>
-                    <h3 className="text-2xl font-bold text-gray-900 mb-1">248</h3>
+                    <h3 className="text-2xl font-bold text-gray-900 mb-1">{allTeachers}</h3>
                     <p className="text-sm text-gray-500">Total Teachers</p>
                 </div>
 
@@ -36,20 +115,9 @@ export default function page() {
                             <UserCheck className="w-6 h-6 text-green-600" />
                         </div>
                     </div>
-                    <h3 className="text-2xl font-bold text-gray-900 mb-1">186</h3>
+                    <h3 className="text-2xl font-bold text-gray-900 mb-1">{active}</h3>
                     <p className="text-sm text-gray-500">Active Teachers</p>
                 </div>
-
-                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                            <UserPlus className="w-6 h-6 text-purple-600" />
-                        </div>
-                    </div>
-                    <h3 className="text-2xl font-bold text-gray-900 mb-1">48</h3>
-                    <p className="text-sm text-gray-500">New This Month</p>
-                </div>
-
                 <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                     <div className="flex items-center justify-between mb-4">
                         <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
@@ -66,27 +134,11 @@ export default function page() {
                 <div className="p-6 border-b border-gray-200">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-bold text-gray-900">All Teacher</h3>
-                        <FormButton type={"teacher"} action="create"/>
+                        <FormButton type={"teacher"} action="create" />
                     </div>
                     <div className="flex items-center gap-4">
-                        <div className="relative flex-1">
-                            <input type="text" placeholder="Search students..." className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                            <Search className="w-5 h-5 text-gray-400 absolute left-3 top-2.5" />
-                        </div>
-                        <Select>
-                            <SelectTrigger className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <SelectValue placeholder="All Classes" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
-                                <SelectGroup >
-                                    {classes.map((classItem) => {
-                                        return (
-                                            <SelectItem key={classItem.id} className="cursor-pointer bg-gray-100 hover:bg-gray-200 text-black" value={classItem.id}>{`Class ${classItem.name}`}</SelectItem>
-                                        )
-                                    })}
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
+                          <StudentSearchInput initialValue={search} />
+                          <FilterSelect classes={classes} classId={classId} />
                     </div>
                 </div>
 
@@ -97,7 +149,6 @@ export default function page() {
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Name</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Department</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Class</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Gender</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Actions</th>
                             </tr>
@@ -109,19 +160,18 @@ export default function page() {
                                         <div className="flex items-center gap-3">
                                             <Image src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80" alt="Student" className="w-10 h-10 rounded-full object-cover" width={20} height={20} />
                                             <div>
-                                                <p className="text-sm font-semibold text-gray-900">{teacher.name}</p>
-                                                <p className="text-[10px] text-gray-500">{teacher.phone}</p>
+                                                <p className="text-sm font-semibold text-gray-900">{`${teacher.user.firstName} ${teacher.user.lastName}`}</p>
+                                                <p className="text-[10px] text-gray-500">{teacher.user.phone}</p>
                                             </div>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-sm text-gray-700">{teacher.department}</td>
-                                    <td className="px-6 py-4 text-sm text-gray-700">{teacher.class}</td>
-                                    <td className="px-6 py-4 text-sm text-gray-700">{teacher.gender}</td>
+                                    <td className="px-6 py-4 text-sm text-gray-700">{teacher.class?.name}</td>
                                     <td className="px-6 py-4">
-                                        <span className={`px-3 py-1 text-xs font-semibold ${teacher.status === "Active" ? 'text-green-700 bg-green-100 ' : "text-red-700 bg-red-100 " }rounded-full`} >{teacher.status}</span>
+                                        <span className={`px-3 py-1 text-xs font-semibold ${teacher.user.status === "ACTIVE" ? 'text-green-700 bg-green-100 ' : "text-red-700 bg-red-100 "}rounded-full`} >{teacher.user.status}</span>
                                     </td>
                                     <td className="px-6 py-6 grid grid-cols-2">
-                                        <Link href={`/admin/teachers/${24334}`} className="text-slate-400 hover:text-indigo-600"><Eye className="w-4 h-4"/></Link>
+                                        <Link href={`/admin/teachers/${24334}`} className="text-slate-400 hover:text-indigo-600"><Eye className="w-4 h-4" /></Link>
                                         <button className="text-slate-400 hover:text-blue-600 mx-1"><Edit2 className="w-4 h-4" /> </button>
                                     </td>
                                 </tr>
@@ -130,7 +180,7 @@ export default function page() {
                         </tbody>
                     </table>
                 </div>
-                <Pagination />
+                <Pagination page={page} count={total} />
             </div>
         </div>
     )

@@ -75,11 +75,13 @@ model Teacher {
   userId     String   @unique
   teacherId  String   @unique
   department String?
+  classId    String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  class   Class?  @relation("TeacherPrimaryClass", fields: [classId], references: [id], onDelete: SetNull)
+  classes Class[] @relation("ClassHomeroomTeacher")
   // Relations
   classTeachers      ClassTeacher[]
   subjectTeachers    SubjectTeacher[]
@@ -90,6 +92,7 @@ model Teacher {
 
   @@index([teacherId])
   @@index([department])
+  @@index([classId])
 }
 
 model Student {
@@ -214,10 +217,13 @@ model Class {
   levelId   String
   name      String   // e.g., "JSS 1A", "Grade 3-A"
   capacity  Int?
+  teacherId String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  level Level @relation(fields: [levelId], references: [id], onDelete: Cascade)
+  level   Level    @relation(fields: [levelId], references: [id], onDelete: Cascade)
+  teacher Teacher? @relation("ClassHomeroomTeacher", fields: [teacherId], references: [id], onDelete: SetNull)
+  primaryTeachers Teacher[] @relation("TeacherPrimaryClass")
 
   // Relations
   classTeachers      ClassTeacher[]
@@ -231,6 +237,7 @@ model Class {
   @@unique([levelId, name])
   @@index([levelId])
   @@index([name])
+  @@index([teacherId])
 }
 
 model Subject {

@@ -4,19 +4,31 @@ import { Edit, Edit2, Plus } from "lucide-react"
 import { useState } from "react";
 import SmartModal, { ModalType } from "../modals/SmartModal";
 import { createStudentAction, updateStudentAction } from "../actions/actions";
+import type { StudentFormClasses, StudentFormData } from "../modals/forms/StudentForm";
 
 
 
 type Action = "create" | "edit"
-type FormButtonProps = {
-    type: ModalType;
-    action: Action
-};
+type FormButtonProps =
+    | {
+        type: "student";
+        action: Action;
+        data?: StudentFormData;
+        classes?: StudentFormClasses;
+    }
+    | {
+        type: Exclude<ModalType, "student">;
+        action: Action;
+    };
 
-const FormButton = ({ type, action }: FormButtonProps) => {
+const FormButton = (props: FormButtonProps) => {
+    const { type, action } = props;
+    const isStudent = type === "student";
+    const data = isStudent ? props.data : undefined;
+    const classes = isStudent ? props.classes : undefined;
     const [open, setOpen] = useState(false);
     const [mode, setMode] = useState<"create" | "edit">(action);
-    const [selectedStudent, setSelectedStudent] = useState<any>(null);
+    const [selectedStudent, setSelectedStudent] = useState<StudentFormData | null>(null);
 
 
     return (
@@ -25,7 +37,7 @@ const FormButton = ({ type, action }: FormButtonProps) => {
             {type === 'student' && mode === 'edit'
                 ? <button
                     onClick={() => {
-                        setSelectedStudent(null);
+                        setSelectedStudent(data ?? null);
                         setMode("edit");
                         setOpen(true);
                     }}
@@ -46,7 +58,7 @@ const FormButton = ({ type, action }: FormButtonProps) => {
                     Edit Class
                 </button> :''}
 
-            {(mode === "create" && type === "student") || (mode === "create" && type === "teacher") ? <button
+            {(mode === "create" && (type === "student" || type === "teacher" || type === "class")) ? <button
                 onClick={() => {
                     setSelectedStudent(null);
                     setMode("create");
@@ -57,14 +69,25 @@ const FormButton = ({ type, action }: FormButtonProps) => {
                 <span className="text-sm font-medium">{mode === 'create' ? `Create ${type}` : `Edit ${type}`}</span>
             </button> : ''}
 
-            <SmartModal
-                open={open}
-                onClose={() => setOpen(false)}
-                type={type}              // class | student | subject | teacher
-                mode={mode}               // create | edit
-                data={selectedStudent}      // null for create
-                action={mode === "edit" ? updateStudentAction : createStudentAction}
-            />
+            {type === "student" ? (
+                <SmartModal
+                    open={open}
+                    onClose={() => setOpen(false)}
+                    type="student"
+                    mode={mode}
+                    action={mode === "edit" ? updateStudentAction : createStudentAction}
+                    data={selectedStudent ?? undefined}
+                    classes={classes}
+                />
+            ) : (
+                <SmartModal
+                    open={open}
+                    onClose={() => setOpen(false)}
+                    type={type}
+                    mode={mode}
+                    action={mode === "edit" ? updateStudentAction : createStudentAction}
+                />
+            )}
         </>
 
     )

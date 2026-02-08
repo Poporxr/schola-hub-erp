@@ -2,7 +2,7 @@
 
 type ModalMode = "create" | "edit";
 
-type ClassFormData = {
+export type ClassFormData = {
   name?: string;
   arm?: string;
   level?: string;

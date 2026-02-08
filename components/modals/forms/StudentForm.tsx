@@ -1,16 +1,20 @@
 "use client";
 
+
 type ModalMode = "create" | "edit";
 
-type StudentFormData = {
+export type StudentFormClasses = { id: string; name: string }[];
+
+export type StudentFormData = {
+  id?: string;
   firstName?: string;
   lastName?: string;
   middleName?: string;
-  dob?: string;
-  gender?: "Male" | "Female";
-  class?: string;
+  dateOfBirth?: string;
+  gender?: "MALE" | "FEMALE";
+  classId?: string;
   arm?: string;
-  admissionNo?: string;
+  admissionNumber?: string;
   admissionDate?: string;
   previousSchool?: string;
 
@@ -28,10 +32,14 @@ type StudentFormData = {
 export default function StudentForm({
   mode,
   data,
+  classes,
 }: {
   mode: ModalMode;
   data?: StudentFormData;
+  classes?: StudentFormClasses;
 }) {
+  void mode;
+  const defaultGender = "MALE" as const;
   const input =
     "w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20";
 
@@ -52,7 +60,7 @@ export default function StudentForm({
           <Field label="First Name *">
             <input
               name="firstName"
-              defaultValue={data?.firstName ?? (mode === "edit" ? "Chukwuemeka" : "")}
+              defaultValue={data?.firstName ?? ""}
               className={input}
             />
           </Field>
@@ -60,7 +68,7 @@ export default function StudentForm({
           <Field label="Last Name *">
             <input
               name="lastName"
-              defaultValue={data?.lastName ?? (mode === "edit" ? "Okafor" : "")}
+              defaultValue={data?.lastName ?? ""}
               className={input}
             />
           </Field>
@@ -68,16 +76,16 @@ export default function StudentForm({
           <Field label="Middle Name">
             <input
               name="middleName"
-              defaultValue={data?.middleName ?? (mode === "edit" ? "Emeka" : "")}
+              defaultValue={data?.middleName ?? ""}
               className={input}
             />
           </Field>
 
           <Field label="Date of Birth *">
             <input
-              name="dob"
+              name="dateOfBirth"
               type="date"
-              defaultValue={data?.dob ?? (mode === "edit" ? "2008-05-15" : "")}
+              defaultValue={data?.dateOfBirth ?? ""}
               className={input}
             />
           </Field>
@@ -85,11 +93,11 @@ export default function StudentForm({
           <Field label="Gender *">
             <select
               name="gender"
-              defaultValue={data?.gender ?? (mode === "edit" ? "Male" : "Male")}
+              defaultValue={data?.gender ?? defaultGender}
               className={input}
             >
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
+              <option value="MALE">Male</option>
+              <option value="FEMALE">Female</option>
             </select>
           </Field>
 
@@ -123,28 +131,33 @@ export default function StudentForm({
         <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-5">
           <Field label="Class *">
             <select
-              name="class"
-              defaultValue={data?.class ?? (mode === "edit" ? "SS1 B" : "SS1 A")}
+              name="classId"
+              defaultValue={data?.classId ?? ""}
               className={input}
             >
-              <option value="SS1 A">SS1 A</option>
-              <option value="SS1 B">SS1 B</option>
-              <option value="SS2 A">SS2 A</option>
+              <option value="" disabled>
+                Select class
+              </option>
+              {(classes ?? []).map((classItem) => (
+                <option key={classItem.id} value={classItem.id}>
+                  {classItem.name}
+                </option>
+              ))}
             </select>
           </Field>
 
           <Field label="Section (Arm)">
             <input
               name="arm"
-              defaultValue={data?.arm ?? (mode === "edit" ? "B" : "")}
+              defaultValue={data?.arm ?? ""}
               className={input}
             />
           </Field>
 
           <Field label="Admission No. *">
             <input
-              name="admissionNo"
-              defaultValue={data?.admissionNo ?? (mode === "edit" ? "2024/SS1/042" : "")}
+              name="admissionNumber"
+              defaultValue={data?.admissionNumber ?? ""}
               className={input}
             />
           </Field>
@@ -153,7 +166,7 @@ export default function StudentForm({
             <input
               name="admissionDate"
               type="date"
-              defaultValue={data?.admissionDate ?? (mode === "edit" ? "2024-01-15" : "")}
+              defaultValue={data?.admissionDate ?? ""}
               className={input}
             />
           </Field>
@@ -184,7 +197,7 @@ export default function StudentForm({
           <Field label="Full Name *">
             <input
               name="guardianName"
-              defaultValue={data?.guardianName ?? (mode === "edit" ? "Mr. Okafor Nnamdi" : "")}
+              defaultValue={data?.guardianName ?? ""}
               className={input}
             />
           </Field>
@@ -192,7 +205,7 @@ export default function StudentForm({
           <Field label="Relationship *">
             <select
               name="guardianRelationship"
-              defaultValue={data?.guardianRelationship ?? (mode === "edit" ? "Father" : "Father")}
+              defaultValue={data?.guardianRelationship ?? "Father"}
               className={input}
             >
               <option value="Father">Father</option>
@@ -205,7 +218,7 @@ export default function StudentForm({
             <input
               name="guardianPhone"
               type="tel"
-              defaultValue={data?.guardianPhone ?? (mode === "edit" ? "+234 803 456 7890" : "")}
+              defaultValue={data?.guardianPhone ?? ""}
               className={input}
             />
           </Field>
@@ -214,7 +227,7 @@ export default function StudentForm({
             <input
               name="guardianEmail"
               type="email"
-              defaultValue={data?.guardianEmail ?? (mode === "edit" ? "okafor.n@email.com" : "")}
+              defaultValue={data?.guardianEmail ?? ""}
               className={input}
             />
           </Field>
@@ -224,7 +237,7 @@ export default function StudentForm({
               <textarea
                 name="guardianAddress"
                 rows={2}
-                defaultValue={data?.guardianAddress ?? (mode === "edit" ? "12 Victoria Island, Lagos State" : "")}
+                defaultValue={data?.guardianAddress ?? ""}
                 className={input}
               />
             </Field>

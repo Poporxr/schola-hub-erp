@@ -1,13 +1,111 @@
 import BackButton from "@/components/BackButton";
 import FormButton from "@/components/buttons/FormButton";
+import ClassDetailActions from "@/components/buttons/ClassDetailActions";
 import ClassSubjects from "@/components/ClassSubjects";
 import ClassStudent from "@/components/List/ClassStudent";
 import Pagination from "@/components/Pagination";
 import WeeklyTimetable from "@/components/WeeklyTimetable";
-import { ArrowUp, Award, BookOpen, BookPlus, Calendar, CalendarCheck, ClipboardList, Edit, Filter, Globe, MoreHorizontal, School, Search, TrendingUp, Trophy, UserCheck, UserPlus, Users } from "lucide-react";
+import { ArrowUp, Award, BookOpen, Calendar, CalendarCheck, ClipboardList, School, TrendingUp, Trophy, UserCheck, Users } from "lucide-react";
 import Image from "next/image";
+import { prisma } from "@/lib/prisma";
+import { notFound } from "next/navigation";
 
-export default function Page() {
+export default async function Page({
+  params,
+}: {
+  params?: { classId?: string } | Promise<{ classId?: string }>;
+}) {
+  const resolvedParams = await params;
+  const classId = resolvedParams?.classId;
+  if (!classId) {
+    notFound();
+  }
+
+  const classInfo = await prisma.class.findUnique({
+    where: { id: classId },
+    select: {
+      id: true,
+      name: true,
+      teacher: { select: { user: { select: { firstName: true, lastName: true } } } },
+    },
+  });
+  if (!classInfo) {
+    notFound();
+  }
+
+  const classOptions = [{ id: classInfo.id, name: classInfo.name }];
+
+  const [students, classSubjects, timetableEntries, currentSession] = await Promise.all([
+    prisma.student.findMany({
+      where: { classHistories: { some: { classId } } },
+      orderBy: [{ createdAt: "desc" }],
+      select: {
+        id: true,
+        admissionNumber: true,
+        gender: true,
+        user: { select: { firstName: true, lastName: true, email: true, phone: true } },
+      },
+    }),
+    prisma.classSubject.findMany({
+      where: { classId },
+      select: {
+        subject: { select: { id: true, name: true } },
+      },
+    }),
+    prisma.timetableEntry.findMany({
+      where: { classId },
+      orderBy: [{ weekday: "asc" }, { startTime: "asc" }],
+      select: {
+        weekday: true,
+        startTime: true,
+        endTime: true,
+        subject: { select: { name: true } },
+        teacher: { select: { user: { select: { firstName: true, lastName: true } } } },
+      },
+    }),
+    prisma.academicSession.findFirst({
+      where: { isCurrent: true },
+      select: { id: true, name: true },
+    }),
+  ]);
+
+  const subjectTeachers = await prisma.subjectTeacher.findMany({
+    where: { classId },
+    select: {
+      subjectId: true,
+      teacher: { select: { user: { select: { firstName: true, lastName: true } } } },
+    },
+  });
+
+  const teacherNamesBySubject = new Map<string, string[]>();
+  for (const row of subjectTeachers) {
+    const name = `${row.teacher.user.firstName} ${row.teacher.user.lastName}`;
+    const list = teacherNamesBySubject.get(row.subjectId) ?? [];
+    list.push(name);
+    teacherNamesBySubject.set(row.subjectId, list);
+  }
+
+  const subjects = classSubjects.map((row) => ({
+    id: row.subject.id,
+    name: row.subject.name,
+    teacherNames: teacherNamesBySubject.get(row.subject.id) ?? [],
+  }));
+
+  const timetable = timetableEntries.map((entry) => ({
+    weekday: entry.weekday,
+    startTime: entry.startTime,
+    endTime: entry.endTime,
+    subject: entry.subject.name,
+    teacher: `${entry.teacher.user.firstName} ${entry.teacher.user.lastName}`,
+  }));
+
+  const currentTerm = currentSession
+    ? await prisma.term.findFirst({
+        where: { sessionId: currentSession.id, isCurrent: true },
+        select: { id: true, name: true },
+      })
+    : null;
+
     return (
         <>
             <BackButton />
@@ -21,29 +119,26 @@ export default function Page() {
                                     <School className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Grade 3A</h1>
+                                    <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">{classInfo.name}</h1>
                                     <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-4 text-indigo-100">
                                         <div className="flex items-center gap-2">
                                             <UserCheck className="w-4 h-4 shrink-0" />
-                                            <span className="text-xs sm:text-sm">Ms. Sarah Johnson</span>
+                                            <span className="text-xs sm:text-sm">
+                                                {classInfo.teacher
+                                                    ? `${classInfo.teacher.user.firstName} ${classInfo.teacher.user.lastName}`
+                                                    : "—"}
+                                            </span>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <Calendar className="w-4 h-4 shrink-0 " />
-                                            <span className="text-xs sm:text-sm">Academic Year 2023-24</span>
+                                            <span className="text-xs sm:text-sm">Academic Year {currentSession?.name}</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                                <button className="px-4 py-2.5 bg-white text-indigo-600 rounded-lg font-medium text-sm hover:bg-indigo-50 transition flex items-center justify-center gap-2">
-                                    <UserPlus className="w-4 h-4" />
-                                    Add Student
-                                </button>
-                                <button className="px-4 py-2.5 bg-white/20 backdrop-blur-sm text-white rounded-lg font-medium text-sm hover:bg-white/30 transition flex items-center justify-center gap-2">
-                                    <BookPlus className="w-4 h-4" />
-                                    Add Subject
-                                </button>
-                            <FormButton action="edit" type="class"/>
+                                <ClassDetailActions classId={classId} classOptions={classOptions} />
+                                <FormButton action="edit" type="class"/>
                             </div>
                         </div>
                     </div>
@@ -54,7 +149,7 @@ export default function Page() {
                                     <Users className="w-4 h-4 sm:w-5 sm:h-5" />
                                 </div>
                                 <div>
-                                    <p className="text-xl sm:text-2xl font-bold text-gray-900">28</p>
+                                    <p className="text-xl sm:text-2xl font-bold text-gray-900">{students.length}</p>
                                     <p className="text-xs text-gray-500">Total Students</p>
                                 </div>
                             </div>
@@ -65,7 +160,7 @@ export default function Page() {
                                     <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
                                 </div>
                                 <div>
-                                    <p className="text-xl sm:text-2xl font-bold text-gray-900">8</p>
+                                    <p className="text-xl sm:text-2xl font-bold text-gray-900">{subjects.length}</p>
                                     <p className="text-xs text-gray-500">Subjects</p>
                                 </div>
                             </div>
@@ -76,7 +171,7 @@ export default function Page() {
                                     <Trophy className="w-4 h-4 sm:w-5 sm:h-5" />
                                 </div>
                                 <div>
-                                    <p className="text-xl sm:text-2xl font-bold text-gray-900">85.4%</p>
+                                    <p className="text-xl sm:text-2xl font-bold text-gray-900">—</p>
                                     <p className="text-xs text-gray-500">Avg Score</p>
                                 </div>
                             </div>
@@ -87,8 +182,8 @@ export default function Page() {
                                     <CalendarCheck className="w-4 h-4 sm:w-5 sm:h-5" />
                                 </div>
                                 <div>
-                                    <p className="text-xl sm:text-2xl font-bold text-gray-900">92.3%</p>
-                                    <p className="text-xs text-gray-500">Attendance</p>
+                                    <p className="text-xl sm:text-2xl font-bold text-gray-900">{currentTerm?.name ?? "—"}</p>
+                                    <p className="text-xs text-gray-500">Current Term</p>
                                 </div>
                             </div>
                         </div>
@@ -150,13 +245,13 @@ export default function Page() {
                 </div>
 
                 {/* Students List Section */}
-                <ClassStudent />
+                <ClassStudent students={students} />
 
                 {/* Subjects & Teachers Section */}
-                <ClassSubjects />
+                <ClassSubjects subjects={subjects} />
 
                 {/* Weekly Timetable */}
-                <WeeklyTimetable />
+                <WeeklyTimetable entries={timetable} />
             </main>
         </>
 

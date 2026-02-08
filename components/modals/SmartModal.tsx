@@ -1,24 +1,44 @@
 "use client";
 
 import { ModalShell}  from "@/components/modals/ModalShell";
-import ClassForm from "./forms/ClassForm";
-import StudentForm from "./forms/StudentForm";
-import SubjectForm from "./forms/SubjectForm";
-import TeacherForm from "./forms/TeacherForm";
+import ClassForm, { type ClassFormData } from "./forms/ClassForm";
+import StudentForm, { type StudentFormClasses, type StudentFormData } from "./forms/StudentForm";
+import SubjectForm, { type SubjectFormData } from "./forms/SubjectForm";
+import TeacherForm, { type TeacherFormData } from "./forms/TeacherForm";
 
 export type ModalType = "teacher" | "student" | "class" | "subject";
 type ModalMode = "create" | "edit";
 
-type Props = {
+type BaseProps = {
   open: boolean;
   onClose: () => void;
-  type: ModalType;
   mode: ModalMode;
-  action: (formData: FormData) => Promise<any>;
-  data?: any; // edit defaults
+  action: (formData: FormData) => void | Promise<void>;
 };
 
-export default function SmartModal({ open, onClose, type, mode, action, data }: Props) {
+type Props =
+  | (BaseProps & {
+      type: "student";
+      data?: StudentFormData;
+      classes?: StudentFormClasses;
+    })
+  | (BaseProps & {
+      type: "class";
+      data?: ClassFormData;
+    })
+  | (BaseProps & {
+      type: "subject";
+      data?: SubjectFormData;
+    })
+  | (BaseProps & {
+      type: "teacher";
+      data?: TeacherFormData;
+    });
+
+export default function SmartModal(props: Props) {
+  const { open, onClose, type, mode, action } = props;
+  const studentData = type === "student" ? props.data : undefined;
+  const studentClasses = type === "student" ? props.classes : undefined;
   const meta = getMeta(type, mode);
 
   return (
@@ -31,8 +51,11 @@ export default function SmartModal({ open, onClose, type, mode, action, data }: 
       footer={
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
           <form action={action} className="flex-1">
-            {mode === "edit" && data?.id ? (
-              <input type="hidden" name="id" value={String(data.id)} />
+            {type === "student" && mode === "edit" && studentData?.id ? (
+              <input type="hidden" name="id" value={String(studentData.id)} />
+            ) : null}
+            {type === "subject" && props.data?.classId ? (
+              <input type="hidden" name="classId" value={String(props.data.classId)} />
             ) : null}
 
             <button className="w-full rounded-xl bg-indigo-600 px-6 py-4 text-white font-semibold hover:bg-indigo-700 transition">
@@ -50,10 +73,10 @@ export default function SmartModal({ open, onClose, type, mode, action, data }: 
         </div>
       }
     >
-      {type === "class" && <ClassForm mode={mode} data={data} />}
-      {type === "student" && <StudentForm mode={mode} data={data} />}
-      {type === "subject" && <SubjectForm mode={mode} data={data} />}
-      {type === "teacher" && <TeacherForm mode={mode} data={data} />}
+      {type === "class" && <ClassForm mode={mode} data={props.data} />}
+      {type === "student" && <StudentForm classes={studentClasses} mode={mode} data={studentData} />}
+      {type === "subject" && <SubjectForm mode={mode} data={props.data} />}
+      {type === "teacher" && <TeacherForm mode={mode} data={props.data} />}
     </ModalShell>
   );
 }

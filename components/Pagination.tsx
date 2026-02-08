@@ -1,14 +1,14 @@
 "use client";
-
+import { ITEM_PER_PAGE } from "@/lib/utils";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 type PaginationProps = {
   page: number;
   count: number;
-  perPage: number;
 };
 
-export default function Pagination({ page, count, perPage }: PaginationProps) {
+const perPage = ITEM_PER_PAGE;
+export default function Pagination({ page, count }: PaginationProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -30,7 +30,7 @@ export default function Pagination({ page, count, perPage }: PaginationProps) {
     <div className="p-4 flex items-center justify-between text-gray-500">
       <button
         disabled={current <= 1}
-        className="py-2 px-4 rounded-md bg-slate-200 text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+        className="py-2 px-4 cursor-pointer rounded-md bg-slate-200 text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
         onClick={() => changePage(current - 1)}
       >
         Prev
@@ -39,7 +39,7 @@ export default function Pagination({ page, count, perPage }: PaginationProps) {
         {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
           <button
             key={pageNum}
-            className={`px-2 rounded-sm cursor-pointer hover:bg-[#b3cacd] ${pageNum === current ? "bg-[#b3cacd]" : ""}`}
+            className={`px-2   rounded-sm cursor-pointer hover:bg-[#b3cacd] ${pageNum === current ? "bg-[#b3cacd]" : ""}`}
             onClick={() => changePage(pageNum)}
           >
             {pageNum}
@@ -47,7 +47,7 @@ export default function Pagination({ page, count, perPage }: PaginationProps) {
         ))}
       </div>
       <button
-        className="py-2 px-4 rounded-md bg-slate-200 text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+        className="py-2 cursor-pointer px-4 rounded-md bg-slate-200 text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
         onClick={() => changePage(current + 1)}
         disabled={current >= totalPages}
       >

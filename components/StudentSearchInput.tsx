@@ -26,6 +26,7 @@ export default function StudentSearchInput({ initialValue }: { initialValue?: st
 
     // Reset pagination whenever a new search is performed
     params.delete("page");
+    params.delete("classId")
 
     const query = params.toString();
     router.push(query ? `${pathname}?${query}` : pathname);
@@ -42,9 +43,9 @@ router.refresh(); // ✅
         type="text"
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        placeholder="Search students..."
+        placeholder="Search"
         className="w-full bg-transparent outline-none"
-        aria-label="Search students"
+        aria-label="Search "
       />
     </form>
   );
