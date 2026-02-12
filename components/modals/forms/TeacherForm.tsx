@@ -4,6 +4,7 @@ import { subjectsMock } from "@/utils/students";
 type ModalMode = "create" | "edit";
 
 export type TeacherFormData = {
+  id: string,
   firstName?: string;
   lastName?: string;
   email?: string;

@@ -5,7 +5,13 @@ import ConfirmDeleteModal from "@/components/modals/ConfirmDeleteModal";
 import { deleteTeacherAction } from "@/components/actions/actions";
 import { ModalType } from "../modals/SmartModal";
 
-export function DeleteButton({ teacher, type }: { teacher: any; type:ModalType }) {
+type DeleteButtonProps = {
+  id: string;
+  label: string;
+  type: ModalType;
+};
+
+export function DeleteButton({ id, label, type }: DeleteButtonProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -21,8 +27,8 @@ export function DeleteButton({ teacher, type }: { teacher: any; type:ModalType }
         open={open}
         onClose={() => setOpen(false)}
         type={type}
-        id={teacher.id}
-        label={`${teacher.firstName} ${teacher.lastName}`}
+        id={id}
+        label={label}
         action={deleteTeacherAction}
         requireText
       />

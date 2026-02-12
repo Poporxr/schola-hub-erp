@@ -69,3 +69,7 @@ export async function updateStudentAction(formData: FormData) {
 export async function createSubjectAction(formData: FormData) {
   console.log("created");
 }
+
+export async function updateSubjectAction(formData: FormData) {
+  console.log("updated");
+}

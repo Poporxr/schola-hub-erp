@@ -3,7 +3,6 @@ import {
     Mail,
     Download,
     Plus,
-    Search,
     Phone,
     MoreHorizontal,
     Users,
@@ -14,19 +13,262 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Pagination from "@/components/Pagination";
-import { classes, parentsMock } from "@/utils/students";
-import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectLabel,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
+import { prisma } from "@/lib/prisma";
+import { ITEM_PER_PAGE } from "@/lib/utils";
+import ParentsFilters from "@/components/parents/ParentsFilters";
+import type { PaymentStatus } from "@/generated/prisma/client";
 
+type SearchParams = {
+    search?: string | string[];
+    classId?: string | string[];
+    status?: string | string[];
+    page?: string | string[];
+};
 
-const Page = () => {
+type ParentRow = {
+    id: string;
+    name: string;
+    email?: string | null;
+    phone?: string | null;
+    image?: string | null;
+    students: { id: string; name: string; image?: string | null }[];
+    status: "Paid" | "Owing" | "Partial";
+    balance: { amount: string; raw: number; label?: string };
+    lastPayment?: string;
+};
+
+const formatNaira = (value: number) =>
+    `₦${value.toLocaleString("en-NG", { maximumFractionDigits: 0 })}`;
+
+const Page = async ({
+    searchParams,
+}: {
+    searchParams?: SearchParams | Promise<SearchParams>;
+}) => {
+    const resolvedSearchParams = await searchParams;
+    const classId = Array.isArray(resolvedSearchParams?.classId) ? resolvedSearchParams?.classId[0] : resolvedSearchParams?.classId;
+    const search = Array.isArray(resolvedSearchParams?.search) ? resolvedSearchParams?.search[0] : resolvedSearchParams?.search;
+    const status = Array.isArray(resolvedSearchParams?.status) ? resolvedSearchParams?.status[0] : resolvedSearchParams?.status;
+    const pageParam = Array.isArray(resolvedSearchParams?.page) ? resolvedSearchParams?.page[0] : resolvedSearchParams?.page;
+    const page = pageParam ? parseInt(pageParam, 10) || 1 : 1;
+
+    const [classes, currentSession, allParents] = await Promise.all([
+        prisma.class.findMany({ select: { id: true, name: true }, orderBy: [{ name: "asc" }] }),
+        prisma.academicSession.findFirst({ where: { isCurrent: true }, select: { id: true } }),
+        prisma.parent.findMany({
+            where: {
+                ...(search
+                    ? {
+                        user: {
+                            OR: [
+                                { firstName: { contains: search, mode: "insensitive" } },
+                                { lastName: { contains: search, mode: "insensitive" } },
+                                { email: { contains: search, mode: "insensitive" } },
+                                { phone: { contains: search, mode: "insensitive" } },
+                            ],
+                        },
+                    }
+                    : {}),
+            },
+            select: {
+                id: true,
+                user: { select: { firstName: true, lastName: true, email: true, phone: true, image: true } },
+                parentStudents: {
+                    select: {
+                        student: {
+                            select: {
+                                id: true,
+                                user: { select: { firstName: true, lastName: true, image: true } },
+                            },
+                        },
+                    },
+                },
+            },
+        }),
+    ]);
+
+    const currentTerm = currentSession
+        ? await prisma.term.findFirst({
+            where: { sessionId: currentSession.id, isCurrent: true },
+            select: { id: true },
+        })
+        : null;
+
+    const studentIds = allParents
+        .flatMap((parent) => parent.parentStudents.map((row) => row.student.id));
+
+    const studentClassHistories = currentSession && currentTerm && studentIds.length
+        ? await prisma.studentClassHistory.findMany({
+            where: {
+                studentId: { in: studentIds },
+                sessionId: currentSession.id,
+                termId: currentTerm.id,
+            },
+            select: { studentId: true, classId: true },
+        })
+        : [];
+
+    const studentClassMap = new Map(
+        studentClassHistories.map((history) => [history.studentId, history.classId])
+    );
+
+    const classIds = Array.from(new Set(studentClassHistories.map((history) => history.classId)));
+
+    const feeAssignments = currentSession && currentTerm && classIds.length
+        ? await prisma.classFeeAssignment.findMany({
+            where: {
+                sessionId: currentSession.id,
+                termId: currentTerm.id,
+                classId: { in: classIds },
+            },
+            select: { id: true, classId: true, feeStructureId: true },
+        })
+        : [];
+
+    const assignmentIds = feeAssignments.map((assignment) => assignment.id);
+    const feeStructureIds = feeAssignments.map((assignment) => assignment.feeStructureId);
+
+    const feeItems = feeStructureIds.length
+        ? await prisma.feeStructureItem.findMany({
+            where: { feeStructureId: { in: feeStructureIds } },
+            select: { feeStructureId: true, amount: true },
+        })
+        : [];
+
+    const feeStructureTotalMap = new Map<string, number>();
+    feeItems.forEach((item) => {
+        feeStructureTotalMap.set(
+            item.feeStructureId,
+            (feeStructureTotalMap.get(item.feeStructureId) ?? 0) + item.amount
+        );
+    });
+
+    const assignmentTotalMap = new Map<string, number>();
+    feeAssignments.forEach((assignment) => {
+        assignmentTotalMap.set(
+            assignment.id,
+            feeStructureTotalMap.get(assignment.feeStructureId) ?? 0
+        );
+    });
+
+    const classAssignmentMap = new Map(
+        feeAssignments.map((assignment) => [assignment.classId, assignment.id])
+    );
+
+    const payments = assignmentIds.length
+        ? await prisma.payment.findMany({
+            where: {
+                assignmentId: { in: assignmentIds },
+                status: { in: ["PAID", "PARTIAL"] as PaymentStatus[] },
+            },
+            select: {
+                amount: true,
+                studentId: true,
+                paymentDate: true,
+                status: true,
+            },
+        })
+        : [];
+
+    const studentPaidMap = new Map<string, number>();
+    const studentLastPaymentMap = new Map<string, Date>();
+    payments.forEach((payment) => {
+        studentPaidMap.set(
+            payment.studentId,
+            (studentPaidMap.get(payment.studentId) ?? 0) + payment.amount
+        );
+        const existing = studentLastPaymentMap.get(payment.studentId);
+        if (!existing || payment.paymentDate > existing) {
+            studentLastPaymentMap.set(payment.studentId, payment.paymentDate);
+        }
+    });
+
+    const parentBalances = new Map<
+        string,
+        { due: number; paid: number; lastPayment?: Date }
+    >();
+
+    allParents.forEach((parent) => {
+        let due = 0;
+        let paid = 0;
+        let lastPayment: Date | undefined;
+        const studentIdsForParent = parent.parentStudents.map((row) => row.student.id);
+        studentIdsForParent.forEach((studentId) => {
+            const classForStudent = studentClassMap.get(studentId);
+            if (!classForStudent) return;
+            const assignmentId = classAssignmentMap.get(classForStudent);
+            if (!assignmentId) return;
+            const assignmentTotal = assignmentTotalMap.get(assignmentId) ?? 0;
+            due += assignmentTotal;
+            paid += studentPaidMap.get(studentId) ?? 0;
+            const last = studentLastPaymentMap.get(studentId);
+            if (last && (!lastPayment || last > lastPayment)) {
+                lastPayment = last;
+            }
+        });
+        parentBalances.set(parent.id, {
+            due,
+            paid,
+            lastPayment,
+        });
+    });
+
+    const rows: ParentRow[] = allParents
+        .filter((parent) => {
+            if (!classId || classId === "all") return true;
+            if (!studentClassMap.size) return true;
+            return parent.parentStudents.some((row) => studentClassMap.get(row.student.id) === classId);
+        })
+        .map((parent) => {
+            const balance = parentBalances.get(parent.id) ?? { due: 0, paid: 0 };
+            const outstanding = Math.max(0, balance.due - balance.paid);
+            let paymentStatus: ParentRow["status"] = "Paid";
+            if (balance.paid > 0 && outstanding > 0) {
+                paymentStatus = "Partial";
+            } else if (outstanding > 0) {
+                paymentStatus = "Owing";
+            }
+
+            const students = parent.parentStudents.map((row) => ({
+                id: row.student.id,
+                name: `${row.student.user.firstName} ${row.student.user.lastName}`,
+                image: row.student.user.image ?? undefined,
+            }));
+
+            return {
+                id: parent.id,
+                name: `${parent.user.firstName} ${parent.user.lastName}`,
+                email: parent.user.email,
+                phone: parent.user.phone,
+                image: parent.user.image,
+                students,
+                status: paymentStatus,
+                balance: {
+                    amount: formatNaira(outstanding),
+                    raw: outstanding,
+                    label: outstanding > 0 ? "Overdue" : undefined,
+                },
+                lastPayment: balance.lastPayment
+                    ? balance.lastPayment.toLocaleDateString("en-NG", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                    })
+                    : "—",
+            };
+        })
+        .filter((row) => {
+            if (!status || status === "all") return true;
+            return row.status.toLowerCase() === status.toLowerCase();
+        });
+
+    const totalParents = rows.length;
+    const parentsOwing = rows.filter((row) => row.status !== "Paid").length;
+    const totalOutstanding = rows.reduce((sum, row) => sum + row.balance.raw, 0);
+    const totalCollected = payments.reduce((sum, payment) => sum + payment.amount, 0);
+
+    const start = (page - 1) * ITEM_PER_PAGE;
+    const pagedRows = rows.slice(start, start + ITEM_PER_PAGE);
     return (
         <div className="flex-1 overflow-y-auto space-y-3">
             <div className="flex flex-col lg:flex-row gap-6 h-full">
@@ -74,7 +316,7 @@ const Page = () => {
                                 </div>
 
                                 <p className="mt-3 text-3xl font-bold text-slate-900">
-                                    452
+                                    {totalParents}
                                 </p>
                             </div>
 
@@ -89,11 +331,11 @@ const Page = () => {
 
                                 <div className="mt-3 flex items-end justify-between">
                                     <p className="text-3xl font-bold text-red-700">
-                                        87
+                                        {parentsOwing}
                                     </p>
 
                                     <span className="rounded-full border border-red-200 bg-white px-2 py-0.5 text-xs font-semibold text-red-600">
-                                        19%
+                                        {totalParents ? Math.round((parentsOwing / totalParents) * 100) : 0}%
                                     </span>
                                 </div>
                             </div>
@@ -108,7 +350,7 @@ const Page = () => {
                                 </div>
 
                                 <p className="mt-3 text-2xl font-bold text-slate-900">
-                                    ₦4.2M
+                                    {formatNaira(totalOutstanding)}
                                 </p>
                             </div>
 
@@ -122,7 +364,7 @@ const Page = () => {
                                 </div>
 
                                 <p className="mt-3 text-2xl font-bold text-green-700">
-                                    ₦18.5M
+                                    {formatNaira(totalCollected)}
                                 </p>
                             </div>
                         </div>
@@ -130,53 +372,12 @@ const Page = () => {
 
                     {/* Filters */}
                     <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <div className="relative">
-                                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                <input
-                                    type="text"
-                                    placeholder="Search name, phone, email..."
-                                    className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-md text-sm focus:outline-none focus:border-indigo-500"
-                                />
-                            </div>
-
-                            <Select >
-                                <SelectTrigger className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm">
-                                    <SelectValue placeholder="Select a Class" />
-                                </SelectTrigger>
-                                <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
-                                    <SelectGroup >
-                                        {classes.map((classItem) => {
-                                            return (
-                                                <SelectItem key={classItem.id} className="cursor-pointer bg-gray-100 hover:bg-gray-200 text-black" value={classItem.id}>{`Class ${classItem.name}`}</SelectItem>
-                                            )
-                                        })}
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
-                            
-                            <Select>
-                                <SelectTrigger className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm">
-                                    <SelectValue placeholder="Payment Status" />
-                                </SelectTrigger>
-                                <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
-                                    <SelectGroup>
-                                        <SelectItem className="cursor-pointer bg-gray-100 hover:bg-gray-200 text-black" value="First Term">Paid</SelectItem>
-                                        <SelectItem className="cursor-pointer bg-gray-100 hover:bg-gray-200 text-black" value="Second Term">Owing</SelectItem>
-                                        <SelectItem className="cursor-pointer bg-gray-100 hover:bg-gray-200 text-black" value="Third Term">Partial</SelectItem>
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
-
-                            <div className="flex gap-2">
-                                <button className="flex-1 px-3 py-2 bg-indigo-50 text-indigo-700 rounded-md text-sm font-medium hover:bg-indigo-100">
-                                    Apply
-                                </button>
-                                <button className="px-3 py-2 bg-white border border-slate-200 text-slate-600 rounded-md text-sm font-medium hover:bg-slate-50">
-                                    Reset
-                                </button>
-                            </div>
-                        </div>
+                        <ParentsFilters
+                            classes={classes}
+                            initialSearch={search}
+                            initialClassId={classId}
+                            initialStatus={status}
+                        />
                     </div>
 
                     {/* Table */}
@@ -207,14 +408,14 @@ const Page = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
-                                    {parentsMock.map((parent) => (
+                                    {pagedRows.map((parent) => (
                                         <tr key={parent.id} className="hover:bg-slate-50 group cursor-pointer">
 
                                             {/* Parent Name */}
                                             <td className="p-4">
                                                 <div className="flex items-center gap-3">
                                                     <Image
-                                                        src={parent.avatar || "/default-avatar.png"}
+                                                        src={parent.image || "/default-avatar.png"}
                                                         alt={parent.name}
                                                         width={40}
                                                         height={40}
@@ -222,7 +423,7 @@ const Page = () => {
                                                     />
                                                     <div>
                                                         <p className="text-sm font-medium text-slate-900">{parent.name}</p>
-                                                        <p className="text-xs text-slate-500">{parent.location}</p>
+                                                        <p className="text-xs text-slate-500">{parent.email ?? "-"}</p>
                                                     </div>
                                                 </div>
                                             </td>
@@ -232,11 +433,11 @@ const Page = () => {
                                                 <div className="flex flex-col gap-1">
                                                     <div className="flex items-center gap-1.5 text-xs text-slate-600">
                                                         <Phone className="w-3 h-3" />
-                                                        {parent.phone}
+                                                        {parent.phone ?? "-"}
                                                     </div>
                                                     <div className="flex items-center gap-1.5 text-xs text-slate-600">
                                                         <Mail className="w-3 h-3" />
-                                                        {parent.email}
+                                                        {parent.email ?? "-"}
                                                     </div>
                                                 </div>
                                             </td>
@@ -244,19 +445,21 @@ const Page = () => {
                                             {/* Students */}
                                             <td className="p-4">
                                                 <div className="flex -space-x-2 overflow-hidden">
-                                                    {parent.students.avatars.map((img, index) => (
+                                                    {parent.students.slice(0, 4).map((student, index) => (
                                                         <Image
                                                             key={index}
                                                             width={24}
                                                             height={24}
-                                                            src={img}
+                                                            src={student.image ?? "/default-avatar.png"}
                                                             alt=""
                                                             className="inline-block h-6 w-6 rounded-full ring-2 ring-white"
                                                         />
                                                     ))}
                                                 </div>
                                                 <span className="text-xs text-slate-500 mt-1 block">
-                                                    {parent.students.summary}
+                                                    {parent.students.length
+                                                        ? `${parent.students.length} student${parent.students.length > 1 ? "s" : ""}`
+                                                        : "No students"}
                                                 </span>
                                             </td>
 
@@ -321,7 +524,7 @@ const Page = () => {
                         </div>
 
                         {/* Pagination */}
-                        <Pagination />
+                        <Pagination page={page} count={totalParents} />
                     </div>
                 </div>
             </div>
@@ -334,7 +537,7 @@ const Page = () => {
                         Need to send reminders?
                     </h3>
                     <p className="text-indigo-200 text-sm mb-4 relative z-10">
-                        87 parents have outstanding payments due this week.
+                        {parentsOwing} parents have outstanding payments due this week.
                     </p>
                     <button className="w-full py-2 bg-white text-indigo-900 text-sm font-medium rounded-md hover:bg-indigo-50 transition-colors relative z-10">
                         Send Bulk Reminder
@@ -346,3 +549,8 @@ const Page = () => {
 };
 
 export default Page;
+
+
+
+
+

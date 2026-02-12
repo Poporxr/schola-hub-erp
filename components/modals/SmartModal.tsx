@@ -54,6 +54,12 @@ export default function SmartModal(props: Props) {
             {type === "student" && mode === "edit" && studentData?.id ? (
               <input type="hidden" name="id" value={String(studentData.id)} />
             ) : null}
+            {type === "teacher" && mode === "edit" && props.data?.id ? (
+              <input type="hidden" name="id" value={String(props.data.id)} />
+            ) : null}
+            {type === "subject" && mode === "edit" && props.data?.id ? (
+              <input type="hidden" name="id" value={String(props.data.id)} />
+            ) : null}
             {type === "subject" && props.data?.classId ? (
               <input type="hidden" name="classId" value={String(props.data.classId)} />
             ) : null}

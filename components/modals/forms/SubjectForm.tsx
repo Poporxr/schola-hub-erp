@@ -3,6 +3,7 @@
 type ModalMode = "create" | "edit";
 
 export type SubjectFormData = {
+  id?: string;
   name?: string;
   code?: string;
   level?: string;

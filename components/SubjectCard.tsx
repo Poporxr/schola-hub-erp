@@ -38,7 +38,7 @@ const SubjectCard = ({ subjects }: { subjects: SubjectCardItem[] }) => {
                         </div>
                         {role === 'admin' && <div className="flex gap-2">
                             <button className="text-indigo-600 hover:text-indigo-900 text-xs font-medium">Edit</button>
-                            <DeleteButton teacher={subject} type="subject"/>
+                            <DeleteButton id={subject.id} label={subject.name} type="subject" />
                         </div>}
                     </div>
                 </div>

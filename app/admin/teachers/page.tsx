@@ -1,24 +1,20 @@
 import Pagination from "@/components/Pagination";
-import { CalendarCheck, Edit2, Eye, Plus, Search, UserCheck, UserPlus, Users } from "lucide-react";
+import { CalendarCheck, Eye, UserCheck, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import FormButton from "@/components/buttons/FormButton";
 import { prisma } from "@/lib/prisma";
-import { StudentFormClasses } from "@/components/modals/forms/StudentForm";
-import { Class, Prisma, Teacher } from "@/generated/prisma/client";
+import { Prisma, Status } from "@/generated/prisma/client";
 import StudentSearchInput from "@/components/StudentSearchInput";
 import FilterSelect from "@/components/SelectFilter";
 import { ITEM_PER_PAGE } from "@/lib/utils";
+import { TeacherFormData } from "@/components/modals/forms/TeacherForm";
 
 type SearchParams = {
     classId?: string | string[];
     search?: string | string[];
     page?: string | string[];
 };
-
-type teacherList = Teacher & { class: Class }
-
-
 
 export default async function page({ searchParams,
 }: {
@@ -36,9 +32,6 @@ export default async function page({ searchParams,
         orderBy: [{ name: "asc" }],
         select: { id: true, name: true },
     });
-    const classOptions = classes satisfies StudentFormClasses;
-
-
     const query: Prisma.TeacherWhereInput = {};
 
 
@@ -69,19 +62,21 @@ export default async function page({ searchParams,
         }
     }
 
+    const teacherSelect = {
+        id: true,
+        class: { select: { id: true, name: true } },
+        department: true,
+        teacherId: true,
+        user: { select: { status: true, firstName: true, lastName: true, phone: true, email: true } },
+    }
+
     const [teachers, total] = await Promise.all([
         prisma.teacher.findMany({
             where: query,
             orderBy: [{ createdAt: "desc" }],
             take: ITEM_PER_PAGE,
             skip: ITEM_PER_PAGE * (page - 1),
-            select: {
-                id: true,
-                class: { select: { id: true, name: true } },
-                department: true,
-                teacherId: true,
-                user: { select: { status: true, firstName: true, lastName: true, phone: true } },
-            },
+            select: teacherSelect,
         }),
         prisma.teacher.count({ where: query }),
     ]);
@@ -94,6 +89,23 @@ export default async function page({ searchParams,
     const allTeachers = await prisma.teacher.count()
 
 
+    type TeacherRow = Prisma.TeacherGetPayload<{ select: typeof teacherSelect }>;
+
+    const toTeacherStatus = (status: Status): TeacherFormData["status"] => {
+        if (status === "ACTIVE") return "active";
+        if (status === "SUSPENDED") return "suspended";
+        return "on_leave";
+    };
+
+    const toTeacherFormData = (teacher: TeacherRow): TeacherFormData => ({
+        id: teacher.id,
+        firstName: teacher.user.firstName,
+        lastName: teacher.user.lastName,
+        email: teacher.user.email,
+        phone: teacher.user.phone ?? undefined,
+        classIds: teacher.class?.id ? [teacher.class.id] : undefined,
+        status: toTeacherStatus(teacher.user.status),
+    });
 
     return (
         <div className="">
@@ -137,8 +149,8 @@ export default async function page({ searchParams,
                         <FormButton type={"teacher"} action="create" />
                     </div>
                     <div className="flex items-center gap-4">
-                          <StudentSearchInput initialValue={search} />
-                          <FilterSelect classes={classes} classId={classId} />
+                        <StudentSearchInput initialValue={search} />
+                        <FilterSelect classes={classes} classId={classId} />
                     </div>
                 </div>
 
@@ -171,8 +183,8 @@ export default async function page({ searchParams,
                                         <span className={`px-3 py-1 text-xs font-semibold ${teacher.user.status === "ACTIVE" ? 'text-green-700 bg-green-100 ' : "text-red-700 bg-red-100 "}rounded-full`} >{teacher.user.status}</span>
                                     </td>
                                     <td className="px-6 py-6 grid grid-cols-2">
-                                        <Link href={`/admin/teachers/${24334}`} className="text-slate-400 hover:text-indigo-600"><Eye className="w-4 h-4" /></Link>
-                                        <button className="text-slate-400 hover:text-blue-600 mx-1"><Edit2 className="w-4 h-4" /> </button>
+                                        <Link href={`/admin/teachers/${teacher.id}`} className="text-slate-400 hover:text-indigo-600"><Eye className="w-4 h-4" /></Link>
+                                        <FormButton type="teacher" action="edit" data={toTeacherFormData(teacher)} />
                                     </td>
                                 </tr>
                             ))}

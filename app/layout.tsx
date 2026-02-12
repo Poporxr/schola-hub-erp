@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { ClerkProvider } from '@clerk/nextjs'
 
 import { Inter } from "next/font/google";
 
@@ -20,12 +21,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${inter.variable} antialiased bg-slate-50 text-slate-800 h-screen overflow-hidden flex pb-40`}
-      >
-        {children}
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en">
+        <body
+          className={`${inter.variable} antialiased bg-slate-50 text-slate-800 h-screen overflow-hidden flex pb-40`}
+        >
+          {children}
+        </body>
+      </html>
+    </ClerkProvider>
+
   );
 }
