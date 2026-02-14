@@ -172,4 +172,9 @@
   body {
     @apply bg-background text-foreground;
   }
+}/* UserButton avatar size */
+.cl-userButtonAvatarBox,
+.cl-avatarBox {
+  width: 40px !important;
+  height: 40px !important;
 }

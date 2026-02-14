@@ -1,5 +1,7 @@
 "use server";
 
+import { prisma } from "@/lib/prisma";
+
 export async function deleteTeacherAction(
 ) {
 
@@ -72,4 +74,23 @@ export async function createSubjectAction(formData: FormData) {
 
 export async function updateSubjectAction(formData: FormData) {
   console.log("updated");
+}
+
+export async function getUserDetails(userId: string) {
+  const student = await prisma.student.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      admissionNumber: true,
+      user: {
+        select: { image: true, firstName: true, lastName: true }
+      },
+    }
+  });
+ return Response.json({
+    firstName: student?.user.firstName,
+    lastName: student?.user.lastName,
+    adminNo: student?.admissionNumber,
+    image: student?.user.image
+  })
 }

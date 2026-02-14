@@ -14,13 +14,35 @@ import {
     LogOut,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { useClerk } from "@clerk/nextjs";
+import { useEffect, useState } from "react";
 
 type AdminMenuProps = {
     open: boolean;
     onClose: () => void;
 };
 
+type StudentData = {
+  firstName?: string;
+  lastName?: string;
+  adminNo?: string;
+  image?: string;
+};
+
+
 const StudentMenu = ({ open, onClose }: AdminMenuProps) => {
+    const [student, setStudent] = useState<StudentData | null>(null);
+  useEffect(() => {
+    async function fetchData() {
+      const res = await fetch("/api/studentData");
+      const data = await res.json();
+      setStudent(data);
+    }
+
+    fetchData();
+  });
+
+    const {signOut} = useClerk();
     const pathname = usePathname();
 
     const isActive = (href: string) => pathname.startsWith(href);
@@ -60,10 +82,10 @@ const StudentMenu = ({ open, onClose }: AdminMenuProps) => {
 
             <div className="p-4 flex flex-col items-center border-b border-gray-100">
                 <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-indigo-50 mb-3">
-                    <Image src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80" alt="Student Profile" className="w-full h-full object-cover" width={50} height={50} />
+                    <Image src={student?.image ? student.image : "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80"  } alt="Student Profile" className="w-full h-full object-cover" width={50} height={50} />
                 </div>
-                <h3 className="font-semibold text-gray-900">Alex Johnson</h3>
-                <p className="text-sm text-gray-500">Class 12-B | ID: 2024056</p>
+                <h3 className="font-semibold text-gray-900">{student?.firstName + ' ' + student?.lastName}</h3>
+                <p className="text-sm text-gray-500">{student?.adminNo}</p>
             </div>
 
             <nav className="flex-1 overflow-y-auto p-4 space-y-1">
@@ -115,7 +137,9 @@ const StudentMenu = ({ open, onClose }: AdminMenuProps) => {
             </nav>
 
             <div className="p-3 border-t border-gray-100">
-                <button className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                <button onClick={()=> {
+                     signOut()
+                }} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors">
                     <LogOut className="w-5 h-5" />
                     Logout
                 </button>

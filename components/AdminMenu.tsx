@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { UserButton } from "@clerk/nextjs"
 import {
   GraduationCap,
   LayoutDashboard,
@@ -36,8 +37,7 @@ const AdminMenu = ({ open, onClose }: AdminMenuProps) => {
   };
 
   const linkClass = (href: string) =>
-    `nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-50 hover:text-slate-900 transition-colors ${
-      isActive(href) ? "text-indigo-600 font-semibold bg-indigo-50" : "text-slate-600"
+    `nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-50 hover:text-slate-900 transition-colors ${isActive(href) ? "text-indigo-600 font-semibold bg-indigo-50" : "text-slate-600"
     }`;
 
   return (
@@ -154,22 +154,17 @@ const AdminMenu = ({ open, onClose }: AdminMenuProps) => {
 
       <div className="p-4 border-t border-slate-200">
         <div className="flex items-center gap-3">
-          <Image
-            src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-            alt="Admin"
-            className="w-9 h-9 rounded-full object-cover"
-            width={36}
-            height={36}
+          <UserButton
+            appearance={{
+              elements: {
+                userButtonAvatarBox: "w-24 h-24 ",
+              },
+            }}
           />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-slate-900 truncate">
-              Alex Morgan
-            </p>
+            <p className="text-sm font-medium text-slate-900 truncate">Alex Morgan</p>
             <p className="text-xs text-slate-500 truncate">Administrator</p>
           </div>
-          <Link href="/" onClick={closeOnMobile} className="text-slate-400 hover:text-slate-600">
-            <LogOut className="w-5 h-5" />
-          </Link>
         </div>
       </div>
     </aside>
