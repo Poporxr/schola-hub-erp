@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ClerkProvider } from '@clerk/nextjs'
+import { Toaster } from "@/components/ui/sonner"
 
 import { Inter } from "next/font/google";
 
@@ -27,6 +28,7 @@ export default function RootLayout({
           className={`${inter.variable} antialiased bg-slate-50 text-slate-800 h-screen overflow-hidden flex pb-40`}
         >
           {children}
+          <Toaster theme="dark"/>
         </body>
       </html>
     </ClerkProvider>

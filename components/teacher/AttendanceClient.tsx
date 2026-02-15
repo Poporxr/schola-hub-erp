@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CalendarDays } from "lucide-react";
 
 // Use your shadcn Select where necessary
@@ -22,6 +22,11 @@ type StudentRow = {
   admissionNo: string;
   gender: "Male" | "Female";
   status: AttendanceStatus;
+};
+
+type ClassOption = {
+  id: string;
+  name: string;
 };
 
 
@@ -47,21 +52,50 @@ function attendanceBtnClass(active: boolean, status: AttendanceStatus) {
   }
 }
 
-export default function AttendanceClient({initialStudents}: {initialStudents: StudentRow[]}) {
+export default function AttendanceClient({
+  initialStudents,
+  classOptions,
+  initialClassId,
+  initialDate,
+  termLabel,
+}: {
+  initialStudents: StudentRow[];
+  classOptions: ClassOption[];
+  initialClassId: string;
+  initialDate: string;
+  termLabel: string;
+}) {
   const [students, setStudents] = useState<StudentRow[]>(initialStudents);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
 
-  // These can be derived/passed from class card
-  const [selectedClass, setSelectedClass] = useState("JSS 2A - Mathematics");
-const [selectedPeriod, setSelectedPeriod] = useState("Period 1 (08:00 AM)");
+  const [selectedClass, setSelectedClass] = useState(initialClassId);
+  const [date, setDate] = useState(initialDate);
 
-  const [date, setDate] = useState(() => {
-    // yyyy-mm-dd
-    const d = new Date();
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    return `${yyyy}-${mm}-${dd}`;
-  });
+  useEffect(() => {
+    async function loadStudents() {
+      setIsLoading(true);
+      setMessage(null);
+      setStudents([]);
+      try {
+        const params = new URLSearchParams({
+          classId: selectedClass,
+          date,
+        });
+        const res = await fetch(`/api/teacher/attendance?${params.toString()}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data?.error || "Failed to load attendance data");
+        setStudents(data.students ?? []);
+      } catch (error) {
+        setMessage(error instanceof Error ? error.message : "Failed to load attendance data");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadStudents();
+  }, [selectedClass, date]);
 
   const counts = useMemo(() => {
     const present = students.filter((s) => s.status === "present").length;
@@ -77,9 +111,26 @@ const [selectedPeriod, setSelectedPeriod] = useState("Period 1 (08:00 AM)");
   }
 
   async function saveAttendance() {
-    // TODO: replace with server action or API call
-    // await fetch("/api/attendance", { method: "POST", body: JSON.stringify(...) })
-    console.log("Saving attendance:", { selectedClass, date, selectedPeriod, students });
+    setIsSaving(true);
+    setMessage(null);
+    try {
+      const res = await fetch("/api/teacher/attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          classId: selectedClass,
+          date,
+          students: students.map((s) => ({ id: s.id, status: s.status })),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Failed to save attendance");
+      setMessage("Attendance saved successfully.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Failed to save attendance");
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   return (
@@ -96,12 +147,12 @@ const [selectedPeriod, setSelectedPeriod] = useState("Period 1 (08:00 AM)");
           {/* Optional top-right chip (like screenshot header) */}
           <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-sm text-slate-700">
             <CalendarDays className="w-4 h-4 text-slate-500" />
-            <span className="font-medium">Term 2, 2024</span>
+            <span className="font-medium">{termLabel}</span>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
               Select Class
@@ -114,36 +165,11 @@ const [selectedPeriod, setSelectedPeriod] = useState("Period 1 (08:00 AM)");
               </SelectTrigger>
               <SelectContent className="bg-white border-slate-200">
                 <SelectGroup>
-                  <SelectItem
-                    className="cursor-pointer"
-                    value="JSS 2A - Mathematics"
-                  >
-                    JSS 2A - Mathematics
-                  </SelectItem>
-                  <SelectItem
-                    className="cursor-pointer"
-                    value="JSS 3C - Mathematics"
-                  >
-                    JSS 3C - Mathematics
-                  </SelectItem>
-                  <SelectItem
-                    className="cursor-pointer"
-                    value="SS 1B - Mathematics"
-                  >
-                    SS 1B - Mathematics
-                  </SelectItem>
-                  <SelectItem
-                    className="cursor-pointer"
-                    value="SS 2B - Further Mathematics"
-                  >
-                    SS 2B - Further Mathematics
-                  </SelectItem>
-                  <SelectItem
-                    className="cursor-pointer"
-                    value="SS 3A - Further Mathematics"
-                  >
-                    SS 3A - Further Mathematics
-                  </SelectItem>
+                  {classOptions.map((item) => (
+                    <SelectItem key={item.id} className="cursor-pointer" value={item.id}>
+                      {item.name}
+                    </SelectItem>
+                  ))}
                 </SelectGroup>
               </SelectContent>
             </Select>
@@ -159,47 +185,6 @@ const [selectedPeriod, setSelectedPeriod] = useState("Period 1 (08:00 AM)");
               onChange={(e) => setDate(e.target.value)}
               className="w-full bg-white border border-slate-200 text-slate-700 text-sm rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 block p-3"
             />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Period
-            </label>
-
-            {/* ✅ shadcn Select */}
-            <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-              <SelectTrigger className="w-full px-3 py-3 border border-slate-200 rounded-xl bg-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
-                <SelectValue placeholder="Select period" />
-              </SelectTrigger>
-              <SelectContent className="bg-white border-slate-200">
-                <SelectGroup>
-                  <SelectItem
-                    className="cursor-pointer"
-                    value="Period 1 (08:00 AM)"
-                  >
-                    Period 1 (08:00 AM)
-                  </SelectItem>
-                  <SelectItem
-                    className="cursor-pointer"
-                    value="Period 2 (09:00 AM)"
-                  >
-                    Period 2 (09:00 AM)
-                  </SelectItem>
-                  <SelectItem
-                    className="cursor-pointer"
-                    value="Period 3 (10:00 AM)"
-                  >
-                    Period 3 (10:00 AM)
-                  </SelectItem>
-                  <SelectItem
-                    className="cursor-pointer"
-                    value="Period 4 (11:00 AM)"
-                  >
-                    Period 4 (11:00 AM)
-                  </SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
           </div>
         </div>
 
@@ -238,11 +223,16 @@ const [selectedPeriod, setSelectedPeriod] = useState("Period 1 (08:00 AM)");
           <button
             type="button"
             onClick={saveAttendance}
+            disabled={isSaving || isLoading || !students.length}
             className="px-5 py-2.5 bg-teal-600 text-white rounded-xl hover:bg-teal-700 font-medium text-sm transition-colors shadow-sm"
           >
-            Save Attendance
+            {isSaving ? "Saving..." : "Save Attendance"}
           </button>
         </div>
+
+        {message && (
+          <p className="mb-4 text-sm text-slate-600">{message}</p>
+        )}
 
         {/* Table */}
         <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
@@ -258,6 +248,20 @@ const [selectedPeriod, setSelectedPeriod] = useState("Period 1 (08:00 AM)");
             </thead>
 
             <tbody className="text-sm text-slate-700">
+              {isLoading ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-6 text-center text-slate-500">
+                    Loading students...
+                  </td>
+                </tr>
+              ) : null}
+              {!isLoading && !students.length ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-6 text-center text-slate-500">
+                    No students found for this class/date.
+                  </td>
+                </tr>
+              ) : null}
               {students.map((s) => (
                 <tr
                   key={s.id}

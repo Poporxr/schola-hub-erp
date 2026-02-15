@@ -10,8 +10,8 @@ const Page = async () => {
     return <div className="p-6 text-sm text-slate-600">Sign in to view attendance.</div>;
   }
 
-  const student = await prisma.student.findUnique({
-    where: {id: userId },
+  const student = await prisma.student.findFirst({
+    where: { OR: [{ id: userId }, { userId }] },
     select: { id: true },
   });
 

@@ -12,7 +12,7 @@ const Page = async () => {
 
     const currentClassRow = await prisma.studentClassHistory.findFirst({
         where: {
-            student: { id: userId },
+            student: { OR: [{ id: userId }, { userId }] },
             session: { isCurrent: true },
             term: { isCurrent: true },
         },
@@ -27,8 +27,8 @@ const Page = async () => {
         },
     });
 
-    const studentData = await prisma.student.findUnique({
-        where: { id: userId },
+    const studentData = await prisma.student.findFirst({
+        where: { OR: [{ id: userId }, { userId }] },
         select: {
             id: true,
             admissionNumber: true,

@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useMemo, useRef, useState } from "react";
+import { toast } from "sonner"
 
 export type ResultStatus = "draft" | "saved" | "error" | "submitted";
 
 export type ResultStudent = {
-  id: number;
+  id: string;
   name: string;
   admNo: string;
   test: number;
@@ -14,6 +15,10 @@ export type ResultStudent = {
 };
 
 export type ResultContext = {
+  classId: string;
+  subjectId: string;
+  sessionId: string;
+  termId: string;
   className: string;
   subjectName: string;
   termLabel: string;
@@ -82,6 +87,8 @@ export default function ResultsEntryClient({
   );
 
   const [submitOpen, setSubmitOpen] = useState(false);
+  const [busy, setBusy] = useState<"" | "save" | "submit">("");
+  const canPersist = Boolean(ctx.classId && ctx.subjectId && ctx.sessionId && ctx.termId && students.length);
 
   // refs for keyboard navigation
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
@@ -94,7 +101,7 @@ export default function ResultsEntryClient({
     return { total, changed, errors, rowsToSubmit };
   }, [students]);
 
-  function updateScore(studentId: number, field: "test" | "exam", value: number) {
+  function updateScore(studentId: string, field: "test" | "exam", value: number) {
     setStudents((prev) =>
       prev.map((s) => {
         if (s.id !== studentId) return s;
@@ -163,15 +170,57 @@ export default function ResultsEntryClient({
   }
 
   function saveDraft() {
-    // 🔁 Replace with server action later
-    setStudents((prev) => prev.map((s) => (s.status === "draft" ? { ...s, status: "saved" } : s)));
+    try {
+      setBusy("save");
+      const payload = {
+        action: "save",
+        classId: ctx.classId,
+        subjectId: ctx.subjectId,
+        sessionId: ctx.sessionId,
+        termId: ctx.termId,
+        students: students.map((s) => ({ id: s.id, test: s.test, exam: s.exam })),
+      };
+      fetch("/api/teacher/results", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }).then(async (res) => {
+        const data = await res.json();
+        if (!res.ok) throw new Error(data?.error || "Failed to save results");
+        setStudents((prev) => prev.map((s) => (s.status === "draft" ? { ...s, status: "saved" } : s)));
+        toast.success("Draft has been Saved", { position: "top-right" })
+      }).catch(() => {
+        setStudents((prev) => prev.map((s) => (s.status === "submitted" ? s : { ...s, status: "error" })));
+      }).finally(() => setBusy(""));
+    } catch {
+      setBusy("");
+    }
   }
 
   function confirmSubmit() {
     if (summary.errors > 0) return;
-    // 🔁 Replace with server action later
-    setStudents((prev) => prev.map((s) => (s.status === "submitted" ? s : { ...s, status: "submitted" })));
-    setSubmitOpen(false);
+    setBusy("submit");
+    const payload = {
+      action: "submit",
+      classId: ctx.classId,
+      subjectId: ctx.subjectId,
+      sessionId: ctx.sessionId,
+      termId: ctx.termId,
+      students: students.map((s) => ({ id: s.id, test: s.test, exam: s.exam })),
+    };
+    fetch("/api/teacher/results", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }).then(async (res) => {
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Failed to submit results");
+      setStudents((prev) => prev.map((s) => (s.status === "submitted" ? s : { ...s, status: "submitted" })));
+      setSubmitOpen(false);
+      toast.success("Submitted Sucessfully", { position: "top-right" })
+    }).catch(() => {
+      setStudents((prev) => prev.map((s) => (s.status === "submitted" ? s : { ...s, status: "error" })));
+    }).finally(() => setBusy(""));
   }
 
   return (
@@ -201,14 +250,16 @@ export default function ResultsEntryClient({
           <button
             type="button"
             onClick={saveDraft}
+            disabled={busy !== "" || !canPersist}
             className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:border-slate-400 transition-all duration-150 shadow-sm"
           >
-            Save Draft
+            {busy === "save" ? "Saving..." : "Save Draft"}
           </button>
 
           <button
             type="button"
             onClick={() => setSubmitOpen(true)}
+            disabled={busy !== "" || !canPersist}
             className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-all duration-150 shadow-sm"
           >
             Submit Results
@@ -418,6 +469,7 @@ export default function ResultsEntryClient({
         <div
           className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4"
           onMouseDown={(e) => {
+            if (busy === "submit") return;
             if (e.target === e.currentTarget) setSubmitOpen(false);
           }}
         >
@@ -469,6 +521,7 @@ export default function ResultsEntryClient({
               <button
                 type="button"
                 onClick={() => setSubmitOpen(false)}
+                disabled={busy === "submit"}
                 className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50"
               >
                 Cancel
@@ -477,10 +530,10 @@ export default function ResultsEntryClient({
               <button
                 type="button"
                 onClick={confirmSubmit}
-                disabled={summary.errors > 0}
+                disabled={summary.errors > 0 || busy === "submit"}
                 className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed"
               >
-                {summary.errors > 0 ? "Fix Errors First" : "Submit Results"}
+                {summary.errors > 0 ? "Fix Errors First" : busy === "submit" ? "Submitting..." : "Submit Results"}
               </button>
             </div>
           </div>

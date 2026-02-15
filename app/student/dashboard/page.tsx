@@ -21,8 +21,8 @@ const Page = async () => {
         return <div className="p-6 text-sm text-slate-600">No current term is configured.</div>;
     }
 
-    const studentData = await prisma.student.findUnique({
-        where: { id: userId },
+    const studentData = await prisma.student.findFirst({
+        where: { OR: [{ id: userId }, { userId }] },
         select: {
             id: true,
             admissionNumber: true,
