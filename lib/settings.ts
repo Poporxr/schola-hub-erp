@@ -90,3 +90,12 @@ export function buildCellKeyByStart(day: Weekday, start: string) {
   const normalizedStart = normalizeTime(start);
   return `${day}|${normalizedStart}`;
 }
+
+export function formatCurrency(amount: number) {
+  if (Number.isNaN(amount)) return "—";
+  return new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
