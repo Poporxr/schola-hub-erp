@@ -31,16 +31,24 @@ type StudentData = {
 
 
 const StudentMenu = ({ open, onClose }: AdminMenuProps) => {
-    const [student, setStudent] = useState<StudentData | null>(null);
+  const [student, setStudent] = useState<StudentData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   useEffect(() => {
+    let isMounted = true;
     async function fetchData() {
       const res = await fetch("/api/studentData");
       const data = await res.json();
-      setStudent(data);
+      if (isMounted) {
+        setStudent(data);
+        setIsLoading(false);
+      }
     }
 
     fetchData();
-  });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
     const {signOut} = useClerk();
     const pathname = usePathname();
@@ -84,8 +92,10 @@ const StudentMenu = ({ open, onClose }: AdminMenuProps) => {
                 <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-indigo-50 mb-3">
                     <Image src={student?.image ? student.image : "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80"  } alt="Student Profile" className="w-full h-full object-cover" width={50} height={50} />
                 </div>
-                <h3 className="font-semibold text-gray-900">{student?.firstName + ' ' + student?.lastName}</h3>
-                <p className="text-sm text-gray-500">{student?.adminNo}</p>
+                <h3 className="font-semibold text-gray-900">
+                    {isLoading ? "Loading..." : [student?.firstName, student?.lastName].filter(Boolean).join(" ") || "Student"}
+                </h3>
+                <p className="text-sm text-gray-500">{isLoading ? " " : student?.adminNo ?? "-"}</p>
             </div>
 
             <nav className="flex-1 overflow-y-auto p-4 space-y-1">

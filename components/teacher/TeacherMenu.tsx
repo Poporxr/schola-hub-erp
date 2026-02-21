@@ -16,14 +16,40 @@ import {
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
+import { useEffect, useState } from "react";
 
 type AdminMenuProps = {
     open: boolean;
     onClose: () => void;
 };
+type TeacherData = {
+    firstName?: string;
+    lastName?: string;
+    staffId?: string;
+    image?: string;
+};
 
 const TeacherMenu = ({ open, onClose }: AdminMenuProps) => {
-     const {signOut} = useClerk();
+    const [teacher, setTeacher] = useState<TeacherData | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        let isMounted = true;
+        async function fetchData() {
+            const res = await fetch("/api/teacherData");
+            const data = await res.json();
+            if (isMounted) {
+                setTeacher(data);
+                setIsLoading(false);
+            }
+        }
+        fetchData();
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    const { signOut } = useClerk();
     const pathname = usePathname();
 
     const isActive = (href: string) => pathname.startsWith(href);
@@ -63,72 +89,75 @@ const TeacherMenu = ({ open, onClose }: AdminMenuProps) => {
 
             <div className="p-4 flex flex-col items-center border-b border-gray-100">
                 <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-indigo-50 mb-3">
-                    <Image src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80" alt="Teacher Profile" className="w-full h-full object-cover" width={50} height={50} />
+                    <Image src={teacher?.image ? teacher.image : "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80"  } alt="Teacher Profile" className="w-full h-full object-cover" width={50} height={50} />
                 </div>
-                <h3 className="font-semibold text-gray-900">Mrs. Adebayo Funke</h3>
-                <p className="text-sm text-gray-500">Mathematics Teacher</p>
-                <span className="mt-2 px-3 py-1 bg-teal-50 text-teal-700 text-xs font-medium rounded-full">Staff ID: TCH-2024-089</span>
+                <h3 className="font-semibold text-gray-900">
+                    {isLoading ? "Loading..." : [teacher?.firstName, teacher?.lastName].filter(Boolean).join(" ") || "Teacher"}
+                </h3>
+                <span className="mt-2 px-3 py-1 bg-teal-50 text-teal-700 text-xs font-medium rounded-full">
+                    Staff ID: {isLoading ? " " : teacher?.staffId ?? "-"}
+                </span>
             </div>
 
             <nav className="flex-1 overflow-y-auto p-4 space-y-1">
                 <Link href={"/teacher"}
-                onClick={closeOnMobile}  className={linkClass("/teacher/dashboard")}>
+                    onClick={closeOnMobile} className={linkClass("/teacher/dashboard")}>
                     <LayoutDashboard className="w-5 h-5" />
                     Dashboard
                 </Link>
 
                 <Link
-                href={"/teacher/classes"}
-                onClick={closeOnMobile}
-                  className={linkClass("/teacher/class")}>
+                    href={"/teacher/classes"}
+                    onClick={closeOnMobile}
+                    className={linkClass("/teacher/class")}>
                     <Users className="w-5 h-5" />
                     My Classes
                 </Link>
 
                 <Link
-                href={"/teacher/attendance"}
-                onClick={closeOnMobile}
-                  className={linkClass("/teacher/attendance")}>
+                    href={"/teacher/attendance"}
+                    onClick={closeOnMobile}
+                    className={linkClass("/teacher/attendance")}>
                     <ClipboardCheck className="w-5 h-5" />
                     Mark Attendance
                 </Link>
 
                 <Link
-                href={"/teacher/results"}
-                onClick={closeOnMobile}
-                  className={linkClass("/teacher/results")}>
+                    href={"/teacher/results"}
+                    onClick={closeOnMobile}
+                    className={linkClass("/teacher/results")}>
                     <FileText className="w-5 h-5" />
                     Enter Results
                 </Link>
 
                 <Link
-                href={"/teacher/subjects"}
-                onClick={closeOnMobile}
-                  className={linkClass("/teacher/subjects")}>
+                    href={"/teacher/subjects"}
+                    onClick={closeOnMobile}
+                    className={linkClass("/teacher/subjects")}>
                     <BookOpen className="w-5 h-5" />
                     My Subjects
                 </Link>
 
                 <Link
-                href={"/teacher/timetable"}
-                onClick={closeOnMobile}
-                  className={linkClass("/teacher/timetable")}>
+                    href={"/teacher/timetable"}
+                    onClick={closeOnMobile}
+                    className={linkClass("/teacher/timetable")}>
                     <Calendar className="w-5 h-5" />
                     Timetable
                 </Link>
 
                 <Link
-                href={"/teacher/profile"}
-                onClick={closeOnMobile}
-                  className={linkClass("/teacher/profile")}>
+                    href={"/teacher/profile"}
+                    onClick={closeOnMobile}
+                    className={linkClass("/teacher/profile")}>
                     <User className="w-5 h-5" />
                     My Profile
                 </Link>
             </nav>
 
             <div className="px-4 py-2 border-t border-gray-100">
-                <button onClick={()=> {
-                     signOut()
+                <button onClick={() => {
+                    signOut()
                 }} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors">
                     <LogOut className="w-5 h-5" />
                     Logout
