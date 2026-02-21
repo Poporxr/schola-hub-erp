@@ -2,20 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 
-type SearchParams = {
-  subjectId?: string | string[];
-};
-
-const firstParam = (value?: string | string[]) => (Array.isArray(value) ? value[0] : value);
-
-const Page = async ({
-  searchParams,
-}: {
-  searchParams?: SearchParams | Promise<SearchParams>;
-}) => {
-  const resolvedSearchParams = await searchParams;
-  const subjectIdParam = firstParam(resolvedSearchParams?.subjectId);
-
+const Page = async () => {
   const { userId } = await auth();
   if (!userId) {
     return <div className="p-6 text-sm text-slate-600">Sign in to view classes.</div>;
@@ -63,13 +50,6 @@ const Page = async ({
     }),
   ]);
 
-  const subjectOptions = Array.from(
-    new Map(subjectTeacherRows.map((row) => [row.subjectId, { id: row.subject.id, name: row.subject.name }])).values()
-  ).sort((a, b) => a.name.localeCompare(b.name));
-
-  const selectedSubjectId =
-    (subjectIdParam && subjectOptions.some((s) => s.id === subjectIdParam) ? subjectIdParam : undefined) ?? "all";
-
   const classMap = new Map<string, { id: string; name: string; isClassTeacher: boolean; subjectNames: string[] }>();
 
   for (const row of classTeacherRows) {
@@ -89,13 +69,7 @@ const Page = async ({
     classMap.set(row.classId, existing);
   }
 
-  const baseClasses = Array.from(classMap.values()).sort((a, b) => a.name.localeCompare(b.name));
-  const filteredClasses =
-    selectedSubjectId === "all"
-      ? baseClasses
-      : baseClasses.filter((item) =>
-          subjectTeacherRows.some((row) => row.classId === item.id && row.subjectId === selectedSubjectId)
-        );
+  const filteredClasses = Array.from(classMap.values()).sort((a, b) => a.name.localeCompare(b.name));
 
   const classStats = await Promise.all(
     filteredClasses.map(async (item) => {
@@ -136,29 +110,6 @@ const Page = async ({
               Classes you teach this term ({currentTerm.name})
             </p>
           </div>
-          <form method="get" className="flex gap-2 items-end">
-            <div>
-              <label className="block text-xs text-slate-600 mb-1">Subject</label>
-              <select
-                name="subjectId"
-                defaultValue={selectedSubjectId}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-              >
-                <option value="all">All Subjects</option>
-                {subjectOptions.map((subject) => (
-                  <option key={subject.id} value={subject.id}>
-                    {subject.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <button
-              type="submit"
-              className="px-3 py-2 rounded-lg bg-purple-600 text-white text-sm font-medium hover:bg-purple-700"
-            >
-              Apply
-            </button>
-          </form>
         </div>
 
         {classStats.length ? (
@@ -204,7 +155,7 @@ const Page = async ({
             ))}
           </div>
         ) : (
-          <p className="text-sm text-slate-500">No classes found for the selected subject.</p>
+          <p className="text-sm text-slate-500">No assigned classes found for the current term.</p>
         )}
       </div>
     </div>

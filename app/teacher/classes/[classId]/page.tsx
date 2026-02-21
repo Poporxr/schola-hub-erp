@@ -3,7 +3,6 @@ import FormButton from "@/components/buttons/FormButton";
 import ClassDetailActions from "@/components/buttons/ClassDetailActions";
 import ClassSubjects from "@/components/ClassSubjects";
 import ClassStudent from "@/components/List/ClassStudent";
-import Pagination from "@/components/Pagination";
 import WeeklyTimetable from "@/components/WeeklyTimetable";
 import { ArrowUp, Award, BookOpen, Calendar, CalendarCheck, ClipboardList, School, TrendingUp, Trophy, UserCheck, Users } from "lucide-react";
 import Image from "next/image";
