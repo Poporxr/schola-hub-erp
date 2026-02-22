@@ -73,6 +73,8 @@ const Page = async () => {
         prisma.attendance.findMany({
             where: {
                 studentId: { in: studentIds },
+                sessionId: currentTerm.sessionId,
+                termId: currentTerm.id,
                 date: {
                     gte: currentTerm.startDate,
                     lte: currentTerm.endDate,
@@ -83,6 +85,8 @@ const Page = async () => {
         prisma.attendance.findMany({
             where: {
                 studentId: { in: studentIds },
+                sessionId: currentTerm.sessionId,
+                termId: currentTerm.id,
                 date: {
                     gte: monthStart,
                     lte: monthEnd,

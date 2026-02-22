@@ -10,13 +10,22 @@ const Page = async () => {
     return <div className="p-6 text-sm text-slate-600">Sign in to view attendance.</div>;
   }
 
-  const student = await prisma.student.findFirst({
-    where: { OR: [{ id: userId }, { userId }] },
-    select: { id: true },
-  });
+  const [student, currentTerm] = await Promise.all([
+    prisma.student.findFirst({
+      where: { OR: [{ id: userId }, { userId }] },
+      select: { id: true },
+    }),
+    prisma.term.findFirst({
+      where: { isCurrent: true, session: { isCurrent: true } },
+      select: { id: true, sessionId: true },
+    }),
+  ]);
 
   if (!student) {
     return <div className="p-6 text-sm text-slate-600">No student profile is linked to this account.</div>;
+  }
+  if (!currentTerm) {
+    return <div className="p-6 text-sm text-slate-600">No current term is configured.</div>;
   }
 
   const now = new Date();
@@ -34,6 +43,8 @@ const Page = async () => {
   const weeklyRows = await prisma.attendance.findMany({
     where: {
       studentId: student.id,
+      sessionId: currentTerm.sessionId,
+      termId: currentTerm.id,
       date: { gte: weekStart, lte: weekEnd },
     },
     select: { date: true, status: true, notes: true },

@@ -166,6 +166,7 @@ model AcademicSession {
   classFeeAssignments ClassFeeAssignment[]
   classTeachers      ClassTeacher[]
   subjectTeachers    SubjectTeacher[]
+  attendances        Attendance[] @relation("SessionAttendances")
 
   @@index([name])
   @@index([isCurrent])
@@ -192,6 +193,7 @@ model Term {
   classFeeAssignments ClassFeeAssignment[]
   classTeachers      ClassTeacher[]
   subjectTeachers    SubjectTeacher[]
+  attendances        Attendance[] @relation("TermAttendances")
 
   @@unique([sessionId, type])
   @@index([sessionId, type])
@@ -494,6 +496,8 @@ model Attendance {
   teacherId String
   subjectId String?  // Optional - can be general attendance or subject-specific
   classId   String
+  sessionId String?
+  termId    String?
   date      DateTime
   period    String?  // e.g., "Period 1 (08:00 AM)"
   status    AttendanceStatus
@@ -505,11 +509,14 @@ model Attendance {
   teacher Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   subject Subject? @relation(fields: [subjectId], references: [id], onDelete: SetNull)
   class   Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  session AcademicSession? @relation("SessionAttendances", fields: [sessionId], references: [id], onDelete: Cascade)
+  term    Term?           @relation("TermAttendances", fields: [termId], references: [id], onDelete: Cascade)
 
   @@unique([studentId, date, period, subjectId])
   @@index([studentId])
   @@index([teacherId])
   @@index([classId])
+  @@index([sessionId, termId])
   @@index([date])
   @@index([status])
 }

@@ -89,6 +89,8 @@ export default async function Page() {
         date: new Date(`${selectedDate}T00:00:00.000Z`),
         subjectId: null,
         period: null,
+        sessionId: currentTerm.sessionId,
+        termId: currentTerm.id,
       },
       select: { studentId: true, status: true },
     }),

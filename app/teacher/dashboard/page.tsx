@@ -67,6 +67,8 @@ const Page = async () => {
             where: {
                 teacherId: teacher.id,
                 date: todayDate,
+                sessionId: currentTerm.sessionId,
+                termId: currentTerm.id,
             },
             select: {
                 classId: true,

@@ -91,13 +91,28 @@ const Page = async () => {
 
     const [present, absent, late, notices] = await Promise.all([
         prisma.attendance.count({
-            where: { studentId: studentData.id, status: AttendanceStatus.PRESENT },
+            where: {
+                studentId: studentData.id,
+                status: AttendanceStatus.PRESENT,
+                sessionId: currentTerm.sessionId,
+                termId: currentTerm.id,
+            },
         }),
         prisma.attendance.count({
-            where: { studentId: studentData.id, status: AttendanceStatus.ABSENT },
+            where: {
+                studentId: studentData.id,
+                status: AttendanceStatus.ABSENT,
+                sessionId: currentTerm.sessionId,
+                termId: currentTerm.id,
+            },
         }),
         prisma.attendance.count({
-            where: { studentId: studentData.id, status: AttendanceStatus.LATE },
+            where: {
+                studentId: studentData.id,
+                status: AttendanceStatus.LATE,
+                sessionId: currentTerm.sessionId,
+                termId: currentTerm.id,
+            },
         }),
         prisma.notice.findMany({
             where: {

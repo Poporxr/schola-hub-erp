@@ -1,4 +1,18 @@
-import { AttendanceStatus, PrismaClient } from "@/generated/prisma/client";
+import {
+  AttendanceStatus,
+  FeeStatus,
+  Gender,
+  Grade,
+  LevelType,
+  NoticePriority,
+  PaymentStatus,
+  PrismaClient,
+  TermType,
+  TimetableStatus,
+  UserRole,
+  Status,
+  Weekday,
+} from "@/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import "dotenv/config";
 
@@ -8,14 +22,14 @@ const adapter = new PrismaPg({
 
 const prisma = new PrismaClient({ adapter });
 
-function scoreToGrade(total: number) {
-  if (total >= 90) return "A_PLUS" as const;
-  if (total >= 80) return "A" as const;
-  if (total >= 70) return "B" as const;
-  if (total >= 60) return "C" as const;
-  if (total >= 50) return "D" as const;
-  if (total >= 40) return "E" as const;
-  return "F" as const;
+function scoreToGrade(total: number): Grade {
+  if (total >= 90) return Grade.A_PLUS;
+  if (total >= 80) return Grade.A;
+  if (total >= 70) return Grade.B;
+  if (total >= 60) return Grade.C;
+  if (total >= 50) return Grade.D;
+  if (total >= 40) return Grade.E;
+  return Grade.F;
 }
 
 function pick<T>(arr: T[], idx: number) {
@@ -109,7 +123,7 @@ async function main() {
     const first = await prisma.term.create({
       data: {
         sessionId,
-        type: "FIRST",
+        type: TermType.FIRST,
         name: "1st Term",
         startDate: new Date(`${startYear}-09-01T00:00:00.000Z`),
         endDate: new Date(`${startYear}-12-15T23:59:59.000Z`),
@@ -120,7 +134,7 @@ async function main() {
     const second = await prisma.term.create({
       data: {
         sessionId,
-        type: "SECOND",
+        type: TermType.SECOND,
         name: "2nd Term",
         startDate: new Date(`${endYear}-01-05T00:00:00.000Z`),
         endDate: new Date(`${endYear}-03-31T23:59:59.000Z`),
@@ -131,7 +145,7 @@ async function main() {
     const third = await prisma.term.create({
       data: {
         sessionId,
-        type: "THIRD",
+        type: TermType.THIRD,
         name: "3rd Term",
         startDate: new Date(`${endYear}-04-20T00:00:00.000Z`),
         endDate: new Date(`${endYear}-07-31T23:59:59.000Z`),
@@ -153,11 +167,11 @@ async function main() {
   // Levels + Classes (KG -> Grade 6 A/B, JSS1 -> SSS3 A-D)
   // ------------------------------------------------------------
   const levelPrimary = await prisma.level.create({
-    data: { name: "Primary Level", type: "PRIMARY" },
+    data: { name: "Primary Level", type: LevelType.PRIMARY },
   });
 
   const levelSecondary = await prisma.level.create({
-    data: { name: "Secondary Level", type: "SECONDARY" },
+    data: { name: "Secondary Level", type: LevelType.SECONDARY },
   });
 
   const primaryBaseNames = ["Kindergarten", "Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6"];
@@ -273,11 +287,11 @@ async function main() {
     data: {
       email: "admin@schola.local",
       passwordHash: "dev_only_change_me",
-      role: "ADMIN",
+      role: UserRole.ADMIN,
       firstName: "System",
       lastName: "Admin",
       phone: "+2348000000000",
-      status: "ACTIVE",
+      status: Status.ACTIVE,
       admin: { create: { staffId: "ADM-001" } },
     },
     include: { admin: true },
@@ -353,11 +367,11 @@ async function main() {
       data: {
         email: `teacher${i}@schola.local`,
         passwordHash: "dev_only_change_me",
-        role: "TEACHER",
+        role: UserRole.TEACHER,
         firstName,
         lastName,
         phone: `+2348000001${pad(i, 3)}`,
-        status: "ACTIVE",
+        status: Status.ACTIVE,
         teacher: {
           create: {
             teacherId: `TCH-${pad(i, 3)}`,
@@ -428,11 +442,11 @@ async function main() {
       data: {
         email: `parent${i}@schola.local`,
         passwordHash: "dev_only_change_me",
-        role: "PARENT",
+        role: UserRole.PARENT,
         firstName,
         lastName,
         phone: `+2348000002${pad(i, 3)}`,
-        status: "ACTIVE",
+        status: Status.ACTIVE,
         parent: { create: {} },
       },
       include: { parent: true },
@@ -493,17 +507,17 @@ async function main() {
   for (let i = 1; i <= 20; i++) {
     const firstName = studentFirstNames[i - 1];
     const lastName = studentLastNames[i - 1];
-    const gender = i % 2 === 0 ? "FEMALE" : "MALE";
+    const gender = i % 2 === 0 ? Gender.FEMALE : Gender.MALE;
 
     const u = await prisma.user.create({
       data: {
         email: `student${i}@schola.local`,
         passwordHash: "dev_only_change_me",
-        role: "STUDENT",
+        role: UserRole.STUDENT,
         firstName,
         lastName,
         phone: `+2348000003${pad(i, 3)}`,
-        status: "ACTIVE",
+        status: Status.ACTIVE,
         student: {
           create: {
             admissionNumber: `ADM/${currentSession.name}/${pad(i, 3)}`,
@@ -651,7 +665,7 @@ async function main() {
   // ------------------------------------------------------------
   // Timetable (CURRENT term) — a few entries per class
   // ------------------------------------------------------------
-  const weekdays = ["MON", "TUE", "WED", "THU", "FRI"] as const;
+  const weekdays: Weekday[] = [Weekday.MON, Weekday.TUE, Weekday.WED, Weekday.THU, Weekday.FRI];
   const times = [
     { start: "08:00", end: "09:00" },
     { start: "09:00", end: "10:00" },
@@ -666,10 +680,10 @@ async function main() {
     venueId: string;
     sessionId: string;
     termId: string;
-    weekday: (typeof weekdays)[number];
+    weekday: Weekday;
     startTime: string;
     endTime: string;
-    status: "ACTIVE";
+    status: TimetableStatus;
   }[] = [];
 
   for (let i = 0; i < classes.length; i++) {
@@ -694,7 +708,7 @@ async function main() {
         weekday: day,
         startTime: t.start,
         endTime: t.end,
-        status: "ACTIVE",
+        status: TimetableStatus.ACTIVE,
       });
     }
   }
@@ -715,6 +729,8 @@ async function main() {
       teacherId: teachers[i % teachers.length].id,
       subjectId: primarySubjectIds[i % primarySubjectIds.length],
       classId: h.classId,
+      sessionId: currentSession.id,
+      termId: currentTerm.id,
       date: today,
       period: "Period 1 (08:00 AM)",
       status: AttendanceStatus.PRESENT,
@@ -732,7 +748,7 @@ async function main() {
       sessionId: currentSession.id,
       termId: currentTerm.id,
       levelId: levelPrimary.id,
-      status: "ACTIVE",
+      status: FeeStatus.ACTIVE,
       createdBy: adminUser.id,
       items: {
         create: [
@@ -752,7 +768,7 @@ async function main() {
       sessionId: currentSession.id,
       termId: currentTerm.id,
       levelId: levelSecondary.id,
-      status: "ACTIVE",
+      status: FeeStatus.ACTIVE,
       createdBy: adminUser.id,
       items: {
         create: [
@@ -810,7 +826,7 @@ async function main() {
     const fee = isSec ? feeSecondary : feePrimary;
 
     const amount = isSec ? 180000 : 90000;
-    const status = i % 3 === 0 ? "PARTIAL" : "PAID";
+    const status = i % 3 === 0 ? PaymentStatus.PARTIAL : PaymentStatus.PAID;
 
     const payment = await prisma.payment.create({
       data: {
@@ -846,7 +862,7 @@ async function main() {
         from: "Admin Office",
         title: "Welcome Back",
         message: "Welcome to the new academic session. Please check your timetable and settle outstanding fees.",
-        priority: "HIGH",
+        priority: NoticePriority.HIGH,
         targetAudience: "ALL",
         isPublished: true,
         publishedAt: new Date(),
@@ -858,7 +874,7 @@ async function main() {
         title: "Math Clinic",
         from: "Mathematics Dept",
         message: "Math clinic holds every Friday at 2:00 PM in the Library.",
-        priority: "MEDIUM",
+        priority: NoticePriority.MEDIUM,
         targetAudience: "STUDENTS",
         isPublished: true,
         publishedAt: new Date(),
@@ -869,7 +885,7 @@ async function main() {
         title: "PTA Reminder",
         from: "School Management",
         message: "PTA meeting holds next week Thursday by 10:00 AM at the Multipurpose Hall.",
-        priority: "URGENT",
+        priority: NoticePriority.URGENT,
         targetAudience: "PARENTS",
         isPublished: true,
         publishedAt: new Date(),
