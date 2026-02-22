@@ -1,5 +1,4 @@
 import FormButton from "@/components/buttons/FormButton";
-import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { Users } from "lucide-react";
 import Link from "next/link";
@@ -17,11 +16,9 @@ const Page = async () => {
             },
         },
         _count: { select: { classHistories: true } },
-    } satisfies Prisma.ClassSelect;
+    };
 
-    type ClassRow = Prisma.ClassGetPayload<{ select: typeof classSelect }>;
-
-    const classes: ClassRow[] = await prisma.class.findMany({
+    const classes = await prisma.class.findMany({
         orderBy: [{ createdAt: "asc" }],
         select: classSelect,
     });
@@ -33,7 +30,7 @@ const Page = async () => {
             <FormButton type={"class"} action="create"/>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {classes.map((classItem: ClassRow) => (
+                {classes.map((classItem) => (
                     <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow" key={classItem.id}>
                         <div className="flex justify-between items-start mb-4">
                             <div>
