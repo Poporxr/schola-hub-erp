@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
+import { NextRequest } from "next/server";
 
 type UpdatePayload = {
   feeStructureId?: string;
@@ -9,9 +10,10 @@ type UpdatePayload = {
 };
 
 export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await context.params;
   const { userId } = await auth();
   if (!userId) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -27,7 +29,7 @@ export async function PUT(
 
   try {
     const updated = await prisma.classFeeAssignment.update({
-      where: { id: params.id },
+      where: { id },
       data: { feeStructureId, classId },
       select: { id: true },
     });
@@ -41,9 +43,10 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _request: Request,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await context.params;
   const { userId } = await auth();
   if (!userId) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -51,7 +54,7 @@ export async function DELETE(
 
   try {
     const paymentCount = await prisma.payment.count({
-      where: { assignmentId: params.id },
+      where: { assignmentId: id },
     });
     if (paymentCount > 0) {
       return Response.json(
@@ -61,7 +64,7 @@ export async function DELETE(
     }
 
     await prisma.classFeeAssignment.delete({
-      where: { id: params.id },
+      where: { id },
       select: { id: true },
     });
 
