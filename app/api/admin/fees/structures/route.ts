@@ -1,6 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
-import { FeeStatus } from "@/generated/prisma/client";
+import { FeeStatus } from "@prisma/client";
 
 type CreateStructurePayload = {
   name?: string;

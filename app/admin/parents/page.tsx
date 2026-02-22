@@ -16,7 +16,7 @@ import Pagination from "@/components/Pagination";
 import { prisma } from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/utils";
 import ParentsFilters from "@/components/parents/ParentsFilters";
-import type { PaymentStatus } from "@/generated/prisma/client";
+import type { PaymentStatus } from "@prisma/client";
 
 type SearchParams = {
     search?: string | string[];

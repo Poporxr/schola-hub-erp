@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { AlertCircle, BookOpen, CheckCircle, Library, TrendingUp } from "lucide-react";
 import Link from "next/link";
-import { AttendanceStatus } from "@/generated/prisma/client";
+import { AttendanceStatus } from "@prisma/client";
 import AttendanceRateCards from "@/components/AttendanceRateCards";
 
 

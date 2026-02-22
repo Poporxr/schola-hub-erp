@@ -5,7 +5,7 @@ import Link from "next/link";
 import FormButton from "@/components/buttons/FormButton";
 import { prisma } from "@/lib/prisma";
 import FilterSelect from "@/components/SelectFilter";
-import { Prisma } from "@/generated/prisma/client";
+import { Prisma } from "@prisma/client";
 import StudentSearchInput from "@/components/StudentSearchInput";
 import { unstable_noStore as noStore } from "next/cache";
 import type { StudentFormClasses, StudentFormData } from "@/components/modals/forms/StudentForm";

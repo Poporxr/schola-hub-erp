@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { AttendanceStatus } from "@/generated/prisma/client";
+import { AttendanceStatus } from "@prisma/client";
 import { auth } from "@clerk/nextjs/server";
 
 type ClientStatus = "present" | "absent" | "late";

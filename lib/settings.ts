@@ -1,4 +1,4 @@
-import type { Weekday } from "@/generated/prisma/client";
+import type { Weekday } from "@prisma/client";
 
 type RouteAccessMap = {
   [key: string]: string[];

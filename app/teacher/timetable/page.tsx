@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { buildCellKey, buildCellKeyByStart } from "@/lib/settings";
-import type { Weekday } from "@/generated/prisma/client";
+import type { Weekday } from "@prisma/client";
 
 const subjectColorUI: Record<string, { bg: string; border: string; title: string; sub: string }> = {
   TEAL: { bg: "bg-teal-50", border: "border-teal-500", title: "text-teal-900", sub: "text-teal-700" },

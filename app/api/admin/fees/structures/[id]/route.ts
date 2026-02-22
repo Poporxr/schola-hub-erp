@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
-import { FeeStatus, Prisma } from "@/generated/prisma/client";
+import { FeeStatus, Prisma } from "@prisma/client";
+import type { NextRequest } from "next/server";
 
 type UpdatePayload = {
   name?: string;
@@ -12,14 +13,15 @@ type UpdatePayload = {
 };
 
 export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const { userId } = await auth();
   if (!userId) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const { id } = await params;
   const payload = (await request.json().catch(() => ({}))) as UpdatePayload;
   const name = payload.name?.trim();
   const sessionId = payload.sessionId?.trim();
@@ -45,9 +47,9 @@ export async function PUT(
   }
 
   const updated = await prisma.$transaction(async (tx) => {
-    await tx.feeStructureItem.deleteMany({ where: { feeStructureId: params.id } });
+    await tx.feeStructureItem.deleteMany({ where: { feeStructureId: id } });
     return tx.feeStructure.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         name,
         sessionId,
@@ -64,8 +66,8 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _request: Request,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const { userId } = await auth();
   if (!userId) {
@@ -73,8 +75,9 @@ export async function DELETE(
   }
 
   try {
+    const { id } = await params;
     const assignmentIds = await prisma.classFeeAssignment.findMany({
-      where: { feeStructureId: params.id },
+      where: { feeStructureId: id },
       select: { id: true },
     });
     if (assignmentIds.length) {
@@ -118,10 +121,10 @@ export async function DELETE(
     }
 
     await prisma.$transaction(async (tx) => {
-      await tx.classFeeAssignment.deleteMany({ where: { feeStructureId: params.id } });
-      await tx.feeStructureItem.deleteMany({ where: { feeStructureId: params.id } });
+      await tx.classFeeAssignment.deleteMany({ where: { feeStructureId: id } });
+      await tx.feeStructureItem.deleteMany({ where: { feeStructureId: id } });
       await tx.feeStructure.delete({
-        where: { id: params.id },
+        where: { id },
         select: { id: true },
       });
     });

@@ -1,7 +1,7 @@
 import AttendanceChart from "@/components/student/AttendanceChart";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
-import { AttendanceStatus } from "@/generated/prisma/client";
+import { AttendanceStatus } from "@prisma/client";
 
 
 const Page = async () => {

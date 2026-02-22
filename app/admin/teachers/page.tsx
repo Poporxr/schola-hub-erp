@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import FormButton from "@/components/buttons/FormButton";
 import { prisma } from "@/lib/prisma";
-import { Prisma, Status } from "@/generated/prisma/client";
+import { Prisma, Status } from "@prisma/client";
 import StudentSearchInput from "@/components/StudentSearchInput";
 import FilterSelect from "@/components/SelectFilter";
 import { ITEM_PER_PAGE } from "@/lib/utils";

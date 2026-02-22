@@ -1,7 +1,7 @@
 import AdminCharts from "@/components/AdminCharts";
 import { prisma } from "@/lib/prisma";
 import { formatCurrency, greetingForHour, relativeDaysLabel } from "@/lib/settings";
-import type { NoticePriority } from "@/generated/prisma/client";
+import type { NoticePriority } from "@prisma/client";
 import {
   Users,
   Presentation,

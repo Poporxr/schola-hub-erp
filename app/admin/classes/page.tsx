@@ -1,5 +1,5 @@
 import FormButton from "@/components/buttons/FormButton";
-import { Prisma } from "@/generated/prisma/client";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { Users } from "lucide-react";
 import Link from "next/link";
