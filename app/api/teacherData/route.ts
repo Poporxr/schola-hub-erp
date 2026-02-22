@@ -7,7 +7,7 @@ export async function GET() {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
     const teacher = await prisma.teacher.findUnique({
-      where: {id: userId!},
+      where: { userId },
       select: {
         id: true,
         teacherId: true,
@@ -20,11 +20,15 @@ export async function GET() {
         }
       }
     })
-  
-  return Response.json({
-    firstName: teacher?.user.firstName,
-    lastName: teacher?.user.lastName,
-    staffId: teacher?.teacherId,
-    image: teacher?.user.image,
-  }) 
+
+  if (!teacher) {
+    return Response.json({ error: "Teacher record not found" }, { status: 404 });
   }
+
+  return Response.json({
+    firstName: teacher.user.firstName,
+    lastName: teacher.user.lastName,
+    staffId: teacher.teacherId,
+    image: teacher.user.image,
+  });
+}

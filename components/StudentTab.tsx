@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
     Calculator,
     FlaskConical,
@@ -10,15 +10,42 @@ import {
 
 type Tab = "personal" | "subjects" | "results";
 
-const StudentTabs = () => {
+type StudentTabProps = {
+    contact: {
+        email?: string | null;
+        phone?: string | null;
+        address?: string | null;
+    };
+    parents: {
+        name: string;
+        phone?: string | null;
+        email?: string | null;
+        relation?: string | null;
+        isPrimary?: boolean;
+    }[];
+    subjects: {
+        id: string;
+        name: string;
+        teacher?: string | null;
+    }[];
+    results: {
+        subject: string;
+        score: number;
+        grade?: string | null;
+        termLabel: string;
+    }[];
+};
+
+const StudentTabs = ({ contact, parents, subjects, results }: StudentTabProps) => {
     const [activeTab, setActiveTab] = useState<Tab>("personal");
+    const primaryParent = useMemo(() => parents.find((p) => p.isPrimary) ?? parents[0], [parents]);
 
     return (
         <div className="bg-white rounded-xl border border-gray-200">
             {/* Tabs Header */}
             <div className="border-b border-gray-200 overflow-auto  px-6">
                 <div className="flex gap-8">
-                    {(["personal", "subjects", "results", "attendance"] as Tab[]).map(
+                    {(["personal", "subjects", "results"] as Tab[]).map(
                         tab => (
                             <button
                                 key={tab}
@@ -46,15 +73,15 @@ const StudentTabs = () => {
                             <div className="space-y-4">
                                 <div>
                                     <p className="text-xs text-gray-500 mb-1">Email</p>
-                                    <p className="text-sm font-medium text-gray-900">emma.johnson@school.edu</p>
+                                    <p className="text-sm font-medium text-gray-900">{contact.email ?? "—"}</p>
                                 </div>
                                 <div>
                                     <p className="text-xs text-gray-500 mb-1">Phone</p>
-                                    <p className="text-sm font-medium text-gray-900">+1 234 567 8901</p>
+                                    <p className="text-sm font-medium text-gray-900">{contact.phone ?? "—"}</p>
                                 </div>
                                 <div>
                                     <p className="text-xs text-gray-500 mb-1">Address</p>
-                                    <p className="text-sm font-medium text-gray-900">123 Main Street, City, State 12345</p>
+                                    <p className="text-sm font-medium text-gray-900">{contact.address ?? "—"}</p>
                                 </div>
                             </div>
                         </div>
@@ -63,15 +90,15 @@ const StudentTabs = () => {
                             <div className="space-y-4">
                                 <div>
                                     <p className="text-xs text-gray-500 mb-1">Parent Name</p>
-                                    <p className="text-sm font-medium text-gray-900">Sarah Johnson</p>
+                                    <p className="text-sm font-medium text-gray-900">{primaryParent?.name ?? "—"}</p>
                                 </div>
                                 <div>
                                     <p className="text-xs text-gray-500 mb-1">Parent Phone</p>
-                                    <p className="text-sm font-medium text-gray-900">+1 234 567 8900</p>
+                                    <p className="text-sm font-medium text-gray-900">{primaryParent?.phone ?? "—"}</p>
                                 </div>
                                 <div>
                                     <p className="text-xs text-gray-500 mb-1">Parent Email</p>
-                                    <p className="text-sm font-medium text-gray-900">sarah.johnson@email.com</p>
+                                    <p className="text-sm font-medium text-gray-900">{primaryParent?.email ?? "—"}</p>
                                 </div>
                             </div>
                         </div>
@@ -86,42 +113,40 @@ const StudentTabs = () => {
                         Enrolled Subjects
                     </h4>
 
-                    <div className="grid lg:grid-cols-2 gap-4">
-                        <Subject
-                            icon={<Calculator className="w-5 h-5 text-blue-600" />}
-                            color="bg-blue-100"
-                            title="Mathematics"
-                            teacher="Dr. Sarah Williams"
-                        />
-                        <Subject
-                            icon={<FlaskConical className="w-5 h-5 text-green-600" />}
-                            color="bg-green-100"
-                            title="Science"
-                            teacher="Prof. John Anderson"
-                        />
-                        <Subject
-                            icon={<Book className="w-5 h-5 text-purple-600" />}
-                            color="bg-purple-100"
-                            title="English"
-                            teacher="Ms. Emily Davis"
-                        />
-                        <Subject
-                            icon={<Landmark className="w-5 h-5 text-orange-600" />}
-                            color="bg-orange-100"
-                            title="History"
-                            teacher="Mr. Robert Taylor"
-                        />
-                    </div>
+                    {subjects.length ? (
+                        <div className="grid lg:grid-cols-2 gap-4">
+                            {subjects.map((s, idx) => (
+                                <Subject
+                                    key={s.id}
+                                    icon={<SubjectIcon index={idx} />}
+                                    color={subjectColor(idx)}
+                                    title={s.name}
+                                    teacher={s.teacher ?? "—"}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-sm text-gray-500">No subjects assigned.</p>
+                    )}
                 </div>
             )}
 
             {/* Results */}
             {activeTab === "results" && (
                 <div className="p-6 space-y-4">
-                    <Result subject="Mathematics" score="92%" grade="A" />
-                    <Result subject="Science" score="88%" grade="B+" />
-                    <Result subject="English" score="95%" grade="A+" />
-                    <Result subject="History" score="90%" grade="A" />
+                    {results.length ? (
+                        results.map((r) => (
+                            <Result
+                                key={`${r.subject}-${r.termLabel}`}
+                                subject={r.subject}
+                                score={`${r.score}%`}
+                                grade={r.grade ?? "—"}
+                                termLabel={r.termLabel}
+                            />
+                        ))
+                    ) : (
+                        <p className="text-sm text-gray-500">No results available.</p>
+                    )}
                 </div>
             )}
         </div>
@@ -162,15 +187,17 @@ const Result = ({
     subject,
     score,
     grade,
+    termLabel,
 }: {
     subject: string;
     score: string;
     grade: string;
+    termLabel: string;
 }) => (
     <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
         <div>
             <p className="font-semibold text-gray-900">{subject}</p>
-            <p className="text-xs text-gray-500">Term 1, 2024</p>
+            <p className="text-xs text-gray-500">{termLabel}</p>
         </div>
         <div className="text-right">
             <p className="text-2xl font-bold text-gray-900">{score}</p>
@@ -180,3 +207,20 @@ const Result = ({
         </div>
     </div>
 );
+
+const iconOptions = [
+    Calculator,
+    FlaskConical,
+    Book,
+    Landmark,
+] as const;
+
+const colorOptions = ["bg-blue-100", "bg-green-100", "bg-purple-100", "bg-orange-100"] as const;
+
+const SubjectIcon = ({ index }: { index: number }) => {
+    const Icon = iconOptions[index % iconOptions.length];
+    const color = ["text-blue-600", "text-green-600", "text-purple-600", "text-orange-600"][index % iconOptions.length];
+    return <Icon className={`w-5 h-5 ${color}`} />;
+};
+
+const subjectColor = (index: number) => colorOptions[index % colorOptions.length];

@@ -5,6 +5,7 @@ import ClassForm, { type ClassFormData } from "./forms/ClassForm";
 import StudentForm, { type StudentFormClasses, type StudentFormData } from "./forms/StudentForm";
 import SubjectForm, { type SubjectFormData } from "./forms/SubjectForm";
 import TeacherForm, { type TeacherFormData } from "./forms/TeacherForm";
+import { toast } from "sonner";
 
 export type ModalType = "teacher" | "student" | "class" | "subject";
 type ModalMode = "create" | "edit";
@@ -40,6 +41,22 @@ export default function SmartModal(props: Props) {
   const studentData = type === "student" ? props.data : undefined;
   const studentClasses = type === "student" ? props.classes : undefined;
   const meta = getMeta(type, mode);
+  const shouldToast = type === "student";
+
+  async function handleAction(formData: FormData) {
+    try {
+      await action(formData);
+      if (shouldToast) {
+        const label = mode === "edit" ? "Student updated" : "Student created";
+        toast.success(label);
+      }
+      onClose();
+    } catch (error) {
+      if (shouldToast) {
+        toast.error("Failed to save student");
+      }
+    }
+  }
 
   return (
     <ModalShell
@@ -50,7 +67,7 @@ export default function SmartModal(props: Props) {
       maxWidth={meta.maxWidth}
       footer={
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-          <form action={action} className="flex-1">
+          <form action={handleAction} className="flex-1">
             {type === "student" && mode === "edit" && studentData?.id ? (
               <input type="hidden" name="id" value={String(studentData.id)} />
             ) : null}

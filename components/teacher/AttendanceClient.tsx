@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { CalendarDays } from "lucide-react";
+import { toast } from "sonner";
 
 // Use your shadcn Select where necessary
 import {
@@ -126,8 +127,11 @@ export default function AttendanceClient({
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Failed to save attendance");
       setMessage("Attendance saved successfully.");
+      toast.success("Attendance saved");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Failed to save attendance");
+      const errMsg = error instanceof Error ? error.message : "Failed to save attendance";
+      setMessage(errMsg);
+      toast.error(errMsg);
     } finally {
       setIsSaving(false);
     }

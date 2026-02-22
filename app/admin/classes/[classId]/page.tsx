@@ -35,9 +35,23 @@ export default async function Page({
 
   const classOptions = [{ id: classInfo.id, name: classInfo.name }];
 
-  const [students, classSubjects, timetableEntries, currentSession] = await Promise.all([
+  const currentSession = await prisma.academicSession.findFirst({
+    where: { isCurrent: true },
+    select: { id: true, name: true },
+  });
+
+  const currentTerm = currentSession
+    ? await prisma.term.findFirst({
+        where: { sessionId: currentSession.id, isCurrent: true },
+        select: { id: true, name: true },
+      })
+    : null;
+
+  const [students, classSubjects, timetableEntries] = await Promise.all([
     prisma.student.findMany({
-      where: { classHistories: { some: { classId } } },
+      where: currentSession && currentTerm
+        ? { classHistories: { some: { classId, sessionId: currentSession.id, termId: currentTerm.id } } }
+        : { classHistories: { some: { classId } } },
       orderBy: [{ createdAt: "desc" }],
       select: {
         id: true,
@@ -53,7 +67,9 @@ export default async function Page({
       },
     }),
     prisma.timetableEntry.findMany({
-      where: { classId },
+      where: currentSession && currentTerm
+        ? { classId, sessionId: currentSession.id, termId: currentTerm.id }
+        : { classId },
       orderBy: [{ weekday: "asc" }, { startTime: "asc" }],
       select: {
         weekday: true,
@@ -62,10 +78,6 @@ export default async function Page({
         subject: { select: { name: true } },
         teacher: { select: { user: { select: { firstName: true, lastName: true } } } },
       },
-    }),
-    prisma.academicSession.findFirst({
-      where: { isCurrent: true },
-      select: { id: true, name: true },
     }),
   ]);
 
@@ -99,12 +111,7 @@ export default async function Page({
     teacher: `${entry.teacher.user.firstName} ${entry.teacher.user.lastName}`,
   }));
 
-  const currentTerm = currentSession
-    ? await prisma.term.findFirst({
-        where: { sessionId: currentSession.id, isCurrent: true },
-        select: { id: true, name: true },
-      })
-    : null;
+  // currentTerm resolved above
 
     return (
         <>

@@ -4,18 +4,25 @@ import * as Clerk from '@clerk/elements/common'
 import * as SignIn from '@clerk/elements/sign-in'
 import { useUser } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { toast } from 'sonner';
 
 export default function SignInPage() {
 const { isLoaded, isSignedIn, user } = useUser();
+const didToastRef = useRef(false);
 
 const router = useRouter();
     useEffect(() =>{
+        if (!isLoaded || !isSignedIn) return;
         const role = user?.publicMetadata.role;
+        if (!didToastRef.current) {
+            toast.success("Signed in successfully");
+            didToastRef.current = true;
+        }
         if (role) {
             router.push(`/${role}`);
         }
-    }, [ user, router]);
+    }, [isLoaded, isSignedIn, user, router]);
 
   return (
     <div className="flex h-screen w-full grow items-center bg-zinc-100 px-4 justify-center">

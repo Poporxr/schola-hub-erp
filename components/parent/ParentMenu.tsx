@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
+import { toast } from "sonner";
 
 type AdminMenuProps = {
     open: boolean;
@@ -101,9 +102,17 @@ const ParentMenu = ({ open, onClose }: AdminMenuProps) => {
             </nav>
 
             <div className="p-4 border-t border-gray-100">
-                <button onClick={()=> {
-                     signOut()
-                }} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                <button
+                    onClick={async () => {
+                        try {
+                            await signOut();
+                            toast.success("Logged out successfully");
+                        } catch (error) {
+                            toast.error("Failed to log out");
+                        }
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                >
                     <LogOut className="w-5 h-5"/>
                     Logout
                 </button>

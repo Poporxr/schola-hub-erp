@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useMemo } from "react";
 import { ModalShell } from "./ModalShell";
+import { toast } from "sonner";
 
 type EntityType = "class" | "student" | "teacher" | "subject" | "parent";
 
@@ -46,8 +47,16 @@ export default function ConfirmDeleteModal({
 
   // auto-close when server says ok
   useEffect(() => {
-    if (state?.ok) onClose();
-  }, [state?.ok, onClose]);
+    if (!state) return;
+    if (state.ok) {
+      toast.success(`${meta.entityLabel} deleted`);
+      onClose();
+      return;
+    }
+    if (state.message && !state.ok) {
+      toast.error(state.message);
+    }
+  }, [state, meta.entityLabel, onClose]);
 
   return (
     <ModalShell

@@ -49,6 +49,7 @@ const TeacherNav = ({ onToggleSidebar }: { onToggleSidebar: () => void }) => {
             if (isMounted) {
                 const label = data?.sessionName ? `${data.name}, ${data.sessionName}` : data?.name;
                 setTermLabel(label || "Current Term");
+                
             }
         }
 
