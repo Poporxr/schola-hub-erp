@@ -1,115 +1,86 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import {
-  Chart,
-  LineController,
-  LineElement,
-  PointElement,
-  BarController,
-  BarElement,
-  CategoryScale,
-  LinearScale,
-  Title,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
   Tooltip,
-  Legend,
-} from "chart.js";
+  CartesianGrid,
+  BarChart,
+  Bar,
+} from "recharts";
 
-// Register Chart.js components
-Chart.register(
-  LineController,
-  LineElement,
-  PointElement,
-  BarController,
-  BarElement,
-  CategoryScale,
-  LinearScale,
-  Title,
-  Tooltip,
-  Legend
-);
+type AttendancePoint = {
+  month: string;
+  rate: number;
+  present?: number;
+  total?: number;
+};
 
-const AdminCharts = () => {
-  const attendanceRef = useRef<HTMLCanvasElement>(null);
-  const performanceRef = useRef<HTMLCanvasElement>(null);
+type PerformancePoint = {
+  subject: string;
+  average: number;
+};
 
-  useEffect(() => {
-    if (!attendanceRef.current || !performanceRef.current) return;
+type AdminChartsProps = {
+  attendanceData: AttendancePoint[];
+  performanceData: PerformancePoint[];
+};
 
-    // Attendance Line Chart
-    const attendanceChart = new Chart(attendanceRef.current, {
-      type: "line",
-      data: {
-        labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
-        datasets: [
-          {
-            label: "Attendance %", 
-            data: [95, 90, 92, 88, 94, 97],
-            borderColor: "rgba(59, 130, 246, 1)", // Tailwind blue-500
-            backgroundColor: "rgba(59, 130, 246, 0.2)",
-            tension: 0.4,
-            fill: true,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          title: { display: true, text: "Attendance Trends" },
-          legend: { display: false },
-        },
-        scales: {
-          y: { beginAtZero: true, max: 100 },
-        },
-      },
-    });
-
-    // Performance Bar Chart
-    const performanceChart = new Chart(performanceRef.current, {
-      type: "bar",
-      data: {
-        labels: ["Math", "English", "Science", "History", "Art"],
-        datasets: [
-          {
-            label: "Average Score",
-            data: [85, 78, 92, 74, 88],
-            backgroundColor: "rgba(16, 185, 129, 0.7)", // Tailwind green-500
-            borderColor: "rgba(16, 185, 129, 1)",
-            borderWidth: 1,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          title: { display: true, text: "Performance Overview" },
-          legend: { display: false },
-        },
-        scales: {
-          y: { beginAtZero: true, max: 100 },
-        },
-      },
-    });
-
-    return () => {
-      attendanceChart.destroy();
-      performanceChart.destroy();
-    };
-  }, []);
-
+const AdminCharts = ({ attendanceData, performanceData }: AdminChartsProps) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
         <h3 className="text-lg font-semibold text-slate-800 mb-4">Attendance Trends</h3>
         <div className="h-64 w-full">
-          <canvas ref={attendanceRef}></canvas>
+          {attendanceData.length === 0 ? (
+            <div className="h-full flex items-center justify-center text-sm text-slate-500">
+              No attendance data yet.
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={attendanceData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#94A3B8" />
+                <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} stroke="#94A3B8" />
+                <Tooltip
+                  formatter={(value: number | undefined) => [
+                    `${(value ?? 0).toFixed(1)}%`,
+                    "Attendance",
+                  ]}
+                />
+                <Line type="monotone" dataKey="rate" stroke="#3B82F6" strokeWidth={2.5} dot={{ r: 3 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
         </div>
       </div>
 
       <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
         <h3 className="text-lg font-semibold text-slate-800 mb-4">Performance Overview</h3>
         <div className="h-64 w-full">
-          <canvas ref={performanceRef}></canvas>
+          {performanceData.length === 0 ? (
+            <div className="h-full flex items-center justify-center text-sm text-slate-500">
+              No results data yet.
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={performanceData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                <XAxis dataKey="subject" tick={{ fontSize: 12 }} stroke="#94A3B8" />
+                <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} stroke="#94A3B8" />
+                <Tooltip
+                  formatter={(value: number | undefined) => [
+                    `${(value ?? 0).toFixed(1)}%`,
+                    "Average",
+                  ]}
+                />
+                <Bar dataKey="average" fill="#10B981" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
       </div>
     </div>

@@ -5,84 +5,78 @@ import { X } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
+type Assignment = {
+  id: string;
+  classId: string;
+  className: string;
+  structureId: string;
+  structureName: string;
+};
+
 type Props = {
   open: boolean;
   onClose: () => void;
-  feeStructures: { id: string; name: string; total: number }[];
+  assignment: Assignment | null;
+  feeStructures: { id: string; name: string }[];
   classes: { id: string; name: string }[];
-  defaultStructureId: string | null;
-  defaultClassIds: string[];
 };
 
-export default function AssignFeeStructureModal({
+export default function EditFeeAssignmentModal({
   open,
   onClose,
+  assignment,
   feeStructures,
   classes,
-  defaultStructureId,
-  defaultClassIds,
 }: Props) {
   const router = useRouter();
-  const [structureId, setStructureId] = useState(defaultStructureId ?? "");
-  const [selectedClassIds, setSelectedClassIds] = useState<string[]>(defaultClassIds);
-  const [dueDate, setDueDate] = useState("");
+  const [structureId, setStructureId] = useState("");
+  const [classId, setClassId] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!open) return;
-    setStructureId(defaultStructureId ?? "");
-    setSelectedClassIds(defaultClassIds);
-  }, [open, defaultStructureId, defaultClassIds]);
-
-  const toggleClass = (classId: string) => {
-    setSelectedClassIds((prev) =>
-      prev.includes(classId)
-        ? prev.filter((id) => id !== classId)
-        : [...prev, classId]
-    );
-  };
+    if (!assignment) return;
+    setStructureId(assignment.structureId);
+    setClassId(assignment.classId);
+  }, [assignment]);
 
   const handleSubmit = async () => {
-    if (!structureId || selectedClassIds.length === 0) {
-      toast.error("Select a fee structure and at least one class.");
+    if (!assignment) return;
+    if (!structureId || !classId) {
+      toast.error("Select both class and fee structure.");
       return;
     }
 
     try {
       setSubmitting(true);
-      const response = await fetch("/api/admin/fees/assignments", {
-        method: "POST",
+      const response = await fetch(`/api/admin/fees/assignments/${assignment.id}`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          feeStructureId: structureId,
-          classIds: selectedClassIds,
-          dueDate: dueDate || null,
-        }),
+        body: JSON.stringify({ feeStructureId: structureId, classId }),
       });
 
       if (!response.ok) {
         const payload = await response.json().catch(() => null);
-        throw new Error(payload?.error || "Failed to assign structure.");
+        throw new Error(payload?.error || "Failed to update assignment.");
       }
 
-      toast.success("Fee structure assigned.");
+      toast.success("Assignment updated.");
       onClose();
       router.refresh();
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to assign.";
+      const message = error instanceof Error ? error.message : "Failed to update.";
       toast.error(message);
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (!open) return null;
+  if (!open || !assignment) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg m-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md m-4">
         <div className="p-5 border-b border-slate-200 flex items-center justify-between">
-          <h3 className="text-lg font-bold text-slate-900">Assign Fee to Class</h3>
+          <h3 className="text-lg font-bold text-slate-900">Edit Assignment</h3>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
             <X className="w-5 h-5" />
           </button>
@@ -91,7 +85,7 @@ export default function AssignFeeStructureModal({
         <div className="p-6 space-y-4">
           <div>
             <label className="block text-xs font-medium text-slate-700 mb-1">
-              Select Fee Structure
+              Fee Structure
             </label>
             <select
               value={structureId}
@@ -107,33 +101,20 @@ export default function AssignFeeStructureModal({
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-700 mb-2">
-              Select Classes
-            </label>
-            <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-md p-2 space-y-2">
-              {classes.map((cls) => (
-                <label key={cls.id} className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={selectedClassIds.includes(cls.id)}
-                    onChange={() => toggleClass(cls.id)}
-                  />
-                  {cls.name}
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div>
             <label className="block text-xs font-medium text-slate-700 mb-1">
-              Due Date
+              Class
             </label>
-            <input
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-              type="date"
+            <select
+              value={classId}
+              onChange={(e) => setClassId(e.target.value)}
               className="w-full px-3 py-2 bg-white border border-slate-200 rounded-md text-sm focus:outline-none focus:border-indigo-500"
-            />
+            >
+              {classes.map((cls) => (
+                <option key={cls.id} value={cls.id}>
+                  {cls.name}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -151,7 +132,7 @@ export default function AssignFeeStructureModal({
             disabled={submitting}
             className="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700 shadow-sm disabled:opacity-60"
           >
-            Confirm Assignment
+            Save Changes
           </button>
         </div>
       </div>
