@@ -47,7 +47,22 @@ export default async function Page({
       })
     : null;
 
-  const [students, classSubjects, timetableEntries] = await Promise.all([
+  type StudentRow = {
+    id: string;
+    admissionNumber: string;
+    gender: string;
+    user: { firstName: string; lastName: string; email: string; phone: string | null };
+  };
+  type ClassSubjectRow = { subject: { id: string; name: string } };
+  type TimetableRow = {
+    weekday: string;
+    startTime: string;
+    endTime: string;
+    subject: { name: string };
+    teacher: { user: { firstName: string; lastName: string } };
+  };
+
+  const [students, classSubjects, timetableEntries] = (await Promise.all([
     prisma.student.findMany({
       where: currentSession && currentTerm
         ? { classHistories: { some: { classId, sessionId: currentSession.id, termId: currentTerm.id } } }
@@ -79,7 +94,7 @@ export default async function Page({
         teacher: { select: { user: { select: { firstName: true, lastName: true } } } },
       },
     }),
-  ]);
+  ])) as [StudentRow[], ClassSubjectRow[], TimetableRow[]];
 
   const subjectTeachers = await prisma.subjectTeacher.findMany({
     where: { classId },
