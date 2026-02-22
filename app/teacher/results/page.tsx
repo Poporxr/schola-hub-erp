@@ -4,7 +4,7 @@ import ResultsEntryClient, {
 } from "@/components/teacher/ResultEntryClient";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
-import { Sliders } from "lucide-react";
+import ResultsFilters from "@/components/teacher/ResultsFilters";
 
 type SearchParams = {
   sessionId?: string | string[];
@@ -333,74 +333,16 @@ export default async function Page({
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
-          <Sliders className="w-5 h-5 text-indigo-600" />
-          Filter Result Entry
-        </h3>
-        <form method="get" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Session</label>
-            <select
-              name="sessionId"
-              defaultValue={filters.selectedSessionId}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              {filters.sessions.map((item) => (
-                <option key={item.id} value={item.id}>{item.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Term</label>
-            <select
-              name="termId"
-              defaultValue={filters.selectedTermId}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              {filters.terms.map((item) => (
-                <option key={item.id} value={item.id}>{item.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Class</label>
-            <select
-              name="classId"
-              defaultValue={filters.selectedClassId}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              {filters.classes.map((item) => (
-                <option key={item.id} value={item.id}>{item.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Subject</label>
-            <select
-              name="subjectId"
-              defaultValue={filters.selectedSubjectId}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              {filters.subjects.map((item) => (
-                <option key={item.id} value={item.id}>{item.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex items-end">
-            <button
-              type="submit"
-              className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
-            >
-              Apply
-            </button>
-          </div>
-        </form>
-      </div>
+      <ResultsFilters
+        sessions={filters.sessions}
+        terms={filters.terms}
+        classes={filters.classes}
+        subjects={filters.subjects}
+        selectedSessionId={filters.selectedSessionId}
+        selectedTermId={filters.selectedTermId}
+        selectedClassId={filters.selectedClassId}
+        selectedSubjectId={filters.selectedSubjectId}
+      />
       <ResultsEntryClient ctx={ctx} initialStudents={students} />
     </div>
   );

@@ -9,7 +9,7 @@ export async function GET() {
   }
 
   const student = await prisma.student.findUnique({
-    where: {id: userId }, // ⚠️ must be userId, not id
+    where: { userId }, // ⚠️ must be userId, not id
     select: {
       id: true,
       admissionNumber: true,
