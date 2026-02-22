@@ -55,7 +55,7 @@ export default async function Page({
   };
   type ClassSubjectRow = { subject: { id: string; name: string } };
   type TimetableRow = {
-    weekday: string;
+    weekday: "MON" | "TUE" | "WED" | "THU" | "FRI";
     startTime: string;
     endTime: string;
     subject: { name: string };
