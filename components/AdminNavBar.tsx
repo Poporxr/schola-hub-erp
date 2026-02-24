@@ -9,7 +9,7 @@ function getTitleFromPath(pathname: string) {
   if (/^\/admin\/students\/[^/]+$/.test(path)) return "Student Profile";
   if (/^\/admin\/teachers\/[^/]+$/.test(path)) return "Teacher Profile";
   if (/^\/admin\/classes\/[^/]+$/.test(path)) return "Class Overview";
-  if (/^\/admin\/Parents\/[^/]+$/.test(path)) return "Parent Overview";
+  if (/^\/admin\/parents\/[^/]+$/.test(path)) return "Parent Overview";
 
   if (path === "/admin/students") return "Students";
   if (path === "/admin/teachers") return "Teachers";
@@ -24,43 +24,61 @@ function getTitleFromPath(pathname: string) {
 
 const AdminNavBar = ({ onToggleSidebar }: { onToggleSidebar: () => void }) => {
   const pathname = usePathname();
+  const title = getTitleFromPath(pathname);
 
   return (
-    <header className="sticky top-0 z-30 min-h-16 h-16 bg-white border-b border-slate-200 flex items-center justify-between px-3 sm:px-4 md:px-6 lg:px-8">
-      <div className="flex items-center gap-2 sm:gap-3 md:gap-4 min-w-0 flex-1">
-        <button
-          onClick={onToggleSidebar}
-          className="lg:hidden text-slate-500 hover:text-slate-700 shrink-0"
-          aria-label="Open sidebar"
-        >
-          <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
-        </button>
+    <header className="sticky top-0 z-30 border-b border-slate-200 bg-white">
+      <div className="flex h-16 items-center justify-between px-3 sm:px-4 md:px-6">
+        
+        {/* Left Section */}
+        <div className="flex min-w-0 items-center gap-3">
+          {/* Mobile Menu */}
+          <button
+            onClick={onToggleSidebar}
+            className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 lg:hidden"
+            aria-label="Open sidebar"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
 
-                <div className="pl-1 sm:pl-2 min-w-0">
-                    <div className="flex lg:hidden items-center gap-1.5 sm:gap-2 text-indigo-600 font-bold text-base sm:text-lg md:text-xl mb-0.5">
-                        <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 shrink-0" />
-                        <span className="truncate">Schola | Hub</span>
-                    </div>
-                    <h1 className="text-xs sm:text-sm md:text-base lg:text-xl font-semibold text-slate-800 truncate lg:mt-0">
-                        {getTitleFromPath(pathname)}
-                    </h1>
-                </div>
-      </div>
+          {/* Logo */}
+          <div className="hidden sm:flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+            <GraduationCap className="h-5 w-5" />
+          </div>
 
-      <div className="flex items-center gap-2 sm:gap-3 md:gap-4 shrink-0">
-        <div className="relative hidden md:block">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search..."
-            className="pl-10 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-48 lg:w-64"
-          />
+          {/* Title Block */}
+          <div className="min-w-0">
+            <div className="text-xs font-medium text-slate-500 truncate">
+              Schola Hub
+            </div>
+            <h1 className="truncate text-sm font-semibold text-slate-900 sm:text-base">
+              {title}
+            </h1>
+          </div>
         </div>
 
-        <button className="relative p-1.5 sm:p-2 text-slate-500 hover:bg-slate-50 rounded-full shrink-0">
-          <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
-          <span className="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
-        </button>
+        {/* Right Section */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          
+          {/* Search (md+) */}
+          <div className="relative hidden md:block">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search..."
+              className="w-48 lg:w-64 rounded-lg border border-slate-200 py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+
+          {/* Notifications */}
+          <button
+            className="relative flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+            aria-label="Notifications"
+          >
+            <Bell className="h-4 w-4" />
+            <span className="absolute top-1 right-1 h-2 w-2 rounded-full border-2 border-white bg-red-500" />
+          </button>
+        </div>
       </div>
     </header>
   );

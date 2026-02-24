@@ -48,7 +48,7 @@ const Page = async () => {
                             <div className="flex justify-between text-sm">
                                 <span className="text-slate-500">Class Teacher:</span>
                                 <span className="font-medium text-slate-900">
-                                    {classItem.teacher?.user.firstName + '' + classItem.teacher?.user.lastName}
+                                    {classItem.teacher?.user.firstName + ' ' + classItem.teacher?.user.lastName}
                                 </span>
                             </div>
                             <div className="flex justify-between text-sm">

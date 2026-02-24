@@ -1,8 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
-import { UserButton } from "@clerk/nextjs"
+import { UserButton } from "@clerk/nextjs";
 import {
   GraduationCap,
   LayoutDashboard,
@@ -14,7 +13,6 @@ import {
   CreditCard,
   UserPlus,
   Settings,
-  LogOut,
   PanelRightOpen,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
@@ -27,30 +25,44 @@ type AdminMenuProps = {
 const AdminMenu = ({ open, onClose }: AdminMenuProps) => {
   const pathname = usePathname();
 
-  const isActive = (href: string) => pathname.startsWith(href);
+  const isActive = (href: string) => {
+    // Treat /admin and /admin/dashboard as same "Dashboard"
+    if (href === "/admin") {
+      return pathname === "/admin" || pathname === "/admin/dashboard";
+    }
+    return pathname.startsWith(href);
+  };
 
-  // Close sidebar on navigation (mobile only)
   const closeOnMobile = () => {
     if (typeof window !== "undefined" && window.innerWidth < 1024) {
       onClose();
     }
   };
 
-  const linkClass = (href: string) =>
-    `nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-50 hover:text-slate-900 transition-colors ${isActive(href) ? "text-indigo-600 font-semibold bg-indigo-50" : "text-slate-600"
-    }`;
+  const linkClass = (href: string) => {
+    const active = isActive(href);
+
+    return [
+      "nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
+      "hover:bg-slate-50 hover:text-slate-900",
+      active
+        ? "text-indigo-600 font-semibold bg-indigo-50 border-l-2 border-indigo-500"
+        : "text-slate-600 font-medium border-l-2 border-transparent",
+    ].join(" ");
+  };
 
   return (
     <aside
       className={[
         "w-64 bg-white border-r border-slate-200 shrink-0 flex flex-col",
-        "fixed inset-0 z-40 lg:static lg:inset-auto lg:h-screen",
+        "fixed inset-y-0 left-0 z-40 lg:static lg:h-screen",
         "transition-transform duration-300 transform",
         open ? "translate-x-0" : "-translate-x-full",
         "lg:translate-x-0",
       ].join(" ")}
     >
-      <div className="h-16 flex items-center justify-between px-2 border-b border-slate-100">
+      {/* Header */}
+      <div className="h-16 flex items-center justify-between px-3 border-b border-slate-100">
         <div className="flex items-center gap-2 text-indigo-600 font-bold text-xl">
           <GraduationCap className="w-8 h-8" />
           <span>Schola | Hub</span>
@@ -65,13 +77,18 @@ const AdminMenu = ({ open, onClose }: AdminMenuProps) => {
         </button>
       </div>
 
+      {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1 custom-scroll">
-        <Link href="/admin" onClick={closeOnMobile} className={linkClass("/admin/dashboard")}>
+        <Link
+          href="/admin"
+          onClick={closeOnMobile}
+          className={linkClass("/admin")}
+        >
           <LayoutDashboard className="w-5 h-5" />
-          Dashboard
+          <span>Dashboard</span>
         </Link>
 
-        <div className="pt-4 pb-2 px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+        <div className="pt-4 pb-1 px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
           Academic
         </div>
 
@@ -81,7 +98,7 @@ const AdminMenu = ({ open, onClose }: AdminMenuProps) => {
           className={linkClass("/admin/students")}
         >
           <Users className="w-5 h-5" />
-          Students
+          <span>Students</span>
         </Link>
 
         <Link
@@ -90,7 +107,7 @@ const AdminMenu = ({ open, onClose }: AdminMenuProps) => {
           className={linkClass("/admin/teachers")}
         >
           <Presentation className="w-5 h-5" />
-          Teachers
+          <span>Teachers</span>
         </Link>
 
         <Link
@@ -99,7 +116,7 @@ const AdminMenu = ({ open, onClose }: AdminMenuProps) => {
           className={linkClass("/admin/classes")}
         >
           <School className="w-5 h-5" />
-          Classes
+          <span>Classes</span>
         </Link>
 
         <Link
@@ -108,7 +125,7 @@ const AdminMenu = ({ open, onClose }: AdminMenuProps) => {
           className={linkClass("/admin/subjects")}
         >
           <BookOpen className="w-5 h-5" />
-          Subjects
+          <span>Subjects</span>
         </Link>
 
         <Link
@@ -117,10 +134,10 @@ const AdminMenu = ({ open, onClose }: AdminMenuProps) => {
           className={linkClass("/admin/results")}
         >
           <FileBarChart className="w-5 h-5" />
-          Results
+          <span>Results</span>
         </Link>
 
-        <div className="pt-4 pb-2 px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+        <div className="pt-4 pb-1 px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
           Administration
         </div>
 
@@ -130,7 +147,7 @@ const AdminMenu = ({ open, onClose }: AdminMenuProps) => {
           className={linkClass("/admin/tuition")}
         >
           <CreditCard className="w-5 h-5" />
-          Tuition & Fees
+          <span>Tuition &amp; Fees</span>
         </Link>
 
         <Link
@@ -139,7 +156,7 @@ const AdminMenu = ({ open, onClose }: AdminMenuProps) => {
           className={linkClass("/admin/parents")}
         >
           <UserPlus className="w-5 h-5" />
-          Parents
+          <span>Parents</span>
         </Link>
 
         <Link
@@ -148,21 +165,24 @@ const AdminMenu = ({ open, onClose }: AdminMenuProps) => {
           className={linkClass("/admin/settings")}
         >
           <Settings className="w-5 h-5" />
-          Settings
+          <span>Settings</span>
         </Link>
       </nav>
 
+      {/* User footer */}
       <div className="p-4 border-t border-slate-200">
         <div className="flex items-center gap-3">
           <UserButton
             appearance={{
               elements: {
-                userButtonAvatarBox: "w-24 h-24 ",
+                userButtonAvatarBox: "w-9 h-9",
               },
             }}
           />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-slate-900 truncate">Alex Morgan</p>
+            <p className="text-sm font-medium text-slate-900 truncate">
+              Alex Morgan
+            </p>
             <p className="text-xs text-slate-500 truncate">Administrator</p>
           </div>
         </div>
