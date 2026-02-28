@@ -1,6 +1,41 @@
 import { ArrowUp, BookOpen, CheckCircle2, Target, TrendingUp, Trophy } from "lucide-react";
 
-const ResultCardSummary = () => {
+type ResultSummary = {
+    overallAverage: number | null;
+    totalScore: number | null;
+    maxScore: number | null;
+    classPosition: number | null;
+    classSize: number | null;
+    subjectCount: number | null;
+    passedSubjects: number | null;
+    statusLabel: string;
+    statusDetail: string;
+};
+
+const formatPosition = (position: number | null) => {
+    if (!position) return "-";
+    const suffix = position % 10 === 1 && position % 100 !== 11 ? "st" : position % 10 === 2 && position % 100 !== 12 ? "nd" : position % 10 === 3 && position % 100 !== 13 ? "rd" : "th";
+    return `${position}${suffix}`;
+};
+
+const ResultCardSummary = ({ summary }: { summary?: ResultSummary }) => {
+    const overallAverage = summary?.overallAverage ?? null;
+    const totalScore = summary?.totalScore ?? null;
+    const maxScore = summary?.maxScore ?? null;
+    const classPosition = summary?.classPosition ?? null;
+    const classSize = summary?.classSize ?? null;
+    const subjectCount = summary?.subjectCount ?? null;
+    const passedSubjects = summary?.passedSubjects ?? null;
+    const statusLabel = summary?.statusLabel ?? "N/A";
+    const statusDetail = summary?.statusDetail ?? "No result data available";
+
+    const subjectStatus =
+        subjectCount && passedSubjects !== null
+            ? passedSubjects === subjectCount
+                ? "All subjects passed"
+                : `${passedSubjects}/${subjectCount} subjects passed`
+            : "No subject data";
+
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
             {/*Overall Average Card */}
@@ -11,10 +46,10 @@ const ResultCardSummary = () => {
                         <TrendingUp className="w-5 h-5" />
                     </div>
                 </div>
-                <p className="text-4xl font-bold mb-1">87.5%</p>
+                <p className="text-4xl font-bold mb-1">{overallAverage === null ? "-" : `${overallAverage}%`}</p>
                 <div className="flex items-center gap-1 text-xs text-white/80">
                     <ArrowUp className="w-3 h-3" />
-                    <span>+3.2% from last term</span>
+                    <span>Current term average</span>
                 </div>
             </div>
 
@@ -26,8 +61,8 @@ const ResultCardSummary = () => {
                         <Target className="w-5 h-5" />
                     </div>
                 </div>
-                <p className="text-4xl font-bold mb-1">875</p>
-                <p className="text-xs text-white/80">Out of 1000 marks</p>
+                <p className="text-4xl font-bold mb-1">{totalScore === null ? "-" : totalScore}</p>
+                <p className="text-xs text-white/80">{maxScore === null ? "Out of - marks" : `Out of ${maxScore} marks`}</p>
             </div>
 
             {/* Class Position Card */}
@@ -38,8 +73,8 @@ const ResultCardSummary = () => {
                         <Trophy className="w-5 h-5" />
                     </div>
                 </div>
-                <p className="text-4xl font-bold mb-1">1st</p>
-                <p className="text-xs text-white/80">Out of 28 students</p>
+                <p className="text-4xl font-bold mb-1">{formatPosition(classPosition)}</p>
+                <p className="text-xs text-white/80">{classSize ? `Out of ${classSize} students` : "Out of - students"}</p>
             </div>
 
             {/* Number of Subjects Card */}
@@ -50,8 +85,8 @@ const ResultCardSummary = () => {
                         <BookOpen className="w-5 h-5" />
                     </div>
                 </div>
-                <p className="text-4xl font-bold mb-1">10</p>
-                <p className="text-xs text-white/80">All subjects passed</p>
+                <p className="text-4xl font-bold mb-1">{subjectCount ?? "-"}</p>
+                <p className="text-xs text-white/80">{subjectStatus}</p>
             </div>
 
             {/* Pass/Fail Status Card */}
@@ -62,8 +97,8 @@ const ResultCardSummary = () => {
                         <CheckCircle2 className="w-5 h-5" />
                     </div>
                 </div>
-                <p className="text-2xl font-bold mb-1">PASSED</p>
-                <p className="text-xs text-white/80">Excellent performance</p>
+                <p className="text-2xl font-bold mb-1">{statusLabel}</p>
+                <p className="text-xs text-white/80">{statusDetail}</p>
             </div>
         </div>
     )

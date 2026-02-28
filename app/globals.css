@@ -53,6 +53,10 @@
     size: A4;
     margin: 5mm;
   }
+
+  .no-print {
+    display: none !important;
+  }
 }
 
 :root {
@@ -172,7 +176,15 @@
   body {
     @apply bg-background text-foreground;
   }
-}/* UserButton avatar size */
+}
+
+/* Provide bottom breathing room on mobile scroll containers */
+.custom-scroll {
+  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+  scroll-padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+}
+
+/* UserButton avatar size */
 .cl-userButtonAvatarBox,
 .cl-avatarBox {
   width: 40px !important;
