@@ -18,20 +18,12 @@ type Props = {
   classes: ClassOption[];
   initialSearch?: string;
   initialClassId?: string;
-  initialStatus?: string;
 };
-
-const statusOptions = [
-  { value: "paid", label: "Paid" },
-  { value: "owing", label: "Owing" },
-  { value: "partial", label: "Partial" },
-] as const;
 
 export default function ParentsFilters({
   classes,
   initialSearch,
   initialClassId,
-  initialStatus,
 }: Props) {
   const router = useRouter();
   const params = useSearchParams();
@@ -54,7 +46,7 @@ export default function ParentsFilters({
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div className="relative">
         <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
         <input
@@ -86,34 +78,6 @@ export default function ParentsFilters({
                 value={classItem.id}
               >
                 {classItem.id === "all" ? "All Classes" : `Class ${classItem.name}`}
-              </SelectItem>
-            ))}
-          </SelectGroup>
-        </SelectContent>
-      </Select>
-
-      <Select
-        defaultValue={initialStatus ?? "all"}
-        onValueChange={(value) => updateParam("status", value)}
-      >
-        <SelectTrigger className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm">
-          <SelectValue placeholder="Payment Status" />
-        </SelectTrigger>
-        <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
-          <SelectGroup>
-            <SelectItem
-              className="cursor-pointer bg-gray-100 hover:bg-gray-200 text-black"
-              value="all"
-            >
-              All Statuses
-            </SelectItem>
-            {statusOptions.map((option) => (
-              <SelectItem
-                key={option.value}
-                className="cursor-pointer bg-gray-100 hover:bg-gray-200 text-black"
-                value={option.value}
-              >
-                {option.label}
               </SelectItem>
             ))}
           </SelectGroup>

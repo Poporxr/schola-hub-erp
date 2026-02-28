@@ -1,9 +1,8 @@
-import { CalendarCheck, ChevronRight, CreditCard, Download } from "lucide-react";
+import { CalendarCheck, ChevronRight, Download } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
-import { formatCurrency } from "@/lib/settings";
 import ParentAnnouncements from "@/components/parent/ParentAnnouncements";
 import ParentAttendanceSummary from "@/components/parent/ParentAttendanceSummary";
 
@@ -69,7 +68,7 @@ const Page = async () => {
     const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
     const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
 
-    const [attendanceRows, attendanceMonthRows, feeAssignments, payments, results, notices] = await Promise.all([
+    const [attendanceRows, attendanceMonthRows, results, notices] = await Promise.all([
         prisma.attendance.findMany({
             where: {
                 studentId: { in: studentIds },
@@ -93,31 +92,6 @@ const Page = async () => {
                 },
             },
             select: { studentId: true, status: true },
-        }),
-        prisma.classFeeAssignment.findMany({
-            where: {
-                classId: { in: classIds },
-                sessionId: currentTerm.sessionId,
-                termId: currentTerm.id,
-            },
-            include: {
-                feeStructure: {
-                    select: {
-                        items: { select: { amount: true } },
-                    },
-                },
-            },
-        }),
-        prisma.payment.findMany({
-            where: {
-                studentId: { in: studentIds },
-                assignment: {
-                    classId: { in: classIds },
-                    sessionId: currentTerm.sessionId,
-                    termId: currentTerm.id,
-                },
-            },
-            select: { studentId: true, amount: true, assignmentId: true },
         }),
         prisma.result.findMany({
             where: {
@@ -163,17 +137,6 @@ const Page = async () => {
         return map;
     }, new Map<string, { present: number; absent: number; late: number; total: number }>());
 
-    const feeTotalByClass = feeAssignments.reduce((map, assignment) => {
-        const total = assignment.feeStructure.items.reduce((sum, item) => sum + item.amount, 0);
-        map.set(assignment.classId, (map.get(assignment.classId) ?? 0) + total);
-        return map;
-    }, new Map<string, number>());
-
-    const paidByStudent = payments.reduce((map, payment) => {
-        map.set(payment.studentId, (map.get(payment.studentId) ?? 0) + payment.amount);
-        return map;
-    }, new Map<string, number>());
-
     const resultsByStudent = results.reduce((map, row) => {
         const stats = map.get(row.studentId) ?? { total: 0, count: 0 };
         map.set(row.studentId, { total: stats.total + row.totalScore, count: stats.count + 1 });
@@ -191,9 +154,6 @@ const Page = async () => {
                 : monthStats && monthStats.total
                     ? Math.round(((monthStats.present + monthStats.late) / monthStats.total) * 100)
                     : null;
-        const feeTotal = classHistory ? feeTotalByClass.get(classHistory.class.id) ?? 0 : 0;
-        const paid = paidByStudent.get(child.id) ?? 0;
-        const balance = feeTotal ? Math.max(feeTotal - paid, 0) : null;
         const resultStats = resultsByStudent.get(child.id);
         const avgResult = resultStats && resultStats.count ? Number((resultStats.total / resultStats.count).toFixed(1)) : null;
 
@@ -205,7 +165,6 @@ const Page = async () => {
             status: child.user.status,
             className,
             attendancePercent,
-            balance,
             avgResult,
         };
     });
@@ -223,74 +182,127 @@ const Page = async () => {
 
     return (
         <div className=" active space-y-6">
-            <div className="bg-linear-to-r from-purple-600 to-indigo-500 rounded-2xl p-6 text-white shadow-lg">
-                <h1 className="text-2xl font-bold mb-2">
-                    Welcome Back, {parent.user.firstName} {parent.user.lastName}!
-                </h1>
-                <p className="text-purple-100">Your children are doing great this term. Check their progress below.</p>
-            </div>
+            <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-indigo-600 via-purple-600 to-fuchsia-500 p-6 sm:p-8 text-white shadow-[0_8px_20px_rgba(0,0,0,0.15)]">
 
+                {/* Soft Glow Overlay */}
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.15),transparent_60%)] pointer-events-none" />
+
+                {/* Floating Accent Shapes */}
+                <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
+                <div className="absolute right-0 top-8 h-16 w-16 rounded-full bg-white/5 blur-xl" />
+
+                {/* Content */}
+                <div className="relative z-10">
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">
+                        Welcome Back, {parent.user.firstName} {parent.user.lastName}!
+                    </h1>
+
+                    <p className="text-sm sm:text-base text-indigo-100 leading-relaxed">
+                        Your children are doing great this term — explore their progress below.
+                    </p>
+                </div>
+            </div>
             <div>
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Your Children</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {childCards.length ? (
                         childCards.map((child) => (
-                            <div key={child.id} className="child-card bg-white rounded-xl shadow-sm border-2 border-gray-100 p-6 hover:shadow-md">
+                            <div
+                                key={child.id}
+                                className="relative bg-white rounded-2xl border border-slate-100 p-5 sm:p-6 shadow-sm hover:shadow-md hover:border-indigo-100 transition-all"
+                            >
+                                {/* Status pill – top right */}
+                                <div className="absolute right-5 top-5">
+                                    <span
+                                        className={
+                                            child.status === "ACTIVE"
+                                                ? "inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-medium text-emerald-700 border border-emerald-100"
+                                                : "inline-flex items-center gap-1 rounded-full bg-slate-50 px-3 py-1 text-[11px] font-medium text-slate-600 border border-slate-100"
+                                        }
+                                    >
+                                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                                        {child.status === "ACTIVE" ? "Active" : child.status ?? "Student"}
+                                    </span>
+                                </div>
+
+                                {/* Header: avatar + basic info */}
                                 <div className="flex items-start gap-4 mb-4">
-                                    <div className="w-16 h-16 rounded-full overflow-hidden border-4 border-purple-50">
-                                        <Image
-                                            width={50}
-                                            height={50}
-                                            src={child.image ?? "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?auto=format&fit=crop&w=200&q=80"}
-                                            alt="Student"
-                                            className="w-full h-full object-cover"
-                                        />
+                                    <div className="relative">
+                                        <div className="h-16 w-16 rounded-full bg-indigo-50 flex items-center justify-center">
+                                            <div className="h-14 w-14 rounded-full overflow-hidden border border-white shadow-[0_0_0_1px_rgba(148,163,184,0.4)]">
+                                                <Image
+                                                    width={56}
+                                                    height={56}
+                                                    src={
+                                                        child.image ??
+                                                        "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?auto=format&fit=crop&w=200&q=80"
+                                                    }
+                                                    alt="Student"
+                                                    className="h-full w-full object-cover"
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="flex-1">
-                                        <h4 className="font-bold text-gray-900 text-lg">{child.name || "Student"}</h4>
-                                        <p className="text-sm text-gray-500">
-                                            {child.className} -   Admission No: {child.admissionNo}
+
+                                    <div className="flex-1 pr-16">
+                                        <h4 className="text-base sm:text-lg font-semibold text-slate-900">
+                                            {child.name || "Student"}
+                                        </h4>
+                                        <p className="mt-0.5 text-sm text-slate-500">
+                                            {child.className || "Class not set"}
                                         </p>
-                                        <span className="inline-block mt-2 px-3 py-1 bg-green-50 text-green-700 text-xs font-medium rounded-full">
-                                            {child.status === "ACTIVE" ? "Active Student" : child.status ?? "Student"}
-                                        </span>
+                                        <p className="mt-0.5 text-xs text-slate-400">
+                                            Admission No:{" "}
+                                            <span className="font-medium text-slate-600">
+                                                {child.admissionNo || "—"}
+                                            </span>
+                                        </p>
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-100">
+
+                                {/* Divider */}
+                                <div className="h-px w-full bg-slate-100 mb-4" />
+
+                                {/* Stats row */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    {/* Attendance */}
                                     <div>
-                                        <p className="text-xs text-gray-500 mb-1">Attendance</p>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-lg font-bold text-green-600">
-                                                {child.attendancePercent === null ? "-" : `${child.attendancePercent}%`}
+                                        <p className="text-[11px] uppercase tracking-wide text-slate-400 mb-1.5">
+                                            Attendance
+                                        </p>
+                                        <div className="flex items-baseline gap-2">
+                                            <span className="text-lg font-semibold text-emerald-600">
+                                                {child.attendancePercent === null
+                                                    ? "-"
+                                                    : `${child.attendancePercent}%`}
                                             </span>
-                                            <span className="text-xs text-gray-500">This term</span>
+                                            <span className="text-xs text-slate-400">This term</span>
                                         </div>
-                                        <div className="w-full bg-gray-100 h-1 rounded-full mt-2">
+                                        <div className="mt-2 h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
                                             <div
                                                 className={
                                                     (child.attendancePercent ?? 0) >= 90
-                                                        ? "bg-green-500 h-1 rounded-full"
+                                                        ? "h-1.5 rounded-full bg-linear-to-r from-emerald-500 to-emerald-400"
                                                         : (child.attendancePercent ?? 0) >= 75
-                                                            ? "bg-yellow-500 h-1 rounded-full"
+                                                            ? "h-1.5 rounded-full bg-linear-to-r from-amber-400 to-amber-300"
                                                             : (child.attendancePercent ?? 0) >= 50
-                                                                ? "bg-orange-500 h-1 rounded-full"
-                                                                : "bg-red-500 h-1 rounded-full"
+                                                                ? "h-1.5 rounded-full bg-linear-to-r from-orange-500 to-orange-400"
+                                                                : "h-1.5 rounded-full bg-linear-to-r from-rose-500 to-rose-400"
                                                 }
                                                 style={{ width: `${child.attendancePercent ?? 0}%` }}
                                             />
                                         </div>
                                     </div>
+
+                                    {/* Last result */}
                                     <div>
-                                        <p className="text-xs text-gray-500 mb-1">Fee Balance</p>
-                                        <p className="text-lg font-bold text-orange-600">
-                                            {child.balance === null ? "-" : formatCurrency(child.balance)}
+                                        <p className="text-[11px] uppercase tracking-wide text-slate-400 mb-1.5">
+                                            Last Result
                                         </p>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-gray-500 mb-1">Last Result</p>
-                                        <p className="text-lg font-bold text-purple-600">
+                                        <p className="text-lg font-semibold text-indigo-600">
                                             {child.avgResult === null ? "-" : `${child.avgResult}%`}
                                         </p>
+                                        <p className="mt-1 text-xs text-slate-400">Overall average</p>
                                     </div>
                                 </div>
                             </div>
@@ -307,16 +319,6 @@ const Page = async () => {
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                     <h3 className="font-bold text-gray-900 mb-6">Quick Actions</h3>
                     <div className="space-y-3">
-                        <button className="w-full flex items-center gap-3 p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors">
-                            <div className="p-2 bg-purple-600 text-white rounded-lg">
-                                <CreditCard className="w-5 h-5" />
-                            </div>
-                            <Link href={'/parent/payments'} className="flex-1 text-left">
-                                <p className="font-semibold text-gray-900 text-sm">Pay School Fees</p>
-                                <p className="text-xs text-gray-500">Make payment online</p>
-                            </Link>
-                            <ChevronRight className="w-5 h-5 text-gray-400" />
-                        </button>
                         <button className="w-full flex items-center gap-3 p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
                             <div className="p-2 bg-blue-600 text-white rounded-lg">
                                 <Download className="w-5 h-5" />

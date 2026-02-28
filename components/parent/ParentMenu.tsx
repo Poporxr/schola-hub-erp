@@ -88,12 +88,6 @@ const ParentMenu = ({ open, onClose }: AdminMenuProps) => {
                     Results
                 </Link>
 
-                <Link href={"/parent/payments"}
-                onClick={closeOnMobile}  className={linkClass("/parent/payments")}>
-                    <CreditCard className="w-5 h-5"/>
-                    Fees & Payments
-                </Link>
-
                 <Link href={"/parent/profile"}
                 onClick={closeOnMobile}  className={linkClass("/parent/profile")}>
                     <User className="w-5 h-5"/>

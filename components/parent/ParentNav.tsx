@@ -15,7 +15,6 @@ function getTitleFromPath(pathname: string) {
   if (/^\/parent\/dashboard\/[^/]+$/.test(path)) return "Dashboard Overview";
   if (/^\/parent\/profile\/[^/]+$/.test(path)) return "Profile";
 
-  if (path === "/parent/payments") return "Payments Structure";
   if (path === "/parent/results") return "Results";
   if (path === "/parent/attendance") return "Attendance";
   if (path === "/parent/profile") return "Profile Overview";

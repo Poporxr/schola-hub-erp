@@ -1,11 +1,9 @@
 import {
   AttendanceStatus,
-  FeeStatus,
   Gender,
   Grade,
   LevelType,
   NoticePriority,
-  PaymentStatus,
   PrismaClient,
   TermType,
   TimetableStatus,
@@ -44,12 +42,6 @@ async function main() {
   // ------------------------------------------------------------
   // DANGER: destructive seed (clears tables). Good for dev/staging.
   // ------------------------------------------------------------
-  await prisma.paymentItem.deleteMany();
-  await prisma.payment.deleteMany();
-  await prisma.classFeeAssignment.deleteMany();
-  await prisma.feeStructureItem.deleteMany();
-  await prisma.feeStructure.deleteMany();
-
   await prisma.attendance.deleteMany();
   await prisma.timetableEntry.deleteMany();
   await prisma.notice.deleteMany();
@@ -740,120 +732,6 @@ async function main() {
   await prisma.attendance.createMany({ data: attendanceRows });
 
   // ------------------------------------------------------------
-  // Fees: 2 structures (Primary + Secondary) for CURRENT term
-  // ------------------------------------------------------------
-  const feePrimary = await prisma.feeStructure.create({
-    data: {
-      name: "Primary Term 1 Fees",
-      sessionId: currentSession.id,
-      termId: currentTerm.id,
-      levelId: levelPrimary.id,
-      status: FeeStatus.ACTIVE,
-      createdBy: adminUser.id,
-      items: {
-        create: [
-          { name: "Tuition Fee", amount: 65000 },
-          { name: "Uniform", amount: 15000, isOptional: true },
-          { name: "Books & Materials", amount: 20000 },
-          { name: "Medical", amount: 5000 },
-        ],
-      },
-    },
-    include: { items: true },
-  });
-
-  const feeSecondary = await prisma.feeStructure.create({
-    data: {
-      name: "Secondary Term 1 Fees",
-      sessionId: currentSession.id,
-      termId: currentTerm.id,
-      levelId: levelSecondary.id,
-      status: FeeStatus.ACTIVE,
-      createdBy: adminUser.id,
-      items: {
-        create: [
-          { name: "Tuition Fee", amount: 120000 },
-          { name: "Development Levy", amount: 20000 },
-          { name: "Books & Materials", amount: 35000 },
-          { name: "Medical", amount: 5000 },
-        ],
-      },
-    },
-    include: { items: true },
-  });
-
-  // Assign to a few classes (so you can test class fee screens)
-  const primaryClassIds = primaryClasses.slice(0, 4).map((c) => c.id);
-  const secondaryClassIds = secondaryClasses.slice(0, 4).map((c) => c.id);
-
-  const assignments = [];
-
-  for (const classId of primaryClassIds) {
-    assignments.push(
-      await prisma.classFeeAssignment.create({
-        data: {
-          feeStructureId: feePrimary.id,
-          classId,
-          sessionId: currentSession.id,
-          termId: currentTerm.id,
-        },
-      })
-    );
-  }
-
-  for (const classId of secondaryClassIds) {
-    assignments.push(
-      await prisma.classFeeAssignment.create({
-        data: {
-          feeStructureId: feeSecondary.id,
-          classId,
-          sessionId: currentSession.id,
-          termId: currentTerm.id,
-        },
-      })
-    );
-  }
-
-  // Payments: create 10 payments linked to parent+student (use first 10 parents that have kids)
-  for (let i = 0; i < 10; i++) {
-    const parent = parents[i];
-    const st = students[i * 2]; // one child per parent for payments
-    const h = currentHistoryByStudent.get(st.id)!;
-
-    // choose assignment based on class level
-    const isSec = secondaryClasses.some((c) => c.id === h.classId);
-    const assignment = isSec ? assignments[primaryClassIds.length + (i % secondaryClassIds.length)] : assignments[i % primaryClassIds.length];
-    const fee = isSec ? feeSecondary : feePrimary;
-
-    const amount = isSec ? 180000 : 90000;
-    const status = i % 3 === 0 ? PaymentStatus.PARTIAL : PaymentStatus.PAID;
-
-    const payment = await prisma.payment.create({
-      data: {
-        studentId: st.id,
-        parentId: parent.id,
-        assignmentId: assignment.id,
-        amount,
-        paymentMethod: i % 2 === 0 ? "Bank Transfer" : "Cash",
-        referenceNumber: `DEV-REF-${pad(i + 1, 4)}`,
-        status,
-        notes: status === "PARTIAL" ? "Part payment for term fees" : "Full payment",
-      },
-    });
-
-    // Allocate to 2 fee items
-    const item1 = fee.items[0];
-    const item2 = fee.items[1] ?? fee.items[0];
-
-    await prisma.paymentItem.createMany({
-      data: [
-        { paymentId: payment.id, feeStructureItemId: item1.id, amount: Math.min(item1.amount, amount) },
-        { paymentId: payment.id, feeStructureItemId: item2.id, amount: Math.max(0, amount - Math.min(item1.amount, amount)) },
-      ],
-    });
-  }
-
-  // ------------------------------------------------------------
   // Notices (mix of admin + teacher notices)
   // ------------------------------------------------------------
   await prisma.notice.createMany({
@@ -861,7 +739,7 @@ async function main() {
       {
         from: "Admin Office",
         title: "Welcome Back",
-        message: "Welcome to the new academic session. Please check your timetable and settle outstanding fees.",
+        message: "Welcome to the new academic session. Please check your timetable.",
         priority: NoticePriority.HIGH,
         targetAudience: "ALL",
         isPublished: true,

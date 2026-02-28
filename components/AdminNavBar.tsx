@@ -16,7 +16,6 @@ function getTitleFromPath(pathname: string) {
   if (path === "/admin/classes") return "Classes";
   if (path === "/admin/attendance") return "Attendance";
   if (path === "/admin/results") return "Results";
-  if (path === "/admin/fees") return "Tuition & Fees";
   if (path === "/admin/parents") return "Parents";
 
   return "Administrator";

@@ -13,7 +13,6 @@ function getTitleFromPath(pathname: string) {
   if (path === "/student/teachers") return "Teachers";
   if (path === "/student/result") return "Result";
   if (path === "/student/attendance") return "Attendance";
-  if (path === "/student/tuition") return "Fees Overview";
   if (path === "/student/profile") return "Profile Overview";
 
   return "Dashboard Overview";

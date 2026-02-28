@@ -1,7 +1,7 @@
 import ScheduleAndNotices from "@/components/student/ScheduleAndNotices";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
-import { AlertCircle, BookOpen, CheckCircle, Library, TrendingUp } from "lucide-react";
+import { BookOpen, CheckCircle, Library, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { AttendanceStatus } from "@/generated/prisma/client";
 import AttendanceRateCards from "@/components/AttendanceRateCards";
@@ -160,20 +160,6 @@ const Page = async () => {
                         </span>
                     </div>
                     <AttendanceRateCards present={present} absent={absent} late={late} />
-                </div>
-
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-gray-500 text-sm font-medium">Term Fees</h3>
-                        <span className="p-2 bg-orange-50 text-orange-600 rounded-lg">
-                            <AlertCircle className="w-4 h-4" />
-                        </span>
-                    </div>
-                    <div className="flex items-end gap-2">
-                        <span className="text-3xl font-bold text-gray-900">$450</span>
-                        <span className="text-sm text-orange-600 mb-1">Due Now</span>
-                    </div>
-                    <Link href={"/student/tuition"} className="text-sm text-indigo-600 font-medium mt-3 hover:underline">Pay Fees &rarr;</Link>
                 </div>
 
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">

@@ -6,7 +6,6 @@ import {
     GraduationCap,
     LayoutDashboard,
     BookOpen,
-    CreditCard,
     PanelRightOpen,
     CalendarCheck,
     Award,
@@ -128,14 +127,6 @@ const StudentMenu = ({ open, onClose }: AdminMenuProps) => {
                  className={linkClass("/student/result")}>
                     <Award className="w-5 h-5" />
                     Results
-                </Link>
-
-                <Link
-                href={"/student/tuition"}
-                onClick={closeOnMobile}
-                  className={linkClass("/student/tuition")}>
-                    <CreditCard className="w-5 h-5" />
-                    Pay Fees
                 </Link>
 
                 <Link

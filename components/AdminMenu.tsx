@@ -142,30 +142,12 @@ const AdminMenu = ({ open, onClose }: AdminMenuProps) => {
         </div>
 
         <Link
-          href="/admin/tuition"
-          onClick={closeOnMobile}
-          className={linkClass("/admin/tuition")}
-        >
-          <CreditCard className="w-5 h-5" />
-          <span>Tuition &amp; Fees</span>
-        </Link>
-
-        <Link
           href="/admin/parents"
           onClick={closeOnMobile}
           className={linkClass("/admin/parents")}
         >
           <UserPlus className="w-5 h-5" />
           <span>Parents</span>
-        </Link>
-
-        <Link
-          href="/admin/settings"
-          onClick={closeOnMobile}
-          className={linkClass("/admin/settings")}
-        >
-          <Settings className="w-5 h-5" />
-          <span>Settings</span>
         </Link>
       </nav>
 
