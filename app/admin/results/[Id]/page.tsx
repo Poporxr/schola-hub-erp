@@ -114,7 +114,12 @@ const Page = () => {
                 <AffectiveDomain />
                 <PsychomoDomain />
             </div>
-            <TeacherResultRemark />
+            <TeacherResultRemark
+                remark="Great improvement this term. Keep focusing on practice and consistency."
+                teacherName="Mrs. Adebayo"
+                className="Grade 3A"
+                date={new Date("2024-03-15")}
+            />
         </div>
 
     )

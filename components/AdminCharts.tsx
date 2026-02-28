@@ -11,6 +11,7 @@ import {
   BarChart,
   Bar,
 } from "recharts";
+import { useEffect, useState } from "react";
 
 type AttendancePoint = {
   month: string;
@@ -30,12 +31,20 @@ type AdminChartsProps = {
 };
 
 const AdminCharts = ({ attendanceData, performanceData }: AdminChartsProps) => {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
         <h3 className="text-lg font-semibold text-slate-800 mb-4">Attendance Trends</h3>
-        <div className="h-64 w-full">
-          {attendanceData.length === 0 ? (
+        <div className="h-64 min-h-[16rem] w-full">
+          {!mounted ? (
+            <div className="h-full w-full rounded-lg bg-slate-50" />
+          ) : attendanceData.length === 0 ? (
             <div className="h-full flex items-center justify-center text-sm text-slate-500">
               No attendance data yet.
             </div>
@@ -60,8 +69,10 @@ const AdminCharts = ({ attendanceData, performanceData }: AdminChartsProps) => {
 
       <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
         <h3 className="text-lg font-semibold text-slate-800 mb-4">Performance Overview</h3>
-        <div className="h-64 w-full">
-          {performanceData.length === 0 ? (
+        <div className="h-64 min-h-[16rem] w-full">
+          {!mounted ? (
+            <div className="h-full w-full rounded-lg bg-slate-50" />
+          ) : performanceData.length === 0 ? (
             <div className="h-full flex items-center justify-center text-sm text-slate-500">
               No results data yet.
             </div>
