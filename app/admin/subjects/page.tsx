@@ -1,4 +1,4 @@
-import FormButton from "@/components/buttons/FormButton";
+﻿import FormButton from "@/components/buttons/FormButton";
 import { DeleteButton } from "@/components/buttons/DeleteButton";
 import Pagination from "@/components/Pagination";
 import { BookOpen, CheckCircle, Clock, Users } from "lucide-react";
@@ -91,100 +91,111 @@ const Page = async ({
     });
 
     return (
-        <div>
-            <div className="">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
-                                <BookOpen className="w-6 h-6 text-indigo-600" />
-                            </div>
-                        </div>
-                        <h3 className="text-2xl font-bold text-gray-900 mb-1">{totalSubjects}</h3>
-                        <p className="text-sm text-gray-500">Total Subjects</p>
-                    </div>
+        <div className="space-y-6">
+            <div className="bg-linear-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+                <div className="relative z-10">
+                    <p className="text-xs uppercase tracking-[0.2em] text-white/60">Subjects Overview</p>
+                    <h1 className="text-2xl font-bold mt-2">Curriculum Subjects</h1>
+                    <p className="text-white/70 max-w-2xl mt-2">
+                        Manage subject catalogs, class coverage, and teacher allocations.
+                    </p>
+                </div>
+                <div className="absolute right-4 top-4 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
+                <div className="absolute left-0 bottom-0 w-56 h-56 rounded-full bg-indigo-500/20 blur-3xl" />
+            </div>
 
-                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                                <CheckCircle className="w-6 h-6 text-green-600" />
-                            </div>
-                        </div>
-                        <h3 className="text-2xl font-bold text-gray-900 mb-1">{totalSubjects}</h3>
-                        <p className="text-sm text-gray-500">Active Subjects</p>
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <div className="flex items-center justify-between">
+                        <p className="text-xs uppercase tracking-wide text-slate-500">Total Subjects</p>
+                        <BookOpen className="h-4 w-4 text-slate-400" />
                     </div>
-
-                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                                <Users className="w-6 h-6 text-purple-600" />
-                            </div>
-                        </div>
-                        <h3 className="text-2xl font-bold text-gray-900 mb-1">{uniqueTeacherCount}</h3>
-                        <p className="text-sm text-gray-500">Assigned Teachers</p>
-                    </div>
-
-                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                                <Clock className="w-6 h-6 text-orange-600" />
-                            </div>
-                        </div>
-                        <h3 className="text-2xl font-bold text-gray-900 mb-1">{totalHours}</h3>
-                        <p className="text-sm text-gray-500">Total Hours/Week</p>
-                    </div>
+                    <p className="mt-3 text-3xl font-bold text-slate-900">{totalSubjects}</p>
+                    <p className="mt-2 text-xs text-slate-500">Across all grade levels</p>
                 </div>
 
-                <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-                    <div className="p-6 border-b border-gray-200">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-bold text-gray-900">All Subjects</h3>
-                        <FormButton type={"subject"} action="create"/>
-                        </div>
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <div className="flex items-center justify-between">
+                        <p className="text-xs uppercase tracking-wide text-slate-500">Active Subjects</p>
+                        <CheckCircle className="h-4 w-4 text-emerald-500" />
                     </div>
+                    <p className="mt-3 text-3xl font-bold text-slate-900">{totalSubjects}</p>
+                    <p className="mt-2 text-xs text-slate-500">Currently scheduled</p>
+                </div>
 
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead className="bg-gray-50 border-b border-gray-200">
-                                <tr>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Name</th>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Class Level</th>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Assigned Teacher</th>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-200">
-                                {subjectRows.map((subject) => (
-                                    <tr className="hover:bg-gray-50" key={subject.id}>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                                                    <BookOpen className="w-5 h-5 text-blue-600" />
-                                                </div>
-                                                <p className="text-sm font-semibold text-gray-900">{subject.name}</p>
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <div className="flex items-center justify-between">
+                        <p className="text-xs uppercase tracking-wide text-slate-500">Assigned Teachers</p>
+                        <Users className="h-4 w-4 text-indigo-400" />
+                    </div>
+                    <p className="mt-3 text-3xl font-bold text-slate-900">{uniqueTeacherCount}</p>
+                    <p className="mt-2 text-xs text-slate-500">Distinct instructors</p>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-linear-to-r from-slate-900 to-slate-800 p-5 text-white shadow-sm">
+                    <div className="flex items-center justify-between">
+                        <p className="text-xs uppercase tracking-wide text-white/70">Weekly Hours</p>
+                        <Clock className="h-4 w-4 text-white/70" />
+                    </div>
+                    <p className="mt-3 text-3xl font-bold">{totalHours}</p>
+                    <p className="mt-2 text-xs text-white/70">Total hours/week</p>
+                </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
+                <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                    <div>
+                        <h3 className="text-lg font-semibold text-slate-800">All Subjects</h3>
+                        <p className="text-xs text-slate-500">Assignments, classes, and instructors</p>
+                    </div>
+                    <FormButton type={"subject"} action="create" />
+                </div>
+
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead className="sticky top-0 bg-slate-50/95 backdrop-blur-sm z-10">
+                            <tr className="border-b border-slate-200 text-xs uppercase tracking-wider text-slate-600 font-semibold">
+                                <th className="px-6 py-4">Name</th>
+                                <th className="px-6 py-4">Class Level</th>
+                                <th className="px-6 py-4">Assigned Teacher</th>
+                                <th className="px-6 py-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-sm">
+                            {subjectRows.map((subject) => (
+                                <tr className="hover:bg-slate-50 transition-colors" key={subject.id}>
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
+                                                <BookOpen className="w-5 h-5 text-slate-600" />
                                             </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-gray-700">
-                                            {subject.classLevels.length ? subject.classLevels.join(", ") : "—"}
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-gray-700">
-                                            {subject.teachers.length ? subject.teachers.join(", ") : "—"}
-                                        </td>
-                                        <td className="px-6 py-4 flex items-center gap-2">
-                                            <FormButton type="subject" action="edit" data={toSubjectFormData(subject)} />
-                                            <DeleteButton id={subject.id} label={subject.name} type="subject" />
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-
-                  <Pagination page={page} count={totalSubjects} />
+                                            <div>
+                                                <p className="text-sm font-semibold text-slate-900">{subject.name}</p>
+                                                <p className="text-xs text-slate-500">{subject.code ?? "No code"}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 text-sm text-slate-700">
+                                        {subject.classLevels.length ? subject.classLevels.join(", ") : "�"}
+                                    </td>
+                                    <td className="px-6 py-4 text-sm text-slate-700">
+                                        {subject.teachers.length ? subject.teachers.join(", ") : "�"}
+                                    </td>
+                                    <td className="px-6 py-4 flex items-center gap-2">
+                                        <FormButton type="subject" action="edit" data={toSubjectFormData(subject)} />
+                                        <DeleteButton id={subject.id} label={subject.name} type="subject" />
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
+
+                <Pagination page={page} count={totalSubjects} />
             </div>
         </div>
     )
 }
-
 export default Page;
+
+

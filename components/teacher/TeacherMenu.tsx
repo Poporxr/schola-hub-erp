@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import UserAvatar from "@/components/UserAvatar";
 import Link from "next/link";
 import {
     GraduationCap,
@@ -90,7 +90,12 @@ const TeacherMenu = ({ open, onClose }: AdminMenuProps) => {
 
             <div className="p-4 flex flex-col items-center border-b border-gray-100">
                 <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-indigo-50 mb-3">
-                    <Image src={teacher?.image ? teacher.image : "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80"  } alt="Teacher Profile" className="w-full h-full object-cover" width={50} height={50} />
+                    <UserAvatar
+                        src={teacher?.image ?? undefined}
+                        alt="Teacher Profile"
+                        size={80}
+                        className="w-20 h-20"
+                    />
                 </div>
                 <h3 className="font-semibold text-gray-900">
                     {isLoading ? "Loading..." : [teacher?.firstName, teacher?.lastName].filter(Boolean).join(" ") || "Teacher"}

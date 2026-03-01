@@ -6,7 +6,7 @@ import ParentResultsFilters from "@/components/parent/ParentResultsFilters";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { Calendar, Download, Hash, Printer, School, Subscript } from "lucide-react";
-import Image from "next/image";
+import UserAvatar from "@/components/UserAvatar";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -264,22 +264,29 @@ const Page = async ({ searchParams }: { searchParams?: { studentId?: string, ses
                 initialStudentId={selectedStudent?.id}
             />
             <div className="space-y-6 max-w-400 mx-auto w-full">
-                <div className="px-6 bg-[#7E2CEE] py-6 rounded-xl">
+                <div className="bg-linear-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+                    <div className="relative z-10">
+                        <p className="text-xs uppercase tracking-[0.2em] text-white/60">Ward Results</p>
+                        <h1 className="text-2xl font-bold mt-2">
+                            {selectedStudent.user.firstName} {selectedStudent.user.lastName}
+                        </h1>
+                        <p className="text-white/70 max-w-2xl mt-2">
+                            {classHistory?.class.name ?? "Class not assigned"} — {selectedTerm?.name ?? "Term"} {selectedSession?.name ?? ""}
+                        </p>
+                    </div>
+                    <div className="absolute right-4 top-4 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
+                    <div className="absolute left-0 bottom-0 w-56 h-56 rounded-full bg-indigo-500/20 blur-3xl" />
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
                             {/* Student Passport Photo */}
-                            <Image
-                                src={selectedStudent.user.image ?? "https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"}
+                            <UserAvatar
+                                src={selectedStudent.user.image ?? undefined}
                                 alt="Student"
-                                className="w-20 h-20 rounded-xl border-4 border-white/30 shadow-lg object-cover"
-                                width={80}
-                                height={80}
+                                size={80}
+                                className="w-20 h-20 rounded-2xl border-4 border-white/20 shadow-sm"
                             />
-                            <div>
-                                <h1 className="text-3xl text-white/90 font-bold mb-1">
-                                    {selectedStudent.user.firstName} {selectedStudent.user.lastName}
-                                </h1>
-                                <div className="lg:flex items-center gap-4 text-white/90 text-sm">
+                            <div className="text-white/80 text-sm">
+                                <div className="flex items-center gap-3">
                                     <span className="flex items-center gap-1">
                                         <Hash className="w-4 h-4" />
                                         {selectedStudent.admissionNumber}
@@ -300,7 +307,7 @@ const Page = async ({ searchParams }: { searchParams?: { studentId?: string, ses
                             {classHistory?.id ? (
                                 <Link
                                     href={`/print/${selectedStudent.id}?studentId=${selectedStudent.id}&sessionId=${selectedSessionId}&termId=${selectedTermId}`}
-                                    className="px-4 py-2 bg-white/20 backdrop-blur-sm border border-white/30 text-white rounded-lg text-sm font-medium hover:bg-white/30 transition-colors flex items-center gap-2"
+                                    className="px-4 py-2 bg-white/10 border border-white/20 text-white rounded-lg text-sm font-medium hover:bg-white/20 transition-colors flex items-center gap-2"
                                 >
                                     <Printer className="w-4 h-4" />
                                     Print Result
@@ -311,7 +318,7 @@ const Page = async ({ searchParams }: { searchParams?: { studentId?: string, ses
                                     Print Result
                                 </span>
                             )}
-                            <button className="px-4 py-2 bg-white text-purple-700 rounded-lg text-sm font-medium hover:bg-white/90 transition-colors shadow-lg flex items-center gap-2">
+                            <button className="px-4 py-2 bg-white text-slate-900 rounded-lg text-sm font-medium hover:bg-white/90 transition-colors shadow-lg flex items-center gap-2">
                                 <Download className="w-4 h-4" />
                                 Download PDF
                             </button>
@@ -321,10 +328,10 @@ const Page = async ({ searchParams }: { searchParams?: { studentId?: string, ses
                 <ResultCardSummary summary={summary} />
                 <div className="grid grid-cols-1 gap-6">
                     {/* Subject Breakdown Table (2 columns) */}
-                    <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200">
-                        <div className="px-6 py-4 border-b border-slate-100 bg-linear-to-r from-purple-50 to-indigo-50">
-                            <h3 className="font-bold text-slate-900 text-lg">Subject Performance Breakdown</h3>
-                            <p className="text-sm text-slate-600 mt-1">Detailed scores across all subjects</p>
+                    <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm">
+                        <div className="px-6 py-4 border-b border-slate-100">
+                            <h3 className="text-lg font-semibold text-slate-800">Subject Performance Breakdown</h3>
+                            <p className="text-xs text-slate-500 mt-1">Detailed scores across all subjects</p>
                         </div>
 
                         <div className="overflow-x-auto custom-scrollbar">
@@ -343,10 +350,10 @@ const Page = async ({ searchParams }: { searchParams?: { studentId?: string, ses
                                 <tbody className="divide-y divide-slate-100 text-sm">
                                     {subjectRows.length ? (
                                         subjectRows.map((subject) => (
-                                            <tr className="hover:bg-purple-50/50 transition-colors" key={subject.id}>
+                                            <tr className="hover:bg-slate-50 transition-colors" key={subject.id}>
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-2">
-                                                        <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center">
+                                                        <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center">
                                                             <Subscript className="w-4 h-4" />
                                                         </div>
                                                         <span className="font-semibold text-slate-900">{subject.subject} </span>
@@ -356,10 +363,10 @@ const Page = async ({ searchParams }: { searchParams?: { studentId?: string, ses
                                                 <td className="px-6 py-4 text-center font-semibold text-slate-900">{subject.assignments}</td>
                                                 <td className="px-6 py-4 text-center font-semibold text-slate-900">{subject.exam}</td>
                                                 <td className="px-6 py-4 text-center">
-                                                    <span className="text-lg font-bold text-purple-600">{subject.total}</span>
+                                                    <span className="text-lg font-bold text-slate-900">{subject.total}</span>
                                                 </td>
                                                 <td className="px-6 py-4 text-center">
-                                                    <span className="grade-badge inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold bg-linear-to-r from-emerald-500 to-emerald-600 text-white shadow-md">{subject.grade}</span>
+                                                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">{subject.grade}</span>
                                                 </td>
                                                 <td className="px-6 py-4 text-center">
                                                     <div className="flex items-center justify-center gap-1">

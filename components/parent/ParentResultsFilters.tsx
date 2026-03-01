@@ -55,19 +55,19 @@ const ParentResultsFilters = ({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-8">
       <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
-        <Sliders className="w-5 h-5 text-purple-600" />
+        <Sliders className="w-5 h-5 text-slate-500" />
         Filter Results
       </h3>
       <form className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" onSubmit={handleSubmit}>
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">Terms</label>
           <Select value={termId} onValueChange={setTermId}>
-            <SelectTrigger className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm">
+            <SelectTrigger className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
               <SelectValue placeholder="Select Term" />
             </SelectTrigger>
-            <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
+            <SelectContent className="bg-white border-slate-200">
               <SelectGroup>
                 {terms.map((term) => (
                   <SelectItem key={term.id} className="cursor-pointer bg-gray-100 hover:bg-gray-200 text-black" value={term.id}>
@@ -81,10 +81,10 @@ const ParentResultsFilters = ({
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">Sessions</label>
           <Select value={sessionId} onValueChange={handleSessionChange}>
-            <SelectTrigger className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm">
+            <SelectTrigger className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
               <SelectValue placeholder="Select Session" />
             </SelectTrigger>
-            <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
+            <SelectContent className="bg-white border-slate-200">
               <SelectGroup>
                 {sessions.map((session) => (
                   <SelectItem key={session.id} className="cursor-pointer bg-gray-100 hover:bg-gray-200 text-black" value={session.id}>
@@ -98,10 +98,10 @@ const ParentResultsFilters = ({
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">Select Ward</label>
           <Select value={studentId} onValueChange={setStudentId}>
-            <SelectTrigger className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm">
+            <SelectTrigger className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
               <SelectValue placeholder="Select Ward" />
             </SelectTrigger>
-            <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
+            <SelectContent className="bg-white border-slate-200">
               <SelectGroup>
                 {students.map((student) => (
                   <SelectItem key={student.id} className="cursor-pointer bg-gray-100 hover:bg-gray-200 text-black" value={student.id}>
@@ -115,7 +115,7 @@ const ParentResultsFilters = ({
         <div className="flex items-end">
           <button
             type="submit"
-            className="w-full px-4 py-2 bg-linear-to-r from-purple-600 to-indigo-600 text-white rounded-lg text-sm font-medium hover:from-purple-700 hover:to-indigo-700 transition-all shadow-md"
+            className="w-full px-4 py-2 bg-linear-to-r from-slate-900 to-slate-800 text-white rounded-lg text-sm font-medium hover:from-slate-800 hover:to-slate-700 transition-all shadow-md"
           >
             Apply Filters
           </button>

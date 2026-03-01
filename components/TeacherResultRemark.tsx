@@ -18,7 +18,7 @@ const formatDate = (date?: Date) => {
 
 const TeacherResultRemark = ({ remark, teacherName, className, date }: TeacherRemarkProps) => {
     return (
-        <div className="bg-linear-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-100 p-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
             <div className="flex items-center gap-2 mb-4">
                 <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
                     <MessageSquare className="w-4 h-4 text-white" />
@@ -26,7 +26,7 @@ const TeacherResultRemark = ({ remark, teacherName, className, date }: TeacherRe
                 <h3 className="font-bold text-slate-900">Form Teacher's Remark</h3>
             </div>
             <p className="text-slate-700 mb-4">"{remark}"</p>
-            <div className="flex items-center justify-between pt-4 border-t border-blue-200">
+            <div className="flex items-center justify-between pt-4 border-t border-slate-200">
                 <div>
                     <p className="text-sm font-semibold text-slate-900">{teacherName}</p>
                     <p className="text-xs text-slate-600">Form Teacher, {className}</p>

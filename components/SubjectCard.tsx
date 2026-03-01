@@ -1,4 +1,4 @@
-import Image from "next/image";
+import UserAvatar from "@/components/UserAvatar";
 import { Globe, MoreVertical, } from "lucide-react";
 import { role } from "@/lib/utils";
 import { DeleteButton } from "./buttons/DeleteButton";
@@ -31,7 +31,12 @@ const SubjectCard = ({ subjects }: { subjects: SubjectCardItem[] }) => {
                         </button>
                     </div>
                     <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
-                        <Image width={10} height={10} src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=facearea&facepad=2&w=96&h=96&q=80" alt="Teacher" className="w-8 h-8 rounded-full object-cover shrink-0" />
+                        <UserAvatar
+                            src={undefined}
+                            alt="Teacher"
+                            size={32}
+                            className="w-8 h-8 shrink-0"
+                        />
                         <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-gray-900 truncate">{subject.teacherNames[0] ?? "—"}</p>
                             <p className="text-xs text-gray-500 truncate">{subject.teacherNames.slice(1).join(", ")}</p>

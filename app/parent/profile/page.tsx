@@ -1,3 +1,5 @@
+import UserAvatar from "@/components/UserAvatar";
+
 const Page = () => {
     return (
 
@@ -6,9 +8,12 @@ const Page = () => {
                 <div className="h-32 bg-linear-to-r from-purple-500 to-indigo-600"></div>
                 <div className="px-6 pb-6">
                     <div className="relative flex justify-between items-end -mt-12 mb-6">
-                        <div className="w-24 h-24 rounded-full border-4 border-white overflow-hidden bg-white">
-                            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80" className="w-full h-full object-cover" />
-                        </div>
+                        <UserAvatar
+                            src={undefined}
+                            alt="Parent"
+                            size={96}
+                            className="w-24 h-24 border-4 border-white bg-white"
+                        />
                         <span className="px-4 py-2 bg-purple-50 text-purple-700 text-sm font-medium rounded-lg border border-purple-200">Parent Account</span>
                     </div>
 
@@ -48,7 +53,12 @@ const Page = () => {
                                 <div className="border border-gray-200 rounded-lg p-4">
                                     <div className="flex items-center gap-3 mb-3">
                                         <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-purple-100">
-                                            <img src="https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80" className="w-full h-full object-cover" />
+                                            <UserAvatar
+                                                src={undefined}
+                                                alt="Student"
+                                                size={48}
+                                                className="w-full h-full"
+                                            />
                                         </div>
                                         <div>
                                             <h4 className="font-semibold text-gray-900">Okafor Chidinma</h4>
@@ -69,7 +79,12 @@ const Page = () => {
                                 <div className="border border-gray-200 rounded-lg p-4">
                                     <div className="flex items-center gap-3 mb-3">
                                         <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-purple-100">
-                                            <img src="https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80" className="w-full h-full object-cover" />
+                                            <UserAvatar
+                                                src={undefined}
+                                                alt="Student"
+                                                size={48}
+                                                className="w-full h-full"
+                                            />
                                         </div>
                                         <div>
                                             <h4 className="font-semibold text-gray-900">Okafor Chukwuemeka</h4>

@@ -67,7 +67,7 @@ const FormButton = (props: FormButtonProps) => {
                         setMode("edit");
                         setOpen(true);
                     }}
-                    className="text-slate-400 hover:text-blue-600 mx-1">
+                    className="text-muted-foreground hover:text-primary mx-1">
                     <Edit2 className="w-4 h-4" />
                 </button>
                 : ''}
@@ -79,7 +79,7 @@ const FormButton = (props: FormButtonProps) => {
                         setMode("edit");
                         setOpen(true);
                     }}
-                    className="text-slate-400 hover:text-blue-600 mx-1">
+                    className="text-muted-foreground hover:text-primary mx-1">
                     <Edit2 className="w-4 h-4" />
                 </button>
                 : ''}
@@ -91,7 +91,7 @@ const FormButton = (props: FormButtonProps) => {
                         setMode("edit");
                         setOpen(true);
                     }}
-                    className="text-slate-400 hover:text-blue-600 mx-1">
+                    className="text-muted-foreground hover:text-primary mx-1">
                     <Edit2 className="w-4 h-4" />
                 </button>
                 : ''}
@@ -116,7 +116,7 @@ const FormButton = (props: FormButtonProps) => {
                     setMode("create");
                     setOpen(true);
                 }}
-                className="flex items-center gap-2 px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
+                    className="btn-primary">
                 {mode === "create" && <Plus className="w-4 h-4" />}
                 <span className="text-sm font-medium">{mode === 'create' ? `Create ${type}` : `Edit ${type}`}</span>
             </button> : ''}

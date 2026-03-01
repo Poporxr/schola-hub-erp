@@ -3,10 +3,9 @@ import FormButton from "@/components/buttons/FormButton";
 import ClassDetailActions from "@/components/buttons/ClassDetailActions";
 import ClassSubjects from "@/components/ClassSubjects";
 import ClassStudent from "@/components/List/ClassStudent";
-import Pagination from "@/components/Pagination";
 import WeeklyTimetable from "@/components/WeeklyTimetable";
 import { ArrowUp, Award, BookOpen, Calendar, CalendarCheck, ClipboardList, School, TrendingUp, Trophy, UserCheck, Users } from "lucide-react";
-import Image from "next/image";
+import UserAvatar from "@/components/UserAvatar";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 
@@ -26,6 +25,7 @@ export default async function Page({
     select: {
       id: true,
       name: true,
+      level: { select: { name: true } },
       teacher: { select: { user: { select: { firstName: true, lastName: true } } } },
     },
   });
@@ -47,7 +47,7 @@ export default async function Page({
       })
     : null;
 
-  const [students, classSubjects, timetableEntries] = await Promise.all([
+  const [students, classSubjects, timetableEntries, classHistories] = await Promise.all([
     prisma.student.findMany({
       where: currentSession && currentTerm
         ? { classHistories: { some: { classId, sessionId: currentSession.id, termId: currentTerm.id } } }
@@ -57,7 +57,7 @@ export default async function Page({
         id: true,
         admissionNumber: true,
         gender: true,
-        user: { select: { firstName: true, lastName: true, email: true, phone: true } },
+        user: { select: { firstName: true, lastName: true, email: true, phone: true, image: true } },
       },
     }),
     prisma.classSubject.findMany({
@@ -79,6 +79,16 @@ export default async function Page({
         teacher: { select: { user: { select: { firstName: true, lastName: true } } } },
       },
     }),
+    currentSession && currentTerm
+      ? prisma.studentClassHistory.findMany({
+          where: { classId, sessionId: currentSession.id, termId: currentTerm.id },
+          select: {
+            id: true,
+            studentId: true,
+            student: { select: { user: { select: { firstName: true, lastName: true } } } },
+          },
+        })
+      : Promise.resolve([]),
   ]);
 
   const subjectTeachers = await prisma.subjectTeacher.findMany({
@@ -111,156 +121,184 @@ export default async function Page({
     teacher: `${entry.teacher.user.firstName} ${entry.teacher.user.lastName}`,
   }));
 
-  // currentTerm resolved above
+  const classHistoryIds = classHistories.map((history) => history.id);
+  const studentNameById = new Map(classHistories.map((history) => [
+    history.studentId,
+    `${history.student.user.firstName} ${history.student.user.lastName}`.trim(),
+  ]));
 
-    return (
-        <>
-            <BackButton />
-            <main className="space-y-10">
+  const [results, attendanceTotals, attendancePresent] = await Promise.all([
+    classHistoryIds.length
+      ? prisma.result.findMany({
+          where: { classHistoryId: { in: classHistoryIds } },
+          select: { studentId: true, totalScore: true, createdAt: true },
+        })
+      : Promise.resolve([]),
+    currentSession && currentTerm
+      ? prisma.attendance.count({
+          where: { classId, sessionId: currentSession.id, termId: currentTerm.id },
+        })
+      : Promise.resolve(0),
+    currentSession && currentTerm
+      ? prisma.attendance.count({
+          where: { classId, sessionId: currentSession.id, termId: currentTerm.id, status: "PRESENT" },
+        })
+      : Promise.resolve(0),
+  ]);
 
-                <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden ">
-                    <div className="bg-linear-to-r from-indigo-500 to-indigo-600 px-4 sm:px-6 py-6 sm:py-8">
-                        <div className="flex flex-col gap-4 sm:gap-6">
-                            <div className="flex items-start gap-3 sm:gap-4">
-                                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shrink-0">
-                                    <School className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">{classInfo.name}</h1>
-                                    <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-4 text-indigo-100">
-                                        <div className="flex items-center gap-2">
-                                            <UserCheck className="w-4 h-4 shrink-0" />
-                                            <span className="text-xs sm:text-sm">
-                                                {classInfo.teacher
-                                                    ? `${classInfo.teacher.user.firstName} ${classInfo.teacher.user.lastName}`
-                                                    : "—"}
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <Calendar className="w-4 h-4 shrink-0 " />
-                                            <span className="text-xs sm:text-sm">Academic Year {currentSession?.name}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                                <ClassDetailActions classId={classId} classOptions={classOptions} />
-                                <FormButton action="edit" type="class"/>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-gray-200">
-                        <div className="px-4 sm:px-6 py-3 sm:py-4">
-                            <div className="flex items-center gap-2 sm:gap-3">
-                                <div className="p-2 bg-blue-50 text-blue-600 rounded-lg shrink-0">
-                                    <Users className="w-4 h-4 sm:w-5 sm:h-5" />
-                                </div>
-                                <div>
-                                    <p className="text-xl sm:text-2xl font-bold text-gray-900">{students.length}</p>
-                                    <p className="text-xs text-gray-500">Total Students</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="px-4 sm:px-6 py-3 sm:py-4">
-                            <div className="flex items-center gap-2 sm:gap-3">
-                                <div className="p-2 bg-green-50 text-green-600 rounded-lg shrink-0">
-                                    <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
-                                </div>
-                                <div>
-                                    <p className="text-xl sm:text-2xl font-bold text-gray-900">{subjects.length}</p>
-                                    <p className="text-xs text-gray-500">Subjects</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="px-4 sm:px-6 py-3 sm:py-4">
-                            <div className="flex items-center gap-2 sm:gap-3">
-                                <div className="p-2 bg-purple-50 text-purple-600 rounded-lg shrink-0">
-                                    <Trophy className="w-4 h-4 sm:w-5 sm:h-5" />
-                                </div>
-                                <div>
-                                    <p className="text-xl sm:text-2xl font-bold text-gray-900">—</p>
-                                    <p className="text-xs text-gray-500">Avg Score</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="px-4 sm:px-6 py-3 sm:py-4">
-                            <div className="flex items-center gap-2 sm:gap-3">
-                                <div className="p-2 bg-orange-50 text-orange-600 rounded-lg shrink-0">
-                                    <CalendarCheck className="w-4 h-4 sm:w-5 sm:h-5" />
-                                </div>
-                                <div>
-                                    <p className="text-xl sm:text-2xl font-bold text-gray-900">{currentTerm?.name ?? "—"}</p>
-                                    <p className="text-xs text-gray-500">Current Term</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+  const avgScore = results.length
+    ? results.reduce((sum, row) => sum + row.totalScore, 0) / results.length
+    : 0;
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-6">
-                        <div className="flex items-center justify-between mb-3 sm:mb-4">
-                            <h3 className="text-sm font-semibold text-gray-900">Average Score</h3>
-                            <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
-                                <TrendingUp className="w-4 h-4" />
-                            </div>
-                        </div>
-                        <p className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">85.4%</p>
-                        <p className="text-xs text-green-600 flex items-center gap-1">
-                            <ArrowUp className="w-3 h-3" />
-                            +3.2% from last term
-                        </p>
-                    </div>
+  const recentExamCount = results.filter((row) => {
+    const limit = new Date();
+    limit.setDate(limit.getDate() - 30);
+    return row.createdAt >= limit;
+  }).length;
 
-                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-6">
-                        <div className="flex items-center justify-between mb-3 sm:mb-4">
-                            <h3 className="text-sm font-semibold text-gray-900">Top Student</h3>
-                            <div className="p-2 bg-yellow-50 text-yellow-600 rounded-lg">
-                                <Award className="w-4 h-4" />
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <Image src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop" width={10} height={10} alt="Top Student" className="w-10 h-10 rounded-full object-cover shrink-0" />
-                            <div className="min-w-0">
-                                <p className="text-sm font-semibold text-gray-900 truncate">Emma Wilson</p>
-                                <p className="text-xs text-gray-500">95.8% Average</p>
-                            </div>
-                        </div>
-                    </div>
+  const studentScores = new Map<string, { sum: number; count: number }>();
+  results.forEach((row) => {
+    const entry = studentScores.get(row.studentId) ?? { sum: 0, count: 0 };
+    entry.sum += row.totalScore;
+    entry.count += 1;
+    studentScores.set(row.studentId, entry);
+  });
 
-                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-6">
-                        <div className="flex items-center justify-between mb-3 sm:mb-4">
-                            <h3 className="text-sm font-semibold text-gray-900">Recent Exams</h3>
-                            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                                <ClipboardList className="w-4 h-4" />
-                            </div>
-                        </div>
-                        <p className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">3</p>
-                        <p className="text-xs text-gray-500">Completed this month</p>
-                    </div>
+  const topStudentEntry = Array.from(studentScores.entries())
+    .map(([studentId, entry]) => ({
+      studentId,
+      avg: entry.count ? entry.sum / entry.count : 0,
+    }))
+    .sort((a, b) => b.avg - a.avg)[0];
 
-                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-6">
-                        <div className="flex items-center justify-between mb-3 sm:mb-4">
-                            <h3 className="text-sm font-semibold text-gray-900">Attendance Rate</h3>
-                            <div className="p-2 bg-green-50 text-green-600 rounded-lg">
-                                <UserCheck className="w-4 h-4" />
-                            </div>
-                        </div>
-                        <p className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">92.3%</p>
-                        <p className="text-xs text-gray-500">26/28 present today</p>
-                    </div>
-                </div>
+  const topStudentName = topStudentEntry ? studentNameById.get(topStudentEntry.studentId) : "—";
+  const topStudentScore = topStudentEntry ? `${topStudentEntry.avg.toFixed(1)}%` : "—";
 
-                {/* Students List Section */}
-                <ClassStudent students={students} />
+  const attendanceRate = attendanceTotals ? (attendancePresent / attendanceTotals) * 100 : 0;
 
-                {/* Subjects & Teachers Section */}
-                <ClassSubjects subjects={subjects} />
+  return (
+    <>
+      <BackButton />
+      <main className="space-y-8">
+        <div className="bg-linear-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-white/15 rounded-2xl flex items-center justify-center">
+                <School className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold">{classInfo.name}</h1>
+                <p className="text-white/70 text-sm">{classInfo.level.name}</p>
+                <p className="text-white/60 text-xs mt-1">Academic Year {currentSession?.name ?? "—"}</p>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+              <ClassDetailActions classId={classId} classOptions={classOptions} />
+              <FormButton action="edit" type="class" />
+            </div>
+          </div>
+          <div className="absolute right-4 top-4 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
+          <div className="absolute left-0 bottom-0 w-56 h-56 rounded-full bg-indigo-500/20 blur-3xl" />
+        </div>
 
-                {/* Weekly Timetable */}
-                <WeeklyTimetable entries={timetable} />
-            </main>
-        </>
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <p className="text-xs uppercase tracking-wide text-slate-500">Total Students</p>
+              <Users className="h-4 w-4 text-slate-400" />
+            </div>
+            <p className="mt-3 text-3xl font-bold text-slate-900">{students.length}</p>
+            <p className="mt-2 text-xs text-slate-500">Linked to this class</p>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <p className="text-xs uppercase tracking-wide text-slate-500">Subjects</p>
+              <BookOpen className="h-4 w-4 text-emerald-500" />
+            </div>
+            <p className="mt-3 text-3xl font-bold text-slate-900">{subjects.length}</p>
+            <p className="mt-2 text-xs text-slate-500">Assigned this term</p>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-linear-to-br from-indigo-50 via-white to-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <p className="text-xs uppercase tracking-wide text-slate-500">Average Score</p>
+              <TrendingUp className="h-4 w-4 text-indigo-500" />
+            </div>
+            <p className="mt-3 text-3xl font-bold text-slate-900">{avgScore.toFixed(1)}%</p>
+            <p className="mt-2 text-xs text-slate-500">Based on {results.length} results</p>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-linear-to-r from-slate-900 to-slate-800 p-5 text-white shadow-sm">
+            <div className="flex items-center justify-between">
+              <p className="text-xs uppercase tracking-wide text-white/70">Current Term</p>
+              <CalendarCheck className="h-4 w-4 text-white/70" />
+            </div>
+            <p className="mt-3 text-3xl font-bold">{currentTerm?.name ?? "—"}</p>
+            <p className="mt-2 text-xs text-white/70">{currentSession?.name ?? "No session"}</p>
+          </div>
+        </div>
 
-    )
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h3 className="text-sm font-semibold text-slate-900">Average Score</h3>
+              <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
+                <TrendingUp className="w-4 h-4" />
+              </div>
+            </div>
+            <p className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">{avgScore.toFixed(1)}%</p>
+            <p className="text-xs text-slate-500 flex items-center gap-1">
+              <ArrowUp className="w-3 h-3 text-emerald-500" />
+              Updated from {results.length} results
+            </p>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h3 className="text-sm font-semibold text-slate-900">Top Student</h3>
+              <div className="p-2 bg-yellow-50 text-yellow-600 rounded-lg">
+                <Award className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <UserAvatar
+                src={undefined}
+                alt="Top Student"
+                size={40}
+                className="w-10 h-10 shrink-0"
+              />
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-slate-900 truncate">{topStudentName}</p>
+                <p className="text-xs text-slate-500">{topStudentScore} Average</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h3 className="text-sm font-semibold text-slate-900">Recent Exams</h3>
+              <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                <ClipboardList className="w-4 h-4" />
+              </div>
+            </div>
+            <p className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">{recentExamCount}</p>
+            <p className="text-xs text-slate-500">Results in last 30 days</p>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h3 className="text-sm font-semibold text-slate-900">Attendance Rate</h3>
+              <div className="p-2 bg-green-50 text-green-600 rounded-lg">
+                <UserCheck className="w-4 h-4" />
+              </div>
+            </div>
+            <p className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">{attendanceRate.toFixed(1)}%</p>
+            <p className="text-xs text-slate-500">{attendancePresent}/{attendanceTotals} present</p>
+          </div>
+        </div>
+
+        <ClassStudent students={students} />
+        <ClassSubjects subjects={subjects} />
+        <WeeklyTimetable entries={timetable} />
+      </main>
+    </>
+  )
 }

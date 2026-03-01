@@ -28,7 +28,7 @@ const PsychomoDomain = ({ scores }: { scores?: PsychomotorScores | null }) => {
     ];
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
             <div className="flex items-center gap-2 mb-4">
                 <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
                     <Zap className="w-4 h-4 text-purple-600" />

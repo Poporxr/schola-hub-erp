@@ -22,10 +22,10 @@ function labelTone(label: ScoreLabel) {
 const SubjectBreakdownTable = ({ rows }: { rows: SubjectResultRow[] }) => {
   return (
     <div className="grid grid-cols-1 gap-6 mt-6">
-      <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200">
-        <div className="px-6 py-4 border-b border-slate-100 bg-linear-to-r from-purple-50 to-indigo-50">
-          <h3 className="font-bold text-slate-900 text-lg">Subject Performance Breakdown</h3>
-          <p className="text-sm text-slate-600 mt-1">Detailed scores across all subjects</p>
+      <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm">
+        <div className="px-6 py-4 border-b border-slate-100">
+          <h3 className="text-lg font-semibold text-slate-800">Subject Performance Breakdown</h3>
+          <p className="text-xs text-slate-500 mt-1">Detailed scores across all subjects</p>
         </div>
 
         <div className="overflow-x-auto custom-scrollbar">
@@ -46,10 +46,10 @@ const SubjectBreakdownTable = ({ rows }: { rows: SubjectResultRow[] }) => {
                 rows.map((row) => {
                   const perf = performanceLabel(row.totalScore);
                   return (
-                    <tr className="hover:bg-purple-50/50 transition-colors" key={row.id}>
+                    <tr className="hover:bg-slate-50 transition-colors" key={row.id}>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center">
+                          <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center">
                             <Subscript className="w-4 h-4" />
                           </div>
                           <span className="font-semibold text-slate-900">{row.subjectName}</span>
@@ -59,10 +59,10 @@ const SubjectBreakdownTable = ({ rows }: { rows: SubjectResultRow[] }) => {
                       <td className="px-6 py-4 text-center font-semibold text-slate-900">{row.assignments.toFixed(1)}</td>
                       <td className="px-6 py-4 text-center font-semibold text-slate-900">{row.exam.toFixed(1)}</td>
                       <td className="px-6 py-4 text-center">
-                        <span className="text-lg font-bold text-purple-600">{row.totalScore.toFixed(1)}</span>
+                        <span className="text-lg font-bold text-slate-900">{row.totalScore.toFixed(1)}</span>
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold bg-linear-to-r from-emerald-500 to-emerald-600 text-white shadow-md">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
                           {row.grade ?? "-"}
                         </span>
                       </td>

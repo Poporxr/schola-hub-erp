@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
-import { Clock, Users } from "lucide-react";
-import Image from "next/image";
+import { BookOpen, Clock, Users } from "lucide-react";
+import UserAvatar from "@/components/UserAvatar";
 
 const Page = async () => {
   const { userId } = await auth();
@@ -93,7 +93,7 @@ const Page = async () => {
       code: row.subject.code ?? row.subject.id,
       name: row.subject.name,
       teacherName: `${row.teacher.user.firstName} ${row.teacher.user.lastName}`,
-      teacherAvatar: row.teacher.user.image ?? "/default-avatar.png",
+      teacherAvatar: row.teacher.user.image ?? undefined,
       weeklyHours: weeklyHours % 1 === 0 ? `${weeklyHours}h / week` : `${weeklyHours.toFixed(1)}h / week`,
     };
   });
@@ -107,15 +107,11 @@ const Page = async () => {
             className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden group hover:shadow-md transition-shadow"
           >
             {/* Header Image */}
-            <div className="relative h-32 bg-indigo-600">
-              <Image
-                src="https://images.unsplash.com/photo-1635070041078-e363dbe005cb?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80"
-                alt="cover"
-                fill
-                className="object-cover opacity-50 group-hover:opacity-40 transition-opacity"
-              />
-
-              <div className="absolute bottom-0 text-white">
+            <div className="relative h-32 bg-linear-to-br from-primary to-primary-soft">
+              <div className="absolute inset-0 opacity-20 flex items-center justify-center">
+                <BookOpen className="h-16 w-16 text-white" />
+              </div>
+              <div className="absolute bottom-0 text-white p-4">
                 <h3 className="font-bold text-lg">{subject.name}</h3>
                 <p className="text-xs opacity-90">Code: {subject.code}</p>
               </div>
@@ -125,7 +121,12 @@ const Page = async () => {
             <div className="p-6">
               {/* Teacher */}
               <div className="flex items-center gap-3 mb-4">
-
+                <UserAvatar
+                  src={subject.teacherAvatar}
+                  alt={subject.teacherName}
+                  size={40}
+                  className="h-10 w-10 border border-border"
+                />
                 <div>
                   <p className="text-sm font-medium text-gray-900">
                     {subject.teacherName}

@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/settings";
 import { auth } from "@clerk/nextjs/server";
-import Image from "next/image";
+import UserAvatar from "@/components/UserAvatar";
 
 
 
@@ -74,15 +74,12 @@ const Page = async () => {
                 <div className="h-32 bg-linear-to-r from-indigo-500 to-purple-600"></div>
                 <div className="px-6 pb-6">
                     <div className="relative flex justify-between items-end -mt-12 mb-6">
-                        <div className="w-24 h-24 rounded-full border-4 border-white overflow-hidden bg-white">
-                            <Image
-                                width={50}
-                                height={50}
-                                alt=""
-                                src={studentData?.user.image ?? "/default-avatar.png"}
-                                className="w-full h-full object-cover"
-                            />
-                        </div>
+                        <UserAvatar
+                            src={studentData?.user.image}
+                            alt="Student"
+                            size={96}
+                            className="w-24 h-24 border-4 border-surface bg-surface"
+                        />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

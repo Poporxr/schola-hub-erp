@@ -5,7 +5,7 @@ import ClassSubjects from "@/components/ClassSubjects";
 import ClassStudent from "@/components/List/ClassStudent";
 import WeeklyTimetable from "@/components/WeeklyTimetable";
 import { ArrowUp, Award, BookOpen, Calendar, CalendarCheck, ClipboardList, School, TrendingUp, Trophy, UserCheck, Users } from "lucide-react";
-import Image from "next/image";
+import UserAvatar from "@/components/UserAvatar";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
@@ -78,7 +78,7 @@ export default async function Page({
         id: true,
         admissionNumber: true,
         gender: true,
-        user: { select: { firstName: true, lastName: true, email: true, phone: true } },
+        user: { select: { firstName: true, lastName: true, email: true, phone: true, image: true } },
       },
     }),
     prisma.classSubject.findMany({
@@ -241,7 +241,12 @@ export default async function Page({
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
-                            <Image src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop" width={10} height={10} alt="Top Student" className="w-10 h-10 rounded-full object-cover shrink-0" />
+                            <UserAvatar
+                              src={undefined}
+                              alt="Top Student"
+                              size={40}
+                              className="w-10 h-10 shrink-0"
+                            />
                             <div className="min-w-0">
                                 <p className="text-sm font-semibold text-gray-900 truncate">Emma Wilson</p>
                                 <p className="text-xs text-gray-500">95.8% Average</p>

@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import UserAvatar from "@/components/UserAvatar";
 import Link from "next/link";
 import {
     LayoutDashboard,
@@ -61,9 +61,12 @@ const ParentMenu = ({ open, onClose }: AdminMenuProps) => {
             </div>
 
             <div className="p-4 flex flex-col items-center border-b border-gray-100">
-                <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-purple-50 mb-3">
-                    <Image src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80" alt="Parent Profile" className="w-full h-full object-cover" width={50} height={50} />
-                </div>
+                <UserAvatar
+                    src={undefined}
+                    alt="Parent Profile"
+                    size={80}
+                    className="w-20 h-20 border-4 border-accent-soft mb-3"
+                />
                 <h3 className="font-semibold text-gray-900">Mr. Okafor Emmanuel</h3>
                 <p className="text-sm text-gray-500">Parent/Guardian</p>
                 <span className="mt-2 px-3 py-1 bg-purple-50 text-purple-700 text-xs font-medium rounded-full">2 Children Enrolled</span>

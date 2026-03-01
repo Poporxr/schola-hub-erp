@@ -1,5 +1,5 @@
 import BackButton from "@/components/BackButton";
-import Image from "next/image";
+import UserAvatar from "@/components/UserAvatar";
 
 const Page = () => {
     return (
@@ -8,7 +8,12 @@ const Page = () => {
             <div className="pb-8 pt-5">
                 <div className="bg-white rounded-xl border border-gray-200 p-8 mb-6">
                     <div className="md:flex md:items-start gap-6">
-                        <Image src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80" alt="Teacher" className="w-32 h-32 rounded-full object-cover border-4 border-purple-100" width={50} height={50} />
+                        <UserAvatar
+                          src={undefined}
+                          alt="Teacher"
+                          size={128}
+                          className="w-32 h-32 border-4 border-accent-soft"
+                        />
                             <div className="flex-1">
                                 <div className="flex items-start justify-between mb-4">
                                     <div>

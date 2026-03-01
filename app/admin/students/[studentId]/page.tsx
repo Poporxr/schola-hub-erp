@@ -1,4 +1,4 @@
-import Image from "next/image";
+import UserAvatar from "@/components/UserAvatar";
 import { notFound } from "next/navigation";
 import StudentTabs from "@/components/StudentTab";
 import BackButton from "@/components/BackButton";
@@ -28,14 +28,14 @@ const Page = async ({ params }: { params: { studentId?: string } | Promise<{ stu
             admissionNumber: true,
             gender: true,
             dateOfBirth: true,
-            address:true,
+            address: true,
             user: {
                 select: {
                     firstName: true,
                     lastName: true,
                     status: true,
-                    email:true,
-                    phone:true,
+                    email: true,
+                    phone: true,
                     image: true,
                 },
             },
@@ -137,70 +137,76 @@ const Page = async ({ params }: { params: { studentId?: string } | Promise<{ stu
     }));
 
     return (
-        <div className="">
+        <div className="space-y-6">
             <BackButton />
 
-            <div className="">
-                {/* Profile Header */}
-                <div className="bg-white rounded-xl border border-gray-200 p-8 mb-6">
-                    <div className="flex flex-col justify-center gap-6">
+            <div className="bg-linear-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                    <div className="flex items-center gap-4">
+                        <UserAvatar
+                            src={student.user.image}
+                            alt={name || "Student"}
+                            size={80}
+                            className="w-20 h-20 rounded-2xl border border-white/20"
+                        />
                         <div>
-                            <Image
-                                src={student.user.image || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"}
-                                alt={name || "Student"}
-                                className="w-29 h-29 rounded-full object-cover"
-                                width={100}
-                                height={100}
-                            />
-                        </div>
-
-
-                        <div className="flex-1">
-                            <div className="flex items-start justify-between mb-4 ">
-                                <div>
-                                    <h3 className="text-2xl font-bold text-gray-900 mb-1">
-                                        {name || "Student"}
-                                    </h3>
-                                    <p className="text-gray-500 mb-2">
-                                        Student ID: {student.admissionNumber}
-                                    </p>
-                                    <span className="px-3 py-1 text-xs font-semibold text-green-700 bg-green-100 rounded-full">
-                                        {student.user.status}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div className="grid lg:grid-cols-4 md:grid-cols-4 gap-6 grid-cols-2">
-                                <Info label="Class" value={className} />
-                                <Info label="Age" value={ageLabel} />
-                                <Info label="Gender" value={student.gender} />
-                                <Info label="Date of Birth" value={dobLabel} />
-                            </div>
+                            <h1 className="text-2xl font-bold">{name || "Student"}</h1>
+                            <p className="text-white/70 text-sm">Admission No: {student.admissionNumber}</p>
+                            <span className={`mt-2 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+                                student.user.status === "ACTIVE" ? "bg-emerald-500/20 text-emerald-100" : "bg-white/10 text-white/70"
+                            }`}>
+                                {student.user.status}
+                            </span>
                         </div>
                     </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <Info label="Class" value={className} tone="light" />
+                        <Info label="Age" value={ageLabel} tone="light" />
+                        <Info label="Gender" value={student.gender} tone="light" />
+                        <Info label="DOB" value={dobLabel} tone="light" />
+                    </div>
                 </div>
-
-                {/* Client Tabs */}
-                <StudentTabs
-                    contact={{
-                        email: student.user.email,
-                        phone: student.user.phone,
-                        address: student.address,
-                    }}
-                    parents={parents}
-                    subjects={subjectRows}
-                    results={resultRows}
-                />
+                <div className="absolute right-4 top-4 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
+                <div className="absolute left-0 bottom-0 w-56 h-56 rounded-full bg-indigo-500/20 blur-3xl" />
             </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <p className="text-xs uppercase tracking-wide text-slate-500">Contact Email</p>
+                    <p className="mt-3 text-sm font-semibold text-slate-900">{student.user.email ?? "—"}</p>
+                    <p className="mt-2 text-xs text-slate-500">Primary communication</p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <p className="text-xs uppercase tracking-wide text-slate-500">Phone</p>
+                    <p className="mt-3 text-sm font-semibold text-slate-900">{student.user.phone ?? "—"}</p>
+                    <p className="mt-2 text-xs text-slate-500">Student contact</p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-gradient-to-r from-slate-900 to-slate-800 p-5 text-white shadow-sm">
+                    <p className="text-xs uppercase tracking-wide text-white/70">Current Term</p>
+                    <p className="mt-3 text-sm font-semibold">{termLabel}</p>
+                    <p className="mt-2 text-xs text-white/70">Active session overview</p>
+                </div>
+            </div>
+
+            <StudentTabs
+                contact={{
+                    email: student.user.email,
+                    phone: student.user.phone,
+                    address: student.address,
+                }}
+                parents={parents}
+                subjects={subjectRows}
+                results={resultRows}
+            />
         </div>
     );
 };
 
 export default Page;
 
-const Info = ({ label, value }: { label: string; value: string }) => (
+const Info = ({ label, value, tone = "dark" }: { label: string; value: string; tone?: "dark" | "light" }) => (
     <div>
-        <p className="text-xs text-gray-500 mb-1">{label}</p>
-        <p className="text-sm font-semibold text-gray-900">{value}</p>
+        <p className={`text-xs ${tone === "light" ? "text-white/60" : "text-slate-500"}`}>{label}</p>
+        <p className={`text-sm font-semibold ${tone === "light" ? "text-white" : "text-slate-900"}`}>{value}</p>
     </div>
 );

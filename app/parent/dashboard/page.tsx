@@ -1,5 +1,5 @@
 import { CalendarCheck, ChevronRight, Download } from "lucide-react";
-import Image from "next/image";
+import UserAvatar from "@/components/UserAvatar";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
@@ -229,18 +229,12 @@ const Page = async () => {
                                 <div className="flex items-start gap-4 mb-4">
                                     <div className="relative">
                                         <div className="h-16 w-16 rounded-full bg-indigo-50 flex items-center justify-center">
-                                            <div className="h-14 w-14 rounded-full overflow-hidden border border-white shadow-[0_0_0_1px_rgba(148,163,184,0.4)]">
-                                                <Image
-                                                    width={56}
-                                                    height={56}
-                                                    src={
-                                                        child.image ??
-                                                        "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?auto=format&fit=crop&w=200&q=80"
-                                                    }
-                                                    alt="Student"
-                                                    className="h-full w-full object-cover"
-                                                />
-                                            </div>
+                                            <UserAvatar
+                                                src={child.image ?? undefined}
+                                                alt="Student"
+                                                size={56}
+                                                className="h-14 w-14 border border-surface shadow-[0_0_0_1px_rgba(148,163,184,0.4)]"
+                                            />
                                         </div>
                                     </div>
 

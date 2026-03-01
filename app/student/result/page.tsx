@@ -191,7 +191,7 @@ const Page = async ({
   const psychomotorData: PsychomotorData | undefined = psychomotor;
 
   return (
-    <div>
+    <div className="space-y-6 max-w-400 mx-auto w-full">
       <ResultFiltersCard
         sessions={sessions.map(({ id, name }) => ({ id, name }))}
         terms={terms.map(({ id, name }) => ({ id, name }))}

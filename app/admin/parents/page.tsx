@@ -1,4 +1,4 @@
-import Image from "next/image";
+import UserAvatar from "@/components/UserAvatar";
 import {
   Mail,
   Download,
@@ -7,12 +7,17 @@ import {
   MoreHorizontal,
   Users,
   ArrowUpRight,
+  UserCheck,
+  UserMinus,
+  Layers,
+  TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
 import Pagination from "@/components/Pagination";
 import { prisma } from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/utils";
 import ParentsFilters from "@/components/parents/ParentsFilters";
+import AddParentModal from "@/components/modals/AddParentModal";
 
 type SearchParams = {
   search?: string | string[];
@@ -27,6 +32,9 @@ type ParentRow = {
   phone?: string | null;
   image?: string | null;
   students: { id: string; name: string; image?: string | null }[];
+  studentCount: number;
+  primaryStudent?: string;
+  primaryClass?: string;
 };
 
 const Page = async ({
@@ -53,15 +61,15 @@ const Page = async ({
       where: {
         ...(search
           ? {
-              user: {
-                OR: [
-                  { firstName: { contains: search, mode: "insensitive" } },
-                  { lastName: { contains: search, mode: "insensitive" } },
-                  { email: { contains: search, mode: "insensitive" } },
-                  { phone: { contains: search, mode: "insensitive" } },
-                ],
-              },
-            }
+            user: {
+              OR: [
+                { firstName: { contains: search, mode: "insensitive" } },
+                { lastName: { contains: search, mode: "insensitive" } },
+                { email: { contains: search, mode: "insensitive" } },
+                { phone: { contains: search, mode: "insensitive" } },
+              ],
+            },
+          }
           : {}),
       },
       select: {
@@ -83,10 +91,12 @@ const Page = async ({
 
   const currentTerm = currentSession
     ? await prisma.term.findFirst({
-        where: { sessionId: currentSession.id, isCurrent: true },
-        select: { id: true },
-      })
+      where: { sessionId: currentSession.id, isCurrent: true },
+      select: { id: true },
+    })
     : null;
+
+  const classLookup = new Map(classes.map((item) => [item.id, item.name]));
 
   const studentIds = allParents.flatMap((parent) =>
     parent.parentStudents.map((row) => row.student.id)
@@ -94,13 +104,13 @@ const Page = async ({
 
   const studentClassHistories = currentSession && currentTerm && studentIds.length
     ? await prisma.studentClassHistory.findMany({
-        where: {
-          studentId: { in: studentIds },
-          sessionId: currentSession.id,
-          termId: currentTerm.id,
-        },
-        select: { studentId: true, classId: true },
-      })
+      where: {
+        studentId: { in: studentIds },
+        sessionId: currentSession.id,
+        termId: currentTerm.id,
+      },
+      select: { studentId: true, classId: true },
+    })
     : [];
 
   const studentClassMap = new Map(
@@ -113,161 +123,258 @@ const Page = async ({
       if (!studentClassMap.size) return true;
       return parent.parentStudents.some((row) => studentClassMap.get(row.student.id) === classId);
     })
-    .map((parent) => ({
-      id: parent.id,
-      name: `${parent.user.firstName} ${parent.user.lastName}`,
-      email: parent.user.email,
-      phone: parent.user.phone,
-      image: parent.user.image,
-      students: parent.parentStudents.map((row) => ({
+    .map((parent) => {
+      const students = parent.parentStudents.map((row) => ({
         id: row.student.id,
         name: `${row.student.user.firstName} ${row.student.user.lastName}`,
         image: row.student.user.image ?? undefined,
-      })),
-    }));
+      }));
+
+      const primaryStudent = students[0];
+      const primaryClassId = primaryStudent ? studentClassMap.get(primaryStudent.id) : undefined;
+
+      return {
+        id: parent.id,
+        name: `${parent.user.firstName} ${parent.user.lastName}`,
+        email: parent.user.email,
+        phone: parent.user.phone,
+        image: parent.user.image,
+        students,
+        studentCount: students.length,
+        primaryStudent: primaryStudent?.name,
+        primaryClass: primaryClassId ? classLookup.get(primaryClassId) : undefined,
+      };
+    });
 
   const totalParents = rows.length;
+  const parentsWithStudents = rows.filter((parent) => parent.studentCount > 0).length;
+  const parentsWithoutStudents = totalParents - parentsWithStudents;
+  const multiStudentParents = rows.filter((parent) => parent.studentCount >= 2).length;
+  const totalLinkedStudents = new Set(rows.flatMap((parent) => parent.students.map((s) => s.id))).size;
+  const avgStudentsPerParent = totalParents ? totalLinkedStudents / totalParents : 0;
+
+  const classCounts = new Map<string, number>();
+  rows.forEach((parent) => {
+    parent.students.forEach((student) => {
+      const cls = studentClassMap.get(student.id);
+      if (!cls) return;
+      classCounts.set(cls, (classCounts.get(cls) ?? 0) + 1);
+    });
+  });
+
+  const topClassEntry = Array.from(classCounts.entries()).sort((a, b) => b[1] - a[1])[0];
+  const topClassName = topClassEntry ? classLookup.get(topClassEntry[0]) : "N/A";
+  const topClassCount = topClassEntry ? topClassEntry[1] : 0;
+
   const start = (page - 1) * ITEM_PER_PAGE;
   const pagedRows = rows.slice(start, start + ITEM_PER_PAGE);
 
   return (
-    <div className="flex-1 overflow-y-auto space-y-3">
-      <div className="flex flex-col lg:flex-row gap-6 h-full">
-        <div className="flex-1 flex flex-col gap-6 min-w-0">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">Parents</h1>
-              <p className="text-slate-500 text-sm mt-1">
-                Manage parent records and communications
-              </p>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <button className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-md text-sm font-medium hover:bg-slate-50 flex items-center gap-2">
-                <Mail className="w-4 h-4" />
-                Message
-              </button>
-
-              <button className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-md text-sm font-medium hover:bg-indigo-50 flex items-center gap-2">
-                <Download className="w-4 h-4" />
-                Export
-              </button>
-
-              <button className="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700 flex items-center gap-2 shadow-sm">
-                <Plus className="w-4 h-4" />
-                Add Parent
-              </button>
-            </div>
+    <div className="flex-1 overflow-y-auto space-y-6 pb-10">
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">Parents</h1>
+            <p className="text-slate-500 text-sm mt-1">
+              Premium overview of parent engagement and student relationships
+            </p>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-            <h3 className="text-sm font-semibold text-slate-900 mb-5">Overview</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              <div className="group cursor-pointer rounded-xl border border-slate-200 bg-slate-50 p-5 transition-all hover:-translate-y-0.5 hover:shadow-md">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-medium text-slate-500">Total Parents</p>
-                  <Users className="h-4 w-4 text-slate-400 group-hover:text-slate-600" />
-                </div>
-                <p className="mt-3 text-3xl font-bold text-slate-900">{totalParents}</p>
+          <div className="flex flex-wrap items-center gap-3">
+            <button className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 flex items-center gap-2">
+              <Mail className="w-4 h-4" />
+              Message
+            </button>
+
+            <button className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-indigo-50 flex items-center gap-2">
+              <Download className="w-4 h-4" />
+              Export
+            </button>
+
+            <AddParentModal />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <p className="text-xs uppercase tracking-wide text-slate-500">Total Parents</p>
+              <Users className="h-4 w-4 text-slate-400" />
+            </div>
+            <p className="mt-3 text-3xl font-bold text-slate-900">{totalParents}</p>
+            <p className="mt-2 text-xs text-slate-500">Active directory size</p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-linear-to-br from-indigo-50 via-white to-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <p className="text-xs uppercase tracking-wide text-slate-500">Linked Students</p>
+              <Layers className="h-4 w-4 text-indigo-400" />
+            </div>
+            <p className="mt-3 text-3xl font-bold text-slate-900">{totalLinkedStudents}</p>
+            <p className="mt-2 text-xs text-slate-500">Across all parent profiles</p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-linear-to-br from-emerald-50 via-white to-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <p className="text-xs uppercase tracking-wide text-slate-500">Parents With Students</p>
+              <UserCheck className="h-4 w-4 text-emerald-500" />
+            </div>
+            <p className="mt-3 text-3xl font-bold text-slate-900">{parentsWithStudents}</p>
+            <p className="mt-2 text-xs text-slate-500">{multiStudentParents} with multiple wards</p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-linear-to-br from-slate-50 via-white to-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <p className="text-xs uppercase tracking-wide text-slate-500">Unlinked Parents</p>
+              <UserMinus className="h-4 w-4 text-rose-400" />
+            </div>
+            <p className="mt-3 text-3xl font-bold text-slate-900">{parentsWithoutStudents}</p>
+            <p className="mt-2 text-xs text-slate-500">Pending student linkage</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <p className="text-xs uppercase tracking-wide text-slate-500">Average Wards</p>
+              <TrendingUp className="h-4 w-4 text-slate-400" />
+            </div>
+            <p className="mt-3 text-2xl font-semibold text-slate-900">
+              {avgStudentsPerParent.toFixed(1)}
+              <span className="ml-2 text-xs text-slate-400">per parent</span>
+            </p>
+            <p className="mt-2 text-xs text-slate-500">Distribution of parent responsibility</p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <p className="text-xs uppercase tracking-wide text-slate-500">Top Class</p>
+              <Users className="h-4 w-4 text-slate-400" />
+            </div>
+            <p className="mt-3 text-2xl font-semibold text-slate-900">{topClassName}</p>
+            <p className="mt-2 text-xs text-slate-500">{topClassCount} linked students</p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-linear-to-r from-slate-900 to-slate-800 p-5 text-white shadow-sm">
+            <p className="text-xs uppercase tracking-wide text-white/70">Engagement Pulse</p>
+            <p className="mt-3 text-2xl font-semibold">{parentsWithStudents}</p>
+            <p className="mt-1 text-xs text-white/70">Parents actively linked this term</p>
+          </div>
+        </div>
+
+        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+          <ParentsFilters classes={classes} initialSearch={search} initialClassId={classId} />
+        </div>
+
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex-1 flex flex-col">
+          <div className="border-b border-slate-200 bg-linear-to-r from-slate-50 via-white to-slate-50 p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900">Parent Directory</h3>
+                <p className="text-xs text-slate-500">Detailed view of parent relationships</p>
               </div>
+              <span className="text-xs text-slate-500">{totalParents} records</span>
             </div>
           </div>
 
-          <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
-            <ParentsFilters classes={classes} initialSearch={search} initialClassId={classId} />
-          </div>
-
-          <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden flex-1 flex flex-col">
-            <div className="overflow-x-auto flex-1">
-              <table className="w-full text-left border-collapse">
-                <thead className="bg-slate-50 sticky top-0 z-10">
-                  <tr>
-                    <th className="p-4 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                      Parent Name
-                    </th>
-                    <th className="p-4 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                      Contact
-                    </th>
-                    <th className="p-4 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                      Students
-                    </th>
-                    <th className="p-4 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider w-20" />
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {pagedRows.map((parent) => (
-                    <tr key={parent.id} className="hover:bg-slate-50 group cursor-pointer">
-                      <td className="p-4">
-                        <div className="flex items-center gap-3">
-                          <Image
-                            src={parent.image || "/default-avatar.png"}
-                            alt={parent.name}
-                            width={40}
-                            height={40}
-                            className="w-10 h-10 rounded-full object-cover border border-slate-200"
-                          />
-                          <div>
-                            <p className="text-sm font-medium text-slate-900">{parent.name}</p>
-                            <p className="text-xs text-slate-500">{parent.email ?? "-"}</p>
-                          </div>
+          <div className="overflow-x-auto flex-1">
+            <table className="w-full text-left border-collapse">
+              <thead className="bg-slate-50 sticky top-0 z-10">
+                <tr>
+                  <th className="px-6 py-3 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                    Parent
+                  </th>
+                  <th className="px-6 py-3 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                    Contact
+                  </th>
+                  <th className="px-6 py-3 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                    Linked Students
+                  </th>
+                  <th className="px-6 py-3 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                    Primary Class
+                  </th>
+                  <th className="px-6 py-3 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider w-20" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {pagedRows.map((parent) => (
+                  <tr key={parent.id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <UserAvatar
+                          src={parent.image}
+                          alt={parent.name}
+                          size={44}
+                          className="h-11 w-11 border border-border"
+                        />
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900">{parent.name}</p>
+                          <p className="text-xs text-slate-500">{parent.primaryStudent ?? "No linked student"}</p>
                         </div>
-                      </td>
+                      </div>
+                    </td>
 
-                      <td className="p-4">
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-1.5 text-xs text-slate-600">
-                            <Phone className="w-3 h-3" />
-                            {parent.phone ?? "-"}
-                          </div>
-                          <div className="flex items-center gap-1.5 text-xs text-slate-600">
-                            <Mail className="w-3 h-3" />
-                            {parent.email ?? "-"}
-                          </div>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col gap-2 text-xs text-slate-600">
+                        <div className="flex items-center gap-1.5">
+                          <Phone className="w-3 h-3" />
+                          {parent.phone ?? "-"}
                         </div>
-                      </td>
+                        <div className="flex items-center gap-1.5">
+                          <Mail className="w-3 h-3" />
+                          {parent.email ?? "-"}
+                        </div>
+                      </div>
+                    </td>
 
-                      <td className="p-4">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
                         <div className="flex -space-x-2 overflow-hidden">
                           {parent.students.slice(0, 4).map((student, index) => (
-                            <Image
+                            <UserAvatar
                               key={index}
-                              width={24}
-                              height={24}
-                              src={student.image ?? "/default-avatar.png"}
-                              alt=""
-                              className="inline-block h-6 w-6 rounded-full ring-2 ring-white"
+                              src={student.image}
+                              alt={student.name}
+                              size={26}
+                              className="h-7 w-7 ring-2 ring-surface"
                             />
                           ))}
                         </div>
-                        <span className="text-xs text-slate-500 mt-1 block">
-                          {parent.students.length
-                            ? `${parent.students.length} student${parent.students.length > 1 ? "s" : ""}`
-                            : "No students"}
+                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+                          {parent.studentCount}
                         </span>
-                      </td>
+                      </div>
+                      <span className="mt-2 block text-xs text-slate-500">
+                        {parent.studentCount
+                          ? `${parent.studentCount} student${parent.studentCount > 1 ? "s" : ""}`
+                          : "No students linked"}
+                      </span>
+                    </td>
 
-                      <td className="p-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Link
-                            href={`/admin/parents/${parent.id}`}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition"
-                            title="Open parent profile"
-                          >
-                            <ArrowUpRight className="w-4 h-4" />
-                          </Link>
-                          <button className="text-slate-400 hover:text-indigo-600 p-1">
-                            <MoreHorizontal className="w-5 h-5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center rounded-full border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-700">
+                        {parent.primaryClass ?? "No class"}
+                      </span>
+                    </td>
 
-            <Pagination page={page} count={totalParents} />
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end">
+                        <Link
+                          href={`/admin/parents/${parent.id}`}
+                          className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 transition-colors"
+                        >
+                          View
+                          <ArrowUpRight className="h-4 w-4" />
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
+
+          <Pagination page={page} count={totalParents} />
         </div>
       </div>
     </div>

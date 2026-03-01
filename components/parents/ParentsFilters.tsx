@@ -77,7 +77,7 @@ export default function ParentsFilters({
                 className="cursor-pointer bg-gray-100 hover:bg-gray-200 text-black"
                 value={classItem.id}
               >
-                {classItem.id === "all" ? "All Classes" : `Class ${classItem.name}`}
+                {classItem.id === "all" ? "All Classes" : `${classItem.name}`}
               </SelectItem>
             ))}
           </SelectGroup>

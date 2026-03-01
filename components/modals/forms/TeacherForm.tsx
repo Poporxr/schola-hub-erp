@@ -1,5 +1,6 @@
 "use client";
 
+import UserAvatar from "@/components/UserAvatar";
 import { subjectsMock } from "@/utils/students";
 type ModalMode = "create" | "edit";
 
@@ -93,10 +94,11 @@ export default function TeacherForm({
 
           <Field label="Profile Photo">
             <div className="flex items-center gap-4">
-              <img
-                src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=facearea&facepad=2&w=96&h=96&q=80"
+              <UserAvatar
+                src={undefined}
                 alt="Teacher"
-                className="h-12 w-12 rounded-full object-cover ring-2 ring-gray-200"
+                size={48}
+                className="h-12 w-12 ring-2 ring-gray-200"
               />
               <button
                 type="button"

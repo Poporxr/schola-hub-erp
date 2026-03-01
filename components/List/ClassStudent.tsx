@@ -9,6 +9,7 @@ export type ClassStudentItem = {
         lastName: string;
         email: string;
         phone: string | null;
+        image: string | null;
     };
 };
 

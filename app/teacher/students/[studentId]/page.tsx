@@ -1,4 +1,4 @@
-import Image from "next/image";
+import UserAvatar from "@/components/UserAvatar";
 import { notFound } from "next/navigation";
 import StudentTabs from "@/components/StudentTab";
 import BackButton from "@/components/BackButton";
@@ -145,12 +145,11 @@ const Page = async ({ params }: { params: { studentId?: string } | Promise<{ stu
                 <div className="bg-white rounded-xl border border-gray-200 p-8 mb-6">
                     <div className="flex flex-col justify-center gap-6">
                         <div>
-                            <Image
-                                src={student.user.image || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"}
+                            <UserAvatar
+                                src={student.user.image ?? undefined}
                                 alt={name || "Student"}
-                                className="w-29 h-29 rounded-full object-cover"
-                                width={100}
-                                height={100}
+                                size={100}
+                                className="w-29 h-29"
                             />
                         </div>
 

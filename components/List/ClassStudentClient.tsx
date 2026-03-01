@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
-import Image from "next/image";
+import UserAvatar from "@/components/UserAvatar";
 import Link from "next/link";
 import { role } from "@/lib/utils";
 import { DeleteButton } from "../buttons/DeleteButton";
@@ -54,12 +54,11 @@ const ClassStudentClient = ({ students }: Props) => {
                 {filteredStudents.map((student) => (
                     <div className="p-4 hover:bg-gray-50" key={student.id}>
                         <div className="flex items-start gap-3 mb-3">
-                            <Image
-                                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop"
+                            <UserAvatar
+                                src={student.user.image ?? undefined}
                                 alt="Student"
-                                className="w-12 h-12 rounded-full object-cover shrink-0"
-                                width={10}
-                                height={10}
+                                size={48}
+                                className="w-12 h-12 shrink-0"
                             />
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-start justify-between gap-2 mb-1">
@@ -110,12 +109,11 @@ const ClassStudentClient = ({ students }: Props) => {
                             <tr className="hover:bg-gray-50" key={student.id}>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="flex items-center">
-                                        <Image
-                                            src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop"
+                                        <UserAvatar
+                                            src={student.user.image ?? undefined}
                                             alt="Student"
-                                            className="w-10 h-10 rounded-full object-cover"
-                                            width={10}
-                                            height={10}
+                                            size={40}
+                                            className="w-10 h-10"
                                         />
                                         <div className="ml-4">
                                             <div className="text-sm font-medium text-gray-900">{`${student.user.firstName} ${student.user.lastName}`}</div>

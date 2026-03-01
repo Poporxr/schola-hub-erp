@@ -1,7 +1,8 @@
-import Image from "next/image";
+import UserAvatar from "@/components/UserAvatar";
 import PrintButton from "@/components/PrintButton";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
+import { GraduationCap } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -229,14 +230,8 @@ export default async function PrintResultPage({
           <div className="border-b border-slate-200 px-4 py-4 print:px-0 print:py-3">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-4">
-                <div className="h-14 w-14 rounded-2xl bg-slate-100 overflow-hidden border border-slate-200">
-                  <Image
-                    src="https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?w=100&h=100&fit=crop"
-                    alt="School Logo"
-                    width={56}
-                    height={56}
-                    className="h-full w-full object-cover"
-                  />
+                <div className="h-14 w-14 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-600">
+                  <GraduationCap className="h-7 w-7" />
                 </div>
                 <div>
                   <h1 className="text-xl font-semibold tracking-tight">Excellence International School</h1>
@@ -249,15 +244,12 @@ export default async function PrintResultPage({
                   <p className="text-xs uppercase tracking-widest text-slate-400">Terminal Report</p>
                   <p className="text-sm font-semibold">{classHistory.term?.name ?? "Term"} | {classHistory.session?.name ?? "Session"}</p>
                 </div>
-                <div className="h-16 w-16 rounded-2xl overflow-hidden border border-slate-200">
-                  <Image
-                    src={classHistory.student.user.image ?? "https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"}
-                    alt="Student"
-                    width={64}
-                    height={64}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
+                <UserAvatar
+                  src={classHistory.student.user.image ?? undefined}
+                  alt="Student"
+                  size={64}
+                  className="h-16 w-16 rounded-2xl border border-slate-200"
+                />
               </div>
             </div>
           </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import UserAvatar from "@/components/UserAvatar";
 
 type ModalMode = "create" | "edit";
 
@@ -103,10 +104,11 @@ export default function StudentForm({
 
           <Field label="Passport Photo">
             <div className="flex items-center gap-4">
-              <img
-                src="https://images.unsplash.com/photo-1544502062-f82887f03d1c?auto=format&fit=facearea&facepad=2&w=96&h=96&q=80"
+              <UserAvatar
+                src={undefined}
                 alt="Student"
-                className="w-12 h-12 rounded-full border-2 border-gray-200 object-cover"
+                size={48}
+                className="w-12 h-12 border-2 border-gray-200"
               />
               <button
                 type="button"

@@ -1,8 +1,104 @@
 import BackButton from "@/components/BackButton";
+import { prisma } from "@/lib/prisma";
 import { ChevronRight, Mail, MapPin, Phone, PlusCircle } from "lucide-react";
-import Image from "next/image";
+import UserAvatar from "@/components/UserAvatar";
+import Link from "next/link";
+import { notFound } from "next/navigation";
 
-const Page = () => {
+const Page = async ({ params }: { params: { Id: string } }) => {
+    const { Id } = await params;
+        if (!Id) notFound();
+    const parent = await prisma.parent.findUnique({
+        where: { id: Id },
+        select: {
+            id: true,
+            createdAt: true,
+            user: {
+                select: {
+                    firstName: true,
+                    lastName: true,
+                    email: true,
+                    phone: true,
+                    image: true,
+                    status: true,
+                },
+            },
+            parentStudents: {
+                select: {
+                    relation: true,
+                    isPrimary: true,
+                    student: {
+                        select: {
+                            id: true,
+                            admissionNumber: true,
+                            user: {
+                                select: {
+                                    firstName: true,
+                                    lastName: true,
+                                    image: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    });
+
+    if (!parent) {
+        notFound();
+    }
+
+    const currentSession = await prisma.academicSession.findFirst({
+        where: { isCurrent: true },
+        select: { id: true },
+    });
+
+    const currentTerm = currentSession
+        ? await prisma.term.findFirst({
+              where: { sessionId: currentSession.id, isCurrent: true },
+              select: { id: true },
+          })
+        : null;
+
+    const studentIds = parent.parentStudents.map((row) => row.student.id);
+
+    const classHistories = currentSession && currentTerm && studentIds.length
+        ? await prisma.studentClassHistory.findMany({
+              where: {
+                  studentId: { in: studentIds },
+                  sessionId: currentSession.id,
+                  termId: currentTerm.id,
+              },
+              select: {
+                  studentId: true,
+                  class: { select: { id: true, name: true } },
+              },
+          })
+        : [];
+
+    const classByStudent = new Map(
+        classHistories.map((history) => [history.studentId, history.class])
+    );
+
+    const students = parent.parentStudents.map((row) => {
+        const classInfo = classByStudent.get(row.student.id);
+        return {
+            id: row.student.id,
+            name: `${row.student.user.firstName} ${row.student.user.lastName}`,
+            image: row.student.user.image ?? undefined,
+            admissionNumber: row.student.admissionNumber,
+            relation: row.relation ?? "Guardian",
+            isPrimary: row.isPrimary,
+            className: classInfo?.name ?? "Unassigned",
+        };
+    });
+
+    const primaryRelation = parent.parentStudents.find((row) => row.isPrimary)?.relation ?? "Guardian";
+    const parentName = `${parent.user.firstName} ${parent.user.lastName}`;
+    const parentStatus = parent.user.status ?? "ACTIVE";
+    const shortId = parent.id.slice(0, 8).toUpperCase();
+
     return (
         <div className="space-y-6">
             <BackButton />
@@ -10,23 +106,26 @@ const Page = () => {
             {/* Header */}
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex items-center gap-4">
-                    <Image
-                        src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-                        alt=""
-                        width={64}
-                        height={64}
-                        className="h-16 w-16 rounded-full border-2 border-white object-cover shadow-sm"
+                    <UserAvatar
+                        src={parent.user.image}
+                        alt={parentName}
+                        size={64}
+                        className="h-16 w-16 border-2 border-surface shadow-sm"
                     />
                     <div>
                         <h1 className="text-2xl font-bold text-slate-900">
-                            Mr. David Okonkwo
+                            {parentName}
                         </h1>
                         <div className="mt-1 flex flex-wrap items-center gap-2">
-                            <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-                                Active
+                            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                                parentStatus === "ACTIVE"
+                                    ? "bg-green-100 text-green-800"
+                                    : "bg-slate-100 text-slate-700"
+                            }`}>
+                                {parentStatus}
                             </span>
                             <span className="text-sm text-slate-400">-</span>
-                            <span className="text-sm text-slate-500">ID: P-2023-045</span>
+                            <span className="text-sm text-slate-500">ID: PR-{shortId}</span>
                         </div>
                     </div>
                 </div>
@@ -56,7 +155,7 @@ const Page = () => {
                             <div>
                                 <p className="text-xs text-slate-500">Phone Number</p>
                                 <p className="text-sm font-medium text-slate-900">
-                                    +234 801 234 5678
+                                    {parent.user.phone ?? "-"}
                                 </p>
                             </div>
                         </div>
@@ -68,7 +167,7 @@ const Page = () => {
                             <div>
                                 <p className="text-xs text-slate-500">Email Address</p>
                                 <p className="text-sm font-medium text-slate-900">
-                                    david.okonkwo@email.com
+                                    {parent.user.email ?? "-"}
                                 </p>
                             </div>
                         </div>
@@ -78,9 +177,9 @@ const Page = () => {
                                 <MapPin className="h-4 w-4" />
                             </div>
                             <div>
-                                <p className="text-xs text-slate-500">Home Address</p>
+                                <p className="text-xs text-slate-500">Primary Relation</p>
                                 <p className="text-sm font-medium text-slate-900">
-                                    15 Admiralty Way, Lekki Phase 1, Lagos State
+                                    {primaryRelation}
                                 </p>
                             </div>
                         </div>
@@ -89,56 +188,45 @@ const Page = () => {
 
                 <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                     <h3 className="mb-4 font-semibold text-slate-900">
-                        Linked Students (2)
+                        Linked Students ({students.length})
                     </h3>
 
                     <div className="space-y-4">
-                        <div className="flex items-center gap-3 rounded-lg border border-slate-100 p-3 transition-colors hover:bg-slate-50">
-                            <Image
-                                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=64&h=64"
-                                alt=""
-                                width={10}
-                                height={10}
-                                className="h-10 w-10 rounded-full object-cover"
-                            />
-                            <div className="min-w-0 flex-1">
-                                <p className="truncate text-sm font-medium text-slate-900">
-                                    Chioma Okonkwo
-                                </p>
-                                <p className="text-xs text-slate-500">
-                                    Class: JSS 1A - ID: ST-001
-                                </p>
+                        {students.length === 0 ? (
+                            <div className="rounded-lg border border-dashed border-slate-200 p-6 text-sm text-slate-500">
+                                No students linked yet.
                             </div>
-                            <button className="text-slate-400 hover:text-indigo-600">
-                                <ChevronRight className="h-5 w-5" />
-                            </button>
-                        </div>
-
-                        <div className="flex items-center gap-3 rounded-lg border border-slate-100 p-3 transition-colors hover:bg-slate-50">
-                            <Image
-                                src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=64&h=64"
-                                alt=""
-                                width={10}
-                                height={10}
-                                className="h-10 w-10 rounded-full object-cover"
-                            />
-                            <div className="min-w-0 flex-1">
-                                <p className="truncate text-sm font-medium text-slate-900">
-                                    Emeka Okonkwo
-                                </p>
-                                <p className="text-xs text-slate-500">
-                                    Class: SSS 2B - ID: ST-002
-                                </p>
-                            </div>
-                            <button className="text-slate-400 hover:text-indigo-600">
-                                <ChevronRight className="h-5 w-5" />
-                            </button>
-                        </div>
+                        ) : (
+                            students.map((student) => (
+                                <div key={student.id} className="flex items-center gap-3 rounded-lg border border-slate-100 p-3 transition-colors hover:bg-slate-50">
+                                    <UserAvatar
+                                        src={student.image}
+                                        alt={student.name}
+                                        size={40}
+                                        className="h-10 w-10"
+                                    />
+                                    <div className="min-w-0 flex-1">
+                                        <p className="truncate text-sm font-medium text-slate-900">
+                                            {student.name}
+                                        </p>
+                                        <p className="text-xs text-slate-500">
+                                            Class: {student.className} - Adm: {student.admissionNumber}
+                                        </p>
+                                        <p className="text-xs text-slate-400">
+                                            Relation: {student.relation}{student.isPrimary ? " (Primary)" : ""}
+                                        </p>
+                                    </div>
+                                    <Link href={`/admin/students/${student.id}`} className="text-slate-400 hover:text-indigo-600">
+                                        <ChevronRight className="h-5 w-5" />
+                                    </Link>
+                                </div>
+                            ))
+                        )}
                     </div>
                 </div>
             </div>
 
-            {/* Quick Message + Admin Notes (take up space) */}
+            {/* Quick Message + Admin Notes */}
             <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-2">
                 <form className="h-full rounded-2xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col">
                     <h3 className="mb-4 font-semibold text-slate-900">Quick Message</h3>

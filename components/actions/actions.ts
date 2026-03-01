@@ -50,6 +50,10 @@ export async function updateSubjectAction(formData: FormData) {
   console.log("updated");
 }
 
+export async function createParentAction(formData: FormData) {
+  console.log("created parent");
+}
+
 export async function getUserDetails(userId: string) {
   const student = await prisma.student.findUnique({
     where: { id: userId },
