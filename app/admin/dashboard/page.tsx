@@ -15,6 +15,8 @@ import {
   NotebookText,
   Bell,
 } from "lucide-react";
+
+export const revalidate = 60;
 type NoticePriority = "URGENT" | "HIGH" | "MEDIUM" | "LOW";
 
 const percentChange = (current: number, previous: number) => {
@@ -438,6 +440,5 @@ export default async function Home() {
     </div>
   );
 }
-
 
 
