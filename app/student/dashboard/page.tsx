@@ -51,8 +51,8 @@ const Page = async () => {
         where: { sessionId: currentTerm.sessionId, termId: currentTerm.id },
         take: 1,
         select: {
-          id: true,
           classId: true,
+          id: true,
           class: {
             select: {
               id: true,
@@ -233,7 +233,7 @@ const Page = async () => {
       <div className="bg-linear-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
         <div className="relative z-10">
           <p className="text-xs uppercase tracking-[0.2em] text-white/60">Student Overview</p>
-          <h1 className="text-2xl font-bold mt-2">{`${greetingForHour(now.getHours())}, ${studentData.user.firstName}.`}</h1>
+          <h1 className="text-2xl font-bold mt-2 text-white/80">{`${greetingForHour(now.getHours())}, ${studentData.user.firstName}.`}</h1>
           <p className="text-white/70 max-w-2xl mt-2">
             Current term: <span className="text-white font-semibold">{currentTerm.name ?? "N/A"}</span> - Session
             <span className="text-white font-semibold"> {currentTerm.session?.name ?? "N/A"}</span>
@@ -281,134 +281,6 @@ const Page = async () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Present Days</p>
-            <CalendarCheck className="h-4 w-4 text-emerald-500" />
-          </div>
-          <p className="mt-3 text-2xl font-semibold text-slate-900">{present}</p>
-          <p className="mt-2 text-xs text-slate-500">On time</p>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Late Days</p>
-            <CalendarCheck className="h-4 w-4 text-amber-500" />
-          </div>
-          <p className="mt-3 text-2xl font-semibold text-slate-900">{late}</p>
-          <p className="mt-2 text-xs text-slate-500">Late arrivals</p>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Notices</p>
-            <Bell className="h-4 w-4 text-amber-500" />
-          </div>
-          <p className="mt-3 text-2xl font-semibold text-slate-900">{notices.length}</p>
-          <p className="mt-2 text-xs text-slate-500">Latest updates</p>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-linear-to-r from-slate-900 to-slate-800 p-5 text-white shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-white/70">Today&apos;s Classes</p>
-            <FileText className="h-4 w-4 text-white/70" />
-          </div>
-          <p className="mt-3 text-2xl font-semibold">{todaySchedule.length}</p>
-          <p className="mt-2 text-xs text-white/70">Scheduled periods</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-            <div>
-              <h3 className="text-lg font-semibold text-slate-800">Recent Activity</h3>
-              <p className="text-xs text-slate-500">Results and school notices</p>
-            </div>
-            <Link href="/student/results" className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
-              View Results
-            </Link>
-          </div>
-          <div className="divide-y divide-slate-100">
-            {activityItems.length === 0 ? (
-              <div className="px-6 py-6 text-sm text-slate-500">No recent activity yet.</div>
-            ) : (
-              activityItems.map((activity) => {
-                const Icon = activity.icon;
-                const colorClass =
-                  activity.color === "amber"
-                    ? "bg-amber-100 text-amber-600"
-                    : "bg-indigo-100 text-indigo-600";
-                return (
-                  <div className="px-6 py-4 flex items-start gap-4" key={activity.id}>
-                    <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${colorClass}`}>
-                      <Icon className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-slate-900">{activity.title}</p>
-                      <p className="text-xs text-slate-500 mt-1">{activity.detail}</p>
-                      <p className="text-xs text-slate-400 mt-1">{activity.time}</p>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-
-        <div className="space-y-6">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-            <h3 className="font-semibold text-slate-800 mb-4">Quick Actions</h3>
-            <div className="space-y-3">
-              <Link
-                href="/student/results"
-                className="w-full flex items-center gap-3 p-4 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors"
-              >
-                <div className="p-2 bg-indigo-600 text-white rounded-lg">
-                  <Award className="w-5 h-5" />
-                </div>
-                <div className="flex-1 text-left">
-                  <p className="font-semibold text-slate-900 text-sm">View Results</p>
-                  <p className="text-xs text-slate-500">Grades and performance</p>
-                </div>
-              </Link>
-              <Link
-                href="/student/attendance"
-                className="w-full flex items-center gap-3 p-4 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors"
-              >
-                <div className="p-2 bg-emerald-600 text-white rounded-lg">
-                  <CalendarCheck className="w-5 h-5" />
-                </div>
-                <div className="flex-1 text-left">
-                  <p className="font-semibold text-slate-900 text-sm">Attendance</p>
-                  <p className="text-xs text-slate-500">Daily logs</p>
-                </div>
-              </Link>
-              <Link
-                href="/student/subjects"
-                className="w-full flex items-center gap-3 p-4 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors"
-              >
-                <div className="p-2 bg-slate-900 text-white rounded-lg">
-                  <BookOpen className="w-5 h-5" />
-                </div>
-                <div className="flex-1 text-left">
-                  <p className="font-semibold text-slate-900 text-sm">Subjects</p>
-                  <p className="text-xs text-slate-500">Class subjects</p>
-                </div>
-              </Link>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-slate-800">Attendance Summary</h3>
-              <span className="text-xs text-slate-500">This term</span>
-            </div>
-            <AttendanceRateCards present={present} absent={absent} late={late} />
-          </div>
-        </div>
-      </div>
 
       <ScheduleAndNotices schedule={schedule} notices={notices} />
     </div>
