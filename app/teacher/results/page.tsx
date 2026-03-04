@@ -13,7 +13,8 @@ type SearchParams = {
   subjectId?: string | string[];
 };
 
-const firstParam = (value?: string | string[]) => (Array.isArray(value) ? value[0] : value);
+const firstParam = (value?: string | string[]) =>
+  Array.isArray(value) ? value[0] : value;
 
 async function getResultsEntryData({
   searchParams,
@@ -113,7 +114,12 @@ async function getResultsEntryData({
       class: { select: { name: true } },
       subject: { select: { name: true } },
     },
-    orderBy: [{ session: { startDate: "desc" } }, { term: { startDate: "asc" } }, { class: { name: "asc" } }, { subject: { name: "asc" } }],
+    orderBy: [
+      { session: { startDate: "desc" } },
+      { term: { startDate: "asc" } },
+      { class: { name: "asc" } },
+      { subject: { name: "asc" } },
+    ],
   });
 
   if (!assignments.length) {
@@ -142,38 +148,54 @@ async function getResultsEntryData({
 
   const sessions = Array.from(
     new Map(
-      assignments.map((a) => [a.sessionId, { id: a.session.id, name: a.session.name, startDate: a.session.startDate }])
+      assignments.map((a) => [
+        a.sessionId,
+        { id: a.session.id, name: a.session.name, startDate: a.session.startDate },
+      ])
     ).values()
   ).sort((a, b) => b.startDate.getTime() - a.startDate.getTime());
 
   const selectedSessionId =
-    (sessionIdParam && sessions.some((s) => s.id === sessionIdParam) ? sessionIdParam : undefined) ??
-    (sessions.some((s) => s.id === currentTerm.sessionId) ? currentTerm.sessionId : undefined) ??
+    (sessionIdParam && sessions.some((s) => s.id === sessionIdParam)
+      ? sessionIdParam
+      : undefined) ??
+    (sessions.some((s) => s.id === currentTerm.sessionId)
+      ? currentTerm.sessionId
+      : undefined) ??
     sessions[0]?.id;
 
   const terms = Array.from(
     new Map(
       assignments
         .filter((a) => a.sessionId === selectedSessionId)
-        .map((a) => [a.termId, { id: a.term.id, name: a.term.name, startDate: a.term.startDate }])
+        .map((a) => [
+          a.termId,
+          { id: a.term.id, name: a.term.name, startDate: a.term.startDate },
+        ])
     ).values()
   ).sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
 
   const selectedTermId =
-    (termIdParam && terms.some((t) => t.id === termIdParam) ? termIdParam : undefined) ??
+    (termIdParam && terms.some((t) => t.id === termIdParam)
+      ? termIdParam
+      : undefined) ??
     (terms.some((t) => t.id === currentTerm.id) ? currentTerm.id : undefined) ??
     terms[0]?.id;
 
   const classes = Array.from(
     new Map(
       assignments
-        .filter((a) => a.sessionId === selectedSessionId && a.termId === selectedTermId)
+        .filter(
+          (a) => a.sessionId === selectedSessionId && a.termId === selectedTermId
+        )
         .map((a) => [a.classId, { id: a.classId, name: a.class.name }])
     ).values()
   ).sort((a, b) => a.name.localeCompare(b.name));
 
   const selectedClassId =
-    (classIdParam && classes.some((c) => c.id === classIdParam) ? classIdParam : undefined) ??
+    (classIdParam && classes.some((c) => c.id === classIdParam)
+      ? classIdParam
+      : undefined) ??
     classes[0]?.id;
 
   const subjects = Array.from(
@@ -190,7 +212,9 @@ async function getResultsEntryData({
   ).sort((a, b) => a.name.localeCompare(b.name));
 
   const selectedSubjectId =
-    (subjectIdParam && subjects.some((s) => s.id === subjectIdParam) ? subjectIdParam : undefined) ??
+    (subjectIdParam && subjects.some((s) => s.id === subjectIdParam)
+      ? subjectIdParam
+      : undefined) ??
     subjects[0]?.id;
 
   const assignment = assignments.find(
@@ -302,7 +326,10 @@ async function getResultsEntryData({
     termLabel: assignment.term.name,
     totalStudentsLabel: `${students.length} students`,
     lastSavedLabel: lastSaved
-      ? lastSaved.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
+      ? lastSaved.toLocaleTimeString("en-US", {
+          hour: "numeric",
+          minute: "2-digit",
+        })
       : "--",
     maxTest: 20,
     maxExam: 80,
@@ -333,6 +360,20 @@ export default async function Page({
 
   return (
     <div className="space-y-6">
+      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+        <div className="relative z-10 space-y-3">
+          <p className="text-xs uppercase tracking-[0.2em] text-white/60">
+            Results
+          </p>
+          <h1 className="text-2xl font-bold">Enter Student Results</h1>
+          <p className="text-sm text-white/70">
+            Capture assessments for your assigned classes with real-time status tracking.
+          </p>
+        </div>
+        <div className="absolute right-4 top-4 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
+        <div className="absolute left-0 bottom-0 w-56 h-56 rounded-full bg-indigo-500/20 blur-3xl" />
+      </div>
+
       <ResultsFilters
         sessions={filters.sessions}
         terms={filters.terms}

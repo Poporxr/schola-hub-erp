@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useMemo, useRef, useState } from "react";
-import { toast } from "sonner"
+import { toast } from "sonner";
+import { AlertTriangle, CheckCircle2, Clock } from "lucide-react";
 
 export type ResultStatus = "draft" | "saved" | "error" | "submitted";
 
@@ -36,8 +37,8 @@ function calculateGrade(total: number): GradeInfo {
   if (total >= 70) return { grade: "B", remark: "Good", color: "text-blue-600" };
   if (total >= 60) return { grade: "C", remark: "Fair", color: "text-amber-600" };
   if (total >= 50) return { grade: "D", remark: "Pass", color: "text-orange-600" };
-  if (total >= 40) return { grade: "E", remark: "Weak Pass", color: "text-red-500" };
-  return { grade: "F", remark: "Fail", color: "text-red-700" };
+  if (total >= 40) return { grade: "E", remark: "Weak Pass", color: "text-rose-500" };
+  return { grade: "F", remark: "Fail", color: "text-rose-700" };
 }
 
 function validateInput(value: number, max: number) {
@@ -56,14 +57,15 @@ function StatusBadge({ status }: { status: ResultStatus }) {
   const map: Record<ResultStatus, { label: string; cls: string; dot: string }> = {
     draft: { label: "Draft", cls: "bg-amber-50 text-amber-700 border-amber-200", dot: "bg-amber-400" },
     saved: { label: "Saved", cls: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500" },
-    error: { label: "Error", cls: "bg-red-50 text-red-700 border-red-200", dot: "bg-red-500" },
+    error: { label: "Error", cls: "bg-rose-50 text-rose-700 border-rose-200", dot: "bg-rose-500" },
     submitted: { label: "Submitted", cls: "bg-slate-100 text-slate-700 border-slate-300", dot: "bg-slate-400" },
   };
 
   const v = map[status];
 
   return (
-    <span className={["inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border", v.cls].join(" ")}>
+    <span className={["inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border", v.cls].join(" ")}
+    >
       <span className={["w-1.5 h-1.5 rounded-full", v.dot].join(" ")} />
       {v.label}
     </span>
@@ -88,9 +90,10 @@ export default function ResultsEntryClient({
 
   const [submitOpen, setSubmitOpen] = useState(false);
   const [busy, setBusy] = useState<"" | "save" | "submit">("");
-  const canPersist = Boolean(ctx.classId && ctx.subjectId && ctx.sessionId && ctx.termId && students.length);
+  const canPersist = Boolean(
+    ctx.classId && ctx.subjectId && ctx.sessionId && ctx.termId && students.length
+  );
 
-  // refs for keyboard navigation
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const summary = useMemo(() => {
@@ -128,7 +131,11 @@ export default function ResultsEntryClient({
     }
   }
 
-  function handleKeyNav(e: React.KeyboardEvent<HTMLInputElement>, rowIndex: number, field: "test" | "exam") {
+  function handleKeyNav(
+    e: React.KeyboardEvent<HTMLInputElement>,
+    rowIndex: number,
+    field: "test" | "exam"
+  ) {
     const isTest = field === "test";
 
     if (e.key === "Enter" || e.key === "ArrowDown") {
@@ -159,7 +166,8 @@ export default function ResultsEntryClient({
   function jumpToFirstError() {
     const first = students.find((s) => s.status === "error");
     if (!first) return;
-    const ref = inputRefs.current[`${first.id}:test`] ?? inputRefs.current[`${first.id}:exam`];
+    const ref =
+      inputRefs.current[`${first.id}:test`] ?? inputRefs.current[`${first.id}:exam`];
     if (!ref) return;
 
     ref.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -184,14 +192,21 @@ export default function ResultsEntryClient({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
-      }).then(async (res) => {
-        const data = await res.json();
-        if (!res.ok) throw new Error(data?.error || "Failed to save results");
-        setStudents((prev) => prev.map((s) => (s.status === "draft" ? { ...s, status: "saved" } : s)));
-        toast.success("Draft has been Saved", { position: "top-right" })
-      }).catch(() => {
-        setStudents((prev) => prev.map((s) => (s.status === "submitted" ? s : { ...s, status: "error" })));
-      }).finally(() => setBusy(""));
+      })
+        .then(async (res) => {
+          const data = await res.json();
+          if (!res.ok) throw new Error(data?.error || "Failed to save results");
+          setStudents((prev) =>
+            prev.map((s) => (s.status === "draft" ? { ...s, status: "saved" } : s))
+          );
+          toast.success("Draft has been saved", { position: "top-right" });
+        })
+        .catch(() => {
+          setStudents((prev) =>
+            prev.map((s) => (s.status === "submitted" ? s : { ...s, status: "error" }))
+          );
+        })
+        .finally(() => setBusy(""));
     } catch {
       setBusy("");
     }
@@ -212,63 +227,110 @@ export default function ResultsEntryClient({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
-    }).then(async (res) => {
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Failed to submit results");
-      setStudents((prev) => prev.map((s) => (s.status === "submitted" ? s : { ...s, status: "submitted" })));
-      setSubmitOpen(false);
-      toast.success("Submitted Sucessfully", { position: "top-right" })
-    }).catch(() => {
-      setStudents((prev) => prev.map((s) => (s.status === "submitted" ? s : { ...s, status: "error" })));
-    }).finally(() => setBusy(""));
+    })
+      .then(async (res) => {
+        const data = await res.json();
+        if (!res.ok) throw new Error(data?.error || "Failed to submit results");
+        setStudents((prev) =>
+          prev.map((s) => (s.status === "submitted" ? s : { ...s, status: "submitted" }))
+        );
+        setSubmitOpen(false);
+        toast.success("Submitted successfully", { position: "top-right" });
+      })
+      .catch(() => {
+        setStudents((prev) =>
+          prev.map((s) => (s.status === "submitted" ? s : { ...s, status: "error" }))
+        );
+      })
+      .finally(() => setBusy(""));
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h3 className="text-2xl font-bold text-slate-900 tracking-tight">Enter Results</h3>
-          <p className="text-sm text-slate-600 mt-1">
-            <span className="font-medium">{ctx.className}</span> •{" "}
-            <span className="font-medium">{ctx.subjectName}</span> •{" "}
-            <span className="font-medium">{ctx.termLabel}</span> •{" "}
-            <span className="font-medium">{ctx.totalStudentsLabel}</span>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <p className="text-xs uppercase tracking-wide text-slate-500">
+              Students
+            </p>
+            <CheckCircle2 className="h-4 w-4 text-slate-400" />
+          </div>
+          <p className="mt-3 text-3xl font-bold text-slate-900">
+            {summary.total}
           </p>
+          <p className="mt-2 text-xs text-slate-500">{ctx.totalStudentsLabel}</p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span>
-              Last saved: <span className="font-medium text-slate-700">{ctx.lastSavedLabel ?? "--"}</span>
-            </span>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <p className="text-xs uppercase tracking-wide text-slate-500">
+              Draft Changes
+            </p>
+            <Clock className="h-4 w-4 text-amber-500" />
           </div>
+          <p className="mt-3 text-3xl font-bold text-slate-900">
+            {summary.changed}
+          </p>
+          <p className="mt-2 text-xs text-slate-500">Awaiting save</p>
+        </div>
 
-          <button
-            type="button"
-            onClick={saveDraft}
-            disabled={busy !== "" || !canPersist}
-            className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:border-slate-400 transition-all duration-150 shadow-sm"
-          >
-            {busy === "save" ? "Saving..." : "Save Draft"}
-          </button>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <p className="text-xs uppercase tracking-wide text-slate-500">Errors</p>
+            <AlertTriangle className="h-4 w-4 text-rose-500" />
+          </div>
+          <p className="mt-3 text-3xl font-bold text-slate-900">
+            {summary.errors}
+          </p>
+          <p className="mt-2 text-xs text-slate-500">Fix before submit</p>
+        </div>
 
-          <button
-            type="button"
-            onClick={() => setSubmitOpen(true)}
-            disabled={busy !== "" || !canPersist}
-            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-all duration-150 shadow-sm"
-          >
-            Submit Results
-          </button>
+        <div className="rounded-2xl border border-slate-200 bg-gradient-to-r from-slate-900 to-slate-800 p-5 text-white shadow-sm">
+          <div className="flex items-center justify-between">
+            <p className="text-xs uppercase tracking-wide text-white/70">
+              Last Saved
+            </p>
+            <Clock className="h-4 w-4 text-white/70" />
+          </div>
+          <p className="mt-3 text-3xl font-bold">{ctx.lastSavedLabel ?? "--"}</p>
+          <p className="mt-2 text-xs text-white/70">Local time</p>
         </div>
       </div>
 
-      {/* Main Card */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h3 className="text-xl font-semibold text-slate-900">Enter Results</h3>
+            <p className="text-sm text-slate-600 mt-1">
+              <span className="font-medium">{ctx.className}</span> |{" "}
+              <span className="font-medium">{ctx.subjectName}</span> |{" "}
+              <span className="font-medium">{ctx.termLabel}</span>
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={saveDraft}
+              disabled={busy !== "" || !canPersist}
+              className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:border-slate-400 transition-all duration-150 shadow-sm"
+            >
+              {busy === "save" ? "Saving..." : "Save Draft"}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSubmitOpen(true)}
+              disabled={busy !== "" || !canPersist}
+              className="px-4 py-2 text-sm font-medium text-white bg-slate-900 rounded-lg hover:bg-slate-800 transition-all duration-150 shadow-sm"
+            >
+              Submit Results
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-slate-50 border-b border-slate-200 sticky top-0 z-10">
@@ -279,17 +341,23 @@ export default function ResultsEntryClient({
 
                 <th className="px-4 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider border-r border-slate-200 w-28">
                   <div>Test</div>
-                  <div className="text-[10px] text-slate-500 font-normal mt-0.5">(Max: {ctx.maxTest})</div>
+                  <div className="text-[10px] text-slate-500 font-normal mt-0.5">
+                    (Max: {ctx.maxTest})
+                  </div>
                 </th>
 
                 <th className="px-4 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider border-r border-slate-200 w-28">
                   <div>Exam</div>
-                  <div className="text-[10px] text-slate-500 font-normal mt-0.5">(Max: {ctx.maxExam})</div>
+                  <div className="text-[10px] text-slate-500 font-normal mt-0.5">
+                    (Max: {ctx.maxExam})
+                  </div>
                 </th>
 
                 <th className="px-4 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider border-r border-slate-200 w-28 bg-slate-100">
                   <div>Total</div>
-                  <div className="text-[10px] text-slate-500 font-normal mt-0.5">(100)</div>
+                  <div className="text-[10px] text-slate-500 font-normal mt-0.5">
+                    (100)
+                  </div>
                 </th>
 
                 <th className="px-4 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider border-r border-slate-200 w-24">
@@ -318,12 +386,12 @@ export default function ResultsEntryClient({
 
                 const dot =
                   s.status === "error"
-                    ? "bg-red-500"
+                    ? "bg-rose-500"
                     : s.status === "draft"
-                    ? "bg-amber-400"
-                    : s.status === "saved"
-                    ? "bg-emerald-500"
-                    : "bg-slate-400";
+                      ? "bg-amber-400"
+                      : s.status === "saved"
+                        ? "bg-emerald-500"
+                        : "bg-slate-400";
 
                 return (
                   <tr
@@ -342,15 +410,21 @@ export default function ResultsEntryClient({
                       <div className="flex items-center gap-3">
                         <div className={["w-2 h-2 rounded-full", dot].join(" ")} />
                         <div>
-                          <div className="font-medium text-slate-900 text-sm">{s.name}</div>
-                          <div className="text-xs text-slate-500 mt-0.5 tabular-nums">{s.admNo}</div>
+                          <div className="font-medium text-slate-900 text-sm">
+                            {s.name}
+                          </div>
+                          <div className="text-xs text-slate-500 mt-0.5 tabular-nums">
+                            {s.admNo}
+                          </div>
                         </div>
                       </div>
                     </td>
 
                     <td className="px-4 py-4 border-r border-slate-200 relative">
                       {rowDisabled ? (
-                        <div className="text-center text-sm tabular-nums text-slate-600">{s.test}</div>
+                        <div className="text-center text-sm tabular-nums text-slate-600">
+                          {s.test}
+                        </div>
                       ) : (
                         <>
                           <input
@@ -359,19 +433,21 @@ export default function ResultsEntryClient({
                             }}
                             type="number"
                             value={String(s.test ?? 0)}
-                            onChange={(e) => updateScore(s.id, "test", clampToNumber(e.target.value))}
+                            onChange={(e) =>
+                              updateScore(s.id, "test", clampToNumber(e.target.value))
+                            }
                             onKeyDown={(e) => handleKeyNav(e, index, "test")}
                             className={[
                               "w-full px-2 py-2 text-center text-sm bg-transparent border rounded",
-                              "focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 tabular-nums",
-                              testOk ? "border-slate-200" : "border-red-500 bg-red-50",
+                              "focus:outline-none focus:ring-2 focus:ring-slate-900/20 focus:border-slate-900/30 tabular-nums",
+                              testOk ? "border-slate-200" : "border-rose-500 bg-rose-50",
                             ].join(" ")}
                             min={0}
                             max={ctx.maxTest}
                             step={0.5}
                           />
                           {!testOk && (
-                            <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] text-red-600 font-medium whitespace-nowrap">
+                            <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] text-rose-600 font-medium whitespace-nowrap">
                               Max: {ctx.maxTest}
                             </div>
                           )}
@@ -381,7 +457,9 @@ export default function ResultsEntryClient({
 
                     <td className="px-4 py-4 border-r border-slate-200 relative">
                       {rowDisabled ? (
-                        <div className="text-center text-sm tabular-nums text-slate-600">{s.exam}</div>
+                        <div className="text-center text-sm tabular-nums text-slate-600">
+                          {s.exam}
+                        </div>
                       ) : (
                         <>
                           <input
@@ -390,19 +468,21 @@ export default function ResultsEntryClient({
                             }}
                             type="number"
                             value={String(s.exam ?? 0)}
-                            onChange={(e) => updateScore(s.id, "exam", clampToNumber(e.target.value))}
+                            onChange={(e) =>
+                              updateScore(s.id, "exam", clampToNumber(e.target.value))
+                            }
                             onKeyDown={(e) => handleKeyNav(e, index, "exam")}
                             className={[
                               "w-full px-2 py-2 text-center text-sm bg-transparent border rounded",
-                              "focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 tabular-nums",
-                              examOk ? "border-slate-200" : "border-red-500 bg-red-50",
+                              "focus:outline-none focus:ring-2 focus:ring-slate-900/20 focus:border-slate-900/30 tabular-nums",
+                              examOk ? "border-slate-200" : "border-rose-500 bg-rose-50",
                             ].join(" ")}
                             min={0}
                             max={ctx.maxExam}
                             step={0.5}
                           />
                           {!examOk && (
-                            <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] text-red-600 font-medium whitespace-nowrap">
+                            <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] text-rose-600 font-medium whitespace-nowrap">
                               Max: {ctx.maxExam}
                             </div>
                           )}
@@ -411,11 +491,16 @@ export default function ResultsEntryClient({
                     </td>
 
                     <td className="px-4 py-4 border-r border-slate-200 bg-slate-50">
-                      <div className="text-center text-sm font-semibold text-slate-900 tabular-nums">{total}</div>
+                      <div className="text-center text-sm font-semibold text-slate-900 tabular-nums">
+                        {total}
+                      </div>
                     </td>
 
                     <td className="px-4 py-4 border-r border-slate-200">
-                      <div className={["text-center text-sm font-bold", gradeInfo.color].join(" ")}>{gradeInfo.grade}</div>
+                      <div className={["text-center text-sm font-bold", gradeInfo.color].join(" ")}
+                      >
+                        {gradeInfo.grade}
+                      </div>
                     </td>
 
                     <td className="px-4 py-4 border-r border-slate-200">
@@ -432,30 +517,35 @@ export default function ResultsEntryClient({
           </table>
         </div>
 
-        {/* Footer Summary */}
         <div className="bg-slate-50 border-t border-slate-200 px-6 py-4">
           <div className="flex flex-wrap items-center gap-6 text-sm">
             <div className="flex items-center gap-2">
               <span className="text-slate-600">Total Students:</span>
-              <span className="font-semibold text-slate-900 tabular-nums">{summary.total}</span>
+              <span className="font-semibold text-slate-900 tabular-nums">
+                {summary.total}
+              </span>
             </div>
 
             <div className="w-px h-4 bg-slate-300" />
 
             <div className="flex items-center gap-2">
               <span className="text-slate-600">Changed:</span>
-              <span className="font-semibold text-amber-600 tabular-nums">{summary.changed}</span>
+              <span className="font-semibold text-amber-600 tabular-nums">
+                {summary.changed}
+              </span>
             </div>
 
             <div className="w-px h-4 bg-slate-300" />
 
             <div className="flex items-center gap-2">
               <span className="text-slate-600">Errors:</span>
-              <span className="font-semibold text-red-600 tabular-nums">{summary.errors}</span>
+              <span className="font-semibold text-rose-600 tabular-nums">
+                {summary.errors}
+              </span>
               <button
                 type="button"
                 onClick={jumpToFirstError}
-                className="text-xs text-indigo-600 hover:text-indigo-700 font-medium underline ml-1"
+                className="text-xs text-slate-900 hover:text-slate-700 font-medium underline ml-1"
               >
                 Jump to first
               </button>
@@ -464,7 +554,6 @@ export default function ResultsEntryClient({
         </div>
       </div>
 
-      {/* Modal */}
       {submitOpen && (
         <div
           className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4"
@@ -473,17 +562,17 @@ export default function ResultsEntryClient({
             if (e.target === e.currentTarget) setSubmitOpen(false);
           }}
         >
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
             <div className="px-6 py-4 border-b border-slate-200">
-              <h2 className="text-lg font-semibold text-slate-900">Confirm Submission</h2>
+              <h2 className="text-lg font-semibold text-slate-900">
+                Confirm Submission
+              </h2>
             </div>
 
             <div className="px-6 py-5">
               <div className="flex items-start gap-4 mb-4">
                 <div className="shrink-0 w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-                  <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
+                  <AlertTriangle className="w-5 h-5 text-amber-600" />
                 </div>
 
                 <div className="flex-1">
@@ -498,26 +587,30 @@ export default function ResultsEntryClient({
                   <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-slate-600">Rows to submit:</span>
-                      <span className="font-semibold text-slate-900 tabular-nums">{summary.rowsToSubmit}</span>
+                      <span className="font-semibold text-slate-900 tabular-nums">
+                        {summary.rowsToSubmit}
+                      </span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-slate-600">Errors to fix:</span>
-                      <span className="font-semibold text-red-600 tabular-nums">{summary.errors}</span>
+                      <span className="font-semibold text-rose-600 tabular-nums">
+                        {summary.errors}
+                      </span>
                     </div>
                   </div>
                 </div>
               </div>
 
               {summary.errors > 0 && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                  <p className="text-xs text-red-700 font-medium">
-                    ⚠️ You must fix all errors before submitting. Please review the highlighted cells.
+                <div className="bg-rose-50 border border-rose-200 rounded-lg p-3">
+                  <p className="text-xs text-rose-700 font-medium">
+                    You must fix all errors before submitting. Please review the highlighted cells.
                   </p>
                 </div>
               )}
             </div>
 
-            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3 rounded-b-xl">
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3 rounded-b-2xl">
               <button
                 type="button"
                 onClick={() => setSubmitOpen(false)}
@@ -531,9 +624,13 @@ export default function ResultsEntryClient({
                 type="button"
                 onClick={confirmSubmit}
                 disabled={summary.errors > 0 || busy === "submit"}
-                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed"
+                className="px-4 py-2 text-sm font-medium text-white bg-slate-900 rounded-lg hover:bg-slate-800 disabled:bg-slate-300 disabled:cursor-not-allowed"
               >
-                {summary.errors > 0 ? "Fix Errors First" : busy === "submit" ? "Submitting..." : "Submit Results"}
+                {summary.errors > 0
+                  ? "Fix Errors First"
+                  : busy === "submit"
+                    ? "Submitting..."
+                    : "Submit Results"}
               </button>
             </div>
           </div>

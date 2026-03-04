@@ -11,7 +11,7 @@ function getTitleFromPath(pathname: string) {
   if (/^\/student\/profile\/[^/]+$/.test(path)) return "Profile";
 
   if (path === "/teacher/subjects") return "My Subjects";
-  if (path === "/teacher/class") return "Class Overview";
+  if (path === "/teacher/classes") return "Class Overview";
   if (path === "/teacher/results") return "Enter Results";
   if (path === "/teacher/attendance") return "Record Attendance";
   if (path === "/teacher/profile") return "Profile Overview";

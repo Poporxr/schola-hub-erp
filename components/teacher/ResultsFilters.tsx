@@ -58,14 +58,20 @@ export default function ResultsFilters(props: Props) {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-      <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
-        <Sliders className="w-5 h-5 text-indigo-600" />
-        Filter Result Entry
-      </h3>
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+      <div className="flex items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-2 text-slate-900">
+          <Sliders className="w-5 h-5 text-slate-700" />
+          <h3 className="font-semibold">Filter Result Entry</h3>
+        </div>
+        <span className="text-xs text-slate-500">Select filters to load students</span>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">Session</label>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Session
+          </label>
           <select
             name="sessionId"
             value={sessionId}
@@ -77,7 +83,7 @@ export default function ResultsFilters(props: Props) {
               setSubjectId("");
               pushQuery({ sessionId: next });
             }}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/20"
           >
             {sessions.map((item) => (
               <option key={item.id} value={item.id}>
@@ -88,7 +94,9 @@ export default function ResultsFilters(props: Props) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">Term</label>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Term
+          </label>
           <select
             name="termId"
             value={termId}
@@ -99,7 +107,7 @@ export default function ResultsFilters(props: Props) {
               setSubjectId("");
               pushQuery({ sessionId, termId: next });
             }}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/20"
           >
             {terms.map((item) => (
               <option key={item.id} value={item.id}>
@@ -110,7 +118,9 @@ export default function ResultsFilters(props: Props) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">Class</label>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Class
+          </label>
           <select
             name="classId"
             value={classId}
@@ -120,7 +130,7 @@ export default function ResultsFilters(props: Props) {
               setSubjectId("");
               pushQuery({ sessionId, termId, classId: next });
             }}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/20"
           >
             {classes.map((item) => (
               <option key={item.id} value={item.id}>
@@ -131,7 +141,9 @@ export default function ResultsFilters(props: Props) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">Subject</label>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Subject
+          </label>
           <select
             name="subjectId"
             value={subjectId}
@@ -140,7 +152,7 @@ export default function ResultsFilters(props: Props) {
               setSubjectId(next);
               pushQuery({ sessionId, termId, classId, subjectId: next });
             }}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/20"
           >
             {subjects.map((item) => (
               <option key={item.id} value={item.id}>
@@ -155,7 +167,7 @@ export default function ResultsFilters(props: Props) {
             type="button"
             onClick={() => pushQuery({ sessionId, termId, classId, subjectId })}
             disabled={!canSubmit}
-            className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed transition-colors"
+            className="w-full px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium hover:bg-slate-800 disabled:bg-slate-300 disabled:cursor-not-allowed transition-colors"
           >
             Apply
           </button>
