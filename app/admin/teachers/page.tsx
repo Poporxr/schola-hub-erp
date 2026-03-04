@@ -198,7 +198,7 @@ export default async function page({ searchParams,
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex items-center justify-end gap-3">
-                                            <Link href={`/admin/teachers/${teacher.id}`} className="text-slate-400 hover:text-indigo-600"><Eye className="w-4 h-4" /></Link>
+                                            <Link href={`/admin/teachers/${teacher.id}`} className="text-slate-400 hover:text-slate-900"><Eye className="w-4 h-4" /></Link>
                                             <FormButton type="teacher" action="edit" data={toTeacherFormData(teacher)} />
                                         </div>
                                     </td>

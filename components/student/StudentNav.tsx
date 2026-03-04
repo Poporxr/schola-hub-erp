@@ -37,7 +37,7 @@ const StudentNav = ({ onToggleSidebar }: { onToggleSidebar: () => void }) => {
           </button>
 
           {/* Logo (small, subtle) */}
-          <div className="hidden sm:flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+          <div className="hidden sm:flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-slate-900">
             <GraduationCap className="h-5 w-5" />
           </div>
 

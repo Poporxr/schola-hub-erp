@@ -91,7 +91,7 @@ const Page = async () => {
                                 <h3 className="text-lg font-bold text-slate-900">{classItem.name}</h3>
                                 <p className="text-sm text-slate-500">{classItem.level.name}</p>
                             </div>
-                            <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
+                            <div className="p-2 bg-indigo-50 rounded-lg text-slate-900">
                                 <Users className="w-5 h-5" />
                             </div>
                         </div>
@@ -114,7 +114,7 @@ const Page = async () => {
                             </div>
                         </div>
                         <div className="mt-6 pt-4 border-t border-slate-100 flex gap-2">
-                            <Link href={`/admin/classes/${classItem.id}`} className="flex-1 py-2 text-center text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100">View Details</Link>
+                            <Link href={`/admin/classes/${classItem.id}`} className="flex-1 py-2 text-center text-sm font-medium text-slate-900 bg-indigo-50 rounded-lg hover:bg-indigo-100">View Details</Link>
                         </div>
                     </div>
                 ))}

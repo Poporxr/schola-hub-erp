@@ -93,7 +93,7 @@ const WeeklyTimetable = ({ entries }: { entries: TimetableEntryItem[] }) => {
                                                 {cell.subject}
                                             </p>
                                             <p
-                                                className="text-xs text-indigo-600 truncate hidden sm:block"
+                                                className="text-xs text-slate-900 truncate hidden sm:block"
                                             >
                                                 {cell.teacher}
                                             </p>

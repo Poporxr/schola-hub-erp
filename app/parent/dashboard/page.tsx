@@ -293,7 +293,7 @@ const Page = async () => {
                                         <p className="text-[11px] uppercase tracking-wide text-slate-400 mb-1.5">
                                             Last Result
                                         </p>
-                                        <p className="text-lg font-semibold text-indigo-600">
+                                        <p className="text-lg font-semibold text-slate-900">
                                             {child.avgResult === null ? "-" : `${child.avgResult}%`}
                                         </p>
                                         <p className="mt-1 text-xs text-slate-400">Overall average</p>

@@ -187,7 +187,7 @@ const Page = async () => {
                         <span className="text-3xl font-bold text-gray-900">{subjectCount}</span>
                         <span className="text-sm text-gray-500 mb-1">Active</span>
                     </div>
-                    <Link href={"/student/subjects"} className="text-sm text-indigo-600 font-medium mt-3 hover:underline">View All &rarr;</Link>
+                    <Link href={"/student/subjects"} className="text-sm text-slate-900 font-medium mt-3 hover:underline">View All &rarr;</Link>
                 </div>
             </div>
             <ScheduleAndNotices schedule={schedule} notices={notices} />

@@ -42,7 +42,7 @@ const SubjectCard = ({ subjects }: { subjects: SubjectCardItem[] }) => {
                             <p className="text-xs text-gray-500 truncate">{subject.teacherNames.slice(1).join(", ")}</p>
                         </div>
                         {role === 'admin' && <div className="flex gap-2">
-                            <button className="text-indigo-600 hover:text-indigo-900 text-xs font-medium">Edit</button>
+                            <button className="text-slate-900 hover:text-indigo-900 text-xs font-medium">Edit</button>
                             <DeleteButton id={subject.id} label={subject.name} type="subject" />
                         </div>}
                     </div>

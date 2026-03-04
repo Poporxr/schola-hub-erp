@@ -18,7 +18,7 @@ const GradeBreakdown = ({ counts, total }: { counts: GradeCounts; total: number 
             <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-slate-900">Grade Breakdown</h3>
                 <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
-                    <PieChart className="w-4 h-4 text-indigo-600" />
+                    <PieChart className="w-4 h-4 text-slate-900" />
                 </div>
             </div>
             <div className="space-y-4">

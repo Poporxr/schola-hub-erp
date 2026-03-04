@@ -23,7 +23,7 @@ export default function ClassDetailActions({ classId, classOptions }: Props) {
     <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
       <button
         onClick={() => setStudentOpen(true)}
-        className="px-4 py-2.5 bg-white text-indigo-600 rounded-lg font-medium text-sm hover:bg-indigo-50 transition flex items-center justify-center gap-2"
+        className="px-4 py-2.5 bg-white text-slate-900 rounded-lg font-medium text-sm hover:bg-indigo-50 transition flex items-center justify-center gap-2"
       >
         <UserPlus className="w-4 h-4" />
         Add Student

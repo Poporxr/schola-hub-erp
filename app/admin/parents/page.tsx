@@ -361,7 +361,7 @@ const Page = async ({
                       <div className="flex items-center justify-end">
                         <Link
                           href={`/admin/parents/${parent.id}`}
-                          className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 transition-colors"
+                          className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-900 bg-indigo-50 hover:bg-indigo-100 transition-colors"
                         >
                           View
                           <ArrowUpRight className="h-4 w-4" />

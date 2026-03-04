@@ -287,7 +287,7 @@ export default async function page({
                                         <div className="flex items-center justify-end gap-3">
                                             <Link
                                                 href={`/admin/students/${student.id}`}
-                                                className="text-slate-400 hover:text-indigo-600"
+                                                className="text-slate-400 hover:text-slate-900"
                                             >
                                                 <Eye className="w-4 h-4" />
                                             </Link>

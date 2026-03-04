@@ -728,7 +728,7 @@ export const subjectBreakdown: SubjectBreakdownRow[] = [
     id: "5",
     subject: "Computer Studies",
     icon: "monitor",
-    iconColor: "bg-indigo-100 text-indigo-600",
+    iconColor: "bg-indigo-100 text-slate-900",
     tests: "18/20",
     assignments: "19/20",
     exam: "54/60",

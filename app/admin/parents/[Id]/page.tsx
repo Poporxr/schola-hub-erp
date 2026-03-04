@@ -142,7 +142,7 @@ const Page = async ({ params }: { params: { Id: string } }) => {
                 <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                     <div className="mb-4 flex items-center justify-between">
                         <h3 className="font-semibold text-slate-900">Contact Info</h3>
-                        <button className="text-xs font-medium text-indigo-600 hover:underline">
+                        <button className="text-xs font-medium text-slate-900 hover:underline">
                             Edit
                         </button>
                     </div>
@@ -216,7 +216,7 @@ const Page = async ({ params }: { params: { Id: string } }) => {
                                             Relation: {student.relation}{student.isPrimary ? " (Primary)" : ""}
                                         </p>
                                     </div>
-                                    <Link href={`/admin/students/${student.id}`} className="text-slate-400 hover:text-indigo-600">
+                                    <Link href={`/admin/students/${student.id}`} className="text-slate-400 hover:text-slate-900">
                                         <ChevronRight className="h-5 w-5" />
                                     </Link>
                                 </div>
@@ -266,7 +266,7 @@ const Page = async ({ params }: { params: { Id: string } }) => {
                         <p className="mt-1 text-xs text-yellow-600">Added by Admin - Oct 20, 2023</p>
                     </div>
 
-                    <button className="mt-auto flex items-center gap-1 text-sm font-medium text-indigo-600 hover:underline">
+                    <button className="mt-auto flex items-center gap-1 text-sm font-medium text-slate-900 hover:underline">
                         <PlusCircle className="h-4 w-4" /> Add Note
                     </button>
                 </div>

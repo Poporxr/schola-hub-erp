@@ -393,7 +393,7 @@ export default async function Home() {
             <h3 className="text-lg font-semibold text-slate-800">Recent Activity</h3>
             <p className="text-xs text-slate-500">Latest notices, admissions, and result updates</p>
           </div>
-          <button className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">View All</button>
+          <button className="text-sm text-slate-900 hover:text-indigo-700 font-medium">View All</button>
         </div>
         <div className="divide-y divide-slate-100">
           {activities.length === 0 ? (

@@ -47,7 +47,7 @@ const ParentMenu = ({ open, onClose }: AdminMenuProps) => {
             "lg:translate-x-0",
         ].join(" ")}>
             <div className="h-16 flex items-center justify-between px-2 border-b border-slate-100">
-                <div className="flex items-center gap-2 text-indigo-600 font-bold text-xl">
+                <div className="flex items-center gap-2 text-slate-900 font-bold text-xl">
                     <GraduationCap className="w-8 h-8" />
                     <span>Schola | Hub</span>
                 </div>

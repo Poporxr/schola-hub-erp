@@ -90,7 +90,7 @@ const Page = async () => {
 
       <div className="space-y-6">
         <div className="text-center p-4 bg-indigo-50 rounded-xl">
-          <p className="text-sm text-indigo-600 font-medium mb-1">Total Present</p>
+          <p className="text-sm text-slate-900 font-medium mb-1">Total Present</p>
           <p className="text-3xl font-bold text-indigo-900">{totalPresent}</p>
           <p className="text-xs text-indigo-400">Entries This Week</p>
         </div>

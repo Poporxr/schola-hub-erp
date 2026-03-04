@@ -76,7 +76,7 @@ const ClassStudentClient = ({ students }: Props) => {
                             <div className="flex gap-2">
                                 <Link
                                     href={`/admin/students/${student.id}`}
-                                    className="text-indigo-600 hover:text-indigo-900 text-xs font-medium"
+                                    className="text-slate-900 hover:text-indigo-900 text-xs font-medium"
                                 >
                                     View
                                 </Link>
@@ -133,7 +133,7 @@ const ClassStudentClient = ({ students }: Props) => {
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <Link
                                         href={`/teacher/students/${student.id}`}
-                                        className="text-indigo-600 hover:text-indigo-900 mr-3"
+                                        className="text-slate-900 hover:text-indigo-900 mr-3"
                                     >
                                         View
                                     </Link>

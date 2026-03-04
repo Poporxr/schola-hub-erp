@@ -252,8 +252,8 @@ const Page = async ({
                             <p className="text-xs text-slate-500">{classes.find((c) => c.id === classId)?.name ?? "-"} - {currentTerm?.name ?? "-"}</p>
                         </div>
                         <div className="flex items-center gap-2">
-                            <button className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">Sort by Name</button>
-                            <button className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">Sort by Score</button>
+                            <button className="text-sm text-slate-900 hover:text-indigo-700 font-medium">Sort by Name</button>
+                            <button className="text-sm text-slate-900 hover:text-indigo-700 font-medium">Sort by Score</button>
                         </div>
                     </div>
 
@@ -307,7 +307,7 @@ const Page = async ({
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-2">
-                                                <Link href={`/admin/results/${resultItem.studentId}`} className="text-indigo-600 hover:text-indigo-700 font-medium text-sm">View</Link>
+                                                <Link href={`/admin/results/${resultItem.studentId}`} className="text-slate-900 hover:text-indigo-700 font-medium text-sm">View</Link>
                                                 <button className="text-slate-400 hover:text-slate-600">
                                                     <Printer className="w-4 h-4" />
                                                 </button>

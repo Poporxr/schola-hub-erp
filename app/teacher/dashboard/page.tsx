@@ -404,7 +404,7 @@ const Page = async () => {
                       </p>
                       <Link
                         href="/teacher/attendance"
-                        className="mt-2 inline-block text-xs font-medium text-indigo-600 hover:underline"
+                        className="mt-2 inline-block text-xs font-medium text-slate-900 hover:underline"
                       >
                         Mark Attendance
                       </Link>
@@ -483,7 +483,7 @@ const Page = async () => {
                 <div
                   className={`p-2 rounded-lg h-fit ${
                     index % 2 === 0
-                      ? "bg-indigo-50 text-indigo-600"
+                      ? "bg-indigo-50 text-slate-900"
                       : "bg-slate-50 text-slate-600"
                   }`}
                 >
