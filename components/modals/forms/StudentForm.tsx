@@ -47,7 +47,7 @@ export default function StudentForm({
   const sectionTitle = "text-lg font-bold text-gray-900 flex items-center gap-3";
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 ">
       {/* 1 Personal */}
       <section>
         <div className={sectionTitle}>

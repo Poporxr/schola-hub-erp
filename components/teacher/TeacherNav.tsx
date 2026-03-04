@@ -66,7 +66,7 @@ const TeacherNav = ({ onToggleSidebar }: { onToggleSidebar: () => void }) => {
   const title = getTitleFromPath(pathname);
 
   return (
-    <header className="sticky top-0 z-30 border-b border-slate-200 bg-white">
+    <header className="sticky top-0 z-30 border-b border-slate-200 bg-white ">
       <div className="flex h-16 items-center justify-between px-3 sm:px-4 md:px-6">
         {/* Left: menu + logo + titles */}
         <div className="flex min-w-0 items-center gap-3">

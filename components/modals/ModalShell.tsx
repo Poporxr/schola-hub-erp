@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 type ModalShellProps = {
   open: boolean;
@@ -28,6 +29,12 @@ export function ModalShell({
   footer,
   maxWidth = "lg",
 }: ModalShellProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // ESC + lock background scroll
   useEffect(() => {
     if (!open) return;
@@ -46,9 +53,9 @@ export function ModalShell({
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
-  return (
+  const modal = (
     <div className="fixed inset-0 z-50">
       {/* Backdrop */}
       <button
@@ -106,4 +113,6 @@ export function ModalShell({
       </div>
     </div>
   );
+
+  return createPortal(modal, document.body);
 }

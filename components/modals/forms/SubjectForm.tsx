@@ -29,7 +29,7 @@ export default function SubjectForm({
     "w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 ">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <Field label="Subject Name *">
           <input

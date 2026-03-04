@@ -2,6 +2,7 @@ import ParentAttendanceClient from "@/components/parent/ParentAttendanceClient";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { getParentAttendanceData } from "@/lib/parentAttendance";
+import { greetingForHour } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
@@ -11,10 +12,12 @@ const Page = async ({ searchParams }: { searchParams?: { studentId?: string } })
         return <div className="p-6 text-sm text-slate-600">Sign in to view attendance.</div>;
     }
 
-    const parent = await prisma.parent.findFirst({
+    const [parent, currentTerm] = await Promise.all([
+        prisma.parent.findFirst({
         where: { OR: [{ id: userId }, { userId }] },
         select: {
             id: true,
+            user: { select: { firstName: true, lastName: true } },
             parentStudents: {
                 select: {
                     student: {
@@ -27,7 +30,16 @@ const Page = async ({ searchParams }: { searchParams?: { studentId?: string } })
                 },
             },
         },
-    });
+    }),
+        prisma.term.findFirst({
+            where: { isCurrent: true, session: { isCurrent: true } },
+            select: {
+                id: true,
+                name: true,
+                session: { select: { name: true } },
+            },
+        }),
+    ]);
 
     if (!parent) {
         return <div className="p-6 text-sm text-slate-600">Parent profile not found.</div>;
@@ -43,16 +55,20 @@ const Page = async ({ searchParams }: { searchParams?: { studentId?: string } })
         return <div className="p-6 text-sm text-slate-600">{initialResult.error}</div>;
     }
 
+    const now = new Date();
+
     return (
-        <ParentAttendanceClient
-            students={children.map((child) => ({
-                id: child.id,
-                firstName: child.user.firstName,
-                lastName: child.user.lastName,
-            }))}
-            initialStudentId={selectedId}
-            initialData={initialResult.data}
-        />
+        <div className="space-y-6">
+            <ParentAttendanceClient
+                students={children.map((child) => ({
+                    id: child.id,
+                    firstName: child.user.firstName,
+                    lastName: child.user.lastName,
+                }))}
+                initialStudentId={selectedId}
+                initialData={initialResult.data}
+            />
+        </div>
     );
 };
 

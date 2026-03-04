@@ -36,7 +36,7 @@ export default function TeacherForm({
   const isEdit = mode === "edit";
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 ">
       {/* 1 Personal */}
       <section>
         <div className="flex items-center gap-3">

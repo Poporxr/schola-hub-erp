@@ -1,197 +1,417 @@
-import ScheduleAndNotices from "@/components/student/ScheduleAndNotices";
+﻿import ScheduleAndNotices from "@/components/student/ScheduleAndNotices";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
-import { BookOpen, CheckCircle, Library, TrendingUp } from "lucide-react";
+import {
+  Award,
+  Bell,
+  BookOpen,
+  CalendarCheck,
+  FileText,
+  TrendingUp,
+} from "lucide-react";
 import Link from "next/link";
 import { AttendanceStatus } from "@/generated/prisma/client";
 import AttendanceRateCards from "@/components/AttendanceRateCards";
+import { greetingForHour, relativeDaysLabel } from "@/lib/settings";
 
+const formatPosition = (position: number | null) => {
+  if (!position) return "-";
+  const suffix =
+    position % 10 === 1 && position % 100 !== 11
+      ? "st"
+      : position % 10 === 2 && position % 100 !== 12
+        ? "nd"
+        : position % 10 === 3 && position % 100 !== 13
+          ? "rd"
+          : "th";
+  return `${position}${suffix}`;
+};
 
 const Page = async () => {
-    const { userId } = await auth();
-    if (!userId) {
-        return <div className="p-6 text-sm text-slate-600">Sign in to view your dashboard.</div>;
-    }
+  const { userId } = await auth();
+  if (!userId) {
+    return <div className="p-6 text-sm text-slate-600">Sign in to view your dashboard.</div>;
+  }
 
-    const currentTerm = await prisma.term.findFirst({
-        where: { isCurrent: true, session: { isCurrent: true } },
-        select: { id: true, sessionId: true },
-    });
-    if (!currentTerm) {
-        return <div className="p-6 text-sm text-slate-600">No current term is configured.</div>;
-    }
+  const currentTerm = await prisma.term.findFirst({
+    where: { isCurrent: true, session: { isCurrent: true } },
+    select: { id: true, sessionId: true, name: true, session: { select: { name: true } } },
+  });
+  if (!currentTerm) {
+    return <div className="p-6 text-sm text-slate-600">No current term is configured.</div>;
+  }
 
-    const studentData = await prisma.student.findFirst({
-        where: { OR: [{ id: userId }, { userId }] },
+  const studentData = await prisma.student.findFirst({
+    where: { OR: [{ id: userId }, { userId }] },
+    select: {
+      id: true,
+      admissionNumber: true,
+      user: { select: { firstName: true, lastName: true } },
+      classHistories: {
+        where: { sessionId: currentTerm.sessionId, termId: currentTerm.id },
+        take: 1,
         select: {
-            id: true,
-            admissionNumber: true,
-            user: { select: { firstName: true, lastName: true } },
-            parentStudents: {
-                orderBy: { isPrimary: "desc" },
-                select: {
-                    relation: true,
-                    isPrimary: true,
-                    parent: {
-                        select: {
-                            id: true,
-                            user: {
-                                select: { firstName: true, lastName: true, email: true, phone: true, image: true },
-                            },
-                        },
-                    },
-                },
-            },
-            classHistories: {
-                where: { sessionId: currentTerm.sessionId, termId: currentTerm.id },
-                take: 1,
-                select: {
-                    classId: true,
-                    class: {
-                        select: {
-                            id: true,
-                            name: true,
-                            _count: {
-                                select: {
-                                    subjects: true
-                                },
-                            },
-                            subjects: {
-                                select: {
-                                    subject: { select: { id: true, name: true, code: true } },
-                                },
-                            },
-                            timetableEntries: {
-                                where: {
-                                    sessionId: currentTerm.sessionId,
-                                    termId: currentTerm.id,
-                                    status: "ACTIVE",
-                                },
-                                orderBy: [{ weekday: "asc" }, { startTime: "asc" }],
-                                select: {
-                                    id: true,
-                                    weekday: true,
-                                    startTime: true,
-                                    endTime: true,
-                                    subject: { select: { id: true, name: true } },
-                                    teacher: { select: { id: true, user: { select: { firstName: true, lastName: true } } } },
-                                    venue: { select: { id: true, name: true } },
-                                },
-                            },
-                        },
-                    },
-                },
-            },
-        },
-    });
-    if (!studentData) {
-        return <div className="p-6 text-sm text-slate-600">No student profile is linked to this account.</div>;
-    }
-
-
-    const [present, absent, late, notices] = await Promise.all([
-        prisma.attendance.count({
-            where: {
-                studentId: studentData.id,
-                status: AttendanceStatus.PRESENT,
-                sessionId: currentTerm.sessionId,
-                termId: currentTerm.id,
-            },
-        }),
-        prisma.attendance.count({
-            where: {
-                studentId: studentData.id,
-                status: AttendanceStatus.ABSENT,
-                sessionId: currentTerm.sessionId,
-                termId: currentTerm.id,
-            },
-        }),
-        prisma.attendance.count({
-            where: {
-                studentId: studentData.id,
-                status: AttendanceStatus.LATE,
-                sessionId: currentTerm.sessionId,
-                termId: currentTerm.id,
-            },
-        }),
-        prisma.notice.findMany({
-            where: {
-                isPublished: true,
-                OR: [
-                    { targetAudience: "ALL" },
-                    { targetAudience: "STUDENT" },
-                    { targetAudience: "STUDENTS" },
-                ],
-            },
-            orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+          id: true,
+          classId: true,
+          class: {
             select: {
-                id: true,
-                from: true,
-                message: true,
-                priority: true,
+              id: true,
+              name: true,
+              _count: {
+                select: {
+                  subjects: true,
+                },
+              },
+              subjects: {
+                select: {
+                  subject: { select: { id: true, name: true, code: true } },
+                },
+              },
+              timetableEntries: {
+                where: {
+                  sessionId: currentTerm.sessionId,
+                  termId: currentTerm.id,
+                  status: "ACTIVE",
+                },
+                orderBy: [{ weekday: "asc" }, { startTime: "asc" }],
+                select: {
+                  id: true,
+                  weekday: true,
+                  startTime: true,
+                  endTime: true,
+                  subject: { select: { id: true, name: true } },
+                  teacher: { select: { id: true, user: { select: { firstName: true, lastName: true } } } },
+                  venue: { select: { id: true, name: true } },
+                },
+              },
             },
-            take: 8,
-        }),
-    ])
+          },
+        },
+      },
+    },
+  });
+  if (!studentData) {
+    return <div className="p-6 text-sm text-slate-600">No student profile is linked to this account.</div>;
+  }
 
-    const currentClassHistory = studentData.classHistories[0];
-    const subjectCount = currentClassHistory?.class._count.subjects ?? 0;
-    const schedule = currentClassHistory?.class.timetableEntries ?? [];
-    return (
-        <div id="dashboard" className=" active space-y-6">
-            {/*Welcome Banner */}
-            <div className="bg-linear-to-r from-indigo-600 to-blue-500 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
-                <div className="relative z-10">
-                    <h1 className="text-2xl font-bold mb-2">{`Welcome back, ${studentData?.user.lastName}! 👋`}</h1>
+  const currentClassHistory = studentData.classHistories[0];
+  const classId = currentClassHistory?.classId ?? null;
 
-                </div>
-                <div className="absolute right-0 bottom-0 opacity-10 transform translate-y-1/4 translate-x-1/4">
-                    <BookOpen className="w-64 h-64" />
-                </div>
-            </div>
+  const [present, absent, late, excused, notices, results, classHistories] = await Promise.all([
+    prisma.attendance.count({
+      where: {
+        studentId: studentData.id,
+        status: AttendanceStatus.PRESENT,
+        sessionId: currentTerm.sessionId,
+        termId: currentTerm.id,
+      },
+    }),
+    prisma.attendance.count({
+      where: {
+        studentId: studentData.id,
+        status: AttendanceStatus.ABSENT,
+        sessionId: currentTerm.sessionId,
+        termId: currentTerm.id,
+      },
+    }),
+    prisma.attendance.count({
+      where: {
+        studentId: studentData.id,
+        status: AttendanceStatus.LATE,
+        sessionId: currentTerm.sessionId,
+        termId: currentTerm.id,
+      },
+    }),
+    prisma.attendance.count({
+      where: {
+        studentId: studentData.id,
+        status: AttendanceStatus.EXCUSED,
+        sessionId: currentTerm.sessionId,
+        termId: currentTerm.id,
+      },
+    }),
+    prisma.notice.findMany({
+      where: {
+        isPublished: true,
+        OR: [
+          { targetAudience: "ALL" },
+          { targetAudience: "STUDENT" },
+          { targetAudience: "STUDENTS" },
+        ],
+      },
+      orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+      select: {
+        id: true,
+        from: true,
+        message: true,
+        priority: true,
+        publishedAt: true,
+        createdAt: true,
+      },
+      take: 8,
+    }),
+    currentClassHistory
+      ? prisma.result.findMany({
+          where: { studentId: studentData.id, classHistoryId: currentClassHistory.id },
+          orderBy: [{ updatedAt: "desc" }],
+          select: {
+            id: true,
+            totalScore: true,
+            createdAt: true,
+            subject: { select: { name: true } },
+          },
+        })
+      : Promise.resolve([]),
+    classId
+      ? prisma.studentClassHistory.findMany({
+          where: { classId, sessionId: currentTerm.sessionId, termId: currentTerm.id },
+          select: { id: true, studentId: true },
+        })
+      : Promise.resolve([]),
+  ]);
 
-            {/*Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-gray-500 text-sm font-medium">Attendance</h3>
-                        <span className="p-2 bg-green-50 text-green-600 rounded-lg">
-                            <CheckCircle className="w-4 h-4" />
-                        </span>
-                    </div>
-                    <AttendanceRateCards present={present} absent={absent} late={late} />
-                </div>
+  const totalAttendance = present + absent + late + excused;
+  const attendanceRate = totalAttendance
+    ? Number((((present + late) / totalAttendance) * 100).toFixed(1))
+    : 0;
 
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-gray-500 text-sm font-medium">Last Position</h3>
-                        <span className="p-2 bg-purple-50 text-purple-600 rounded-lg">
-                            <TrendingUp className="w-4 h-4" />
-                        </span>
-                    </div>
-                    <div className="flex items-end gap-2">
-                        <span className="text-3xl font-bold text-gray-900">3rd</span>
-                        <span className="text-sm text-gray-500 mb-1">/ 23</span>
-                    </div>
-                    <p className="text-xs text-gray-400 mt-3">Last updated: Yesterday</p>
-                </div>
+  const subjectCount = currentClassHistory?.class._count.subjects ?? 0;
+  const schedule = currentClassHistory?.class.timetableEntries ?? [];
 
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-gray-500 text-sm font-medium">Total Subjects</h3>
-                        <span className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                            <Library className="w-4 h-4" />
-                        </span>
-                    </div>
-                    <div className="flex items-end gap-2">
-                        <span className="text-3xl font-bold text-gray-900">{subjectCount}</span>
-                        <span className="text-sm text-gray-500 mb-1">Active</span>
-                    </div>
-                    <Link href={"/student/subjects"} className="text-sm text-slate-900 font-medium mt-3 hover:underline">View All &rarr;</Link>
-                </div>
-            </div>
-            <ScheduleAndNotices schedule={schedule} notices={notices} />
+  const totalScore = results.reduce((sum, row) => sum + (row.totalScore ?? 0), 0);
+  const averageScore = results.length ? Number((totalScore / results.length).toFixed(1)) : 0;
+
+  const totalsByStudent = classHistories.length
+    ? await prisma.result.findMany({
+        where: { classHistoryId: { in: classHistories.map((row) => row.id) } },
+        select: { studentId: true, totalScore: true },
+      })
+    : [];
+
+  const totalsMap = totalsByStudent.reduce((map, row) => {
+    map.set(row.studentId, (map.get(row.studentId) ?? 0) + row.totalScore);
+    return map;
+  }, new Map<string, number>());
+
+  const sortedTotals = Array.from(totalsMap.entries())
+    .sort((a, b) => b[1] - a[1])
+    .map(([studentId]) => studentId);
+  const classPosition = sortedTotals.length ? sortedTotals.indexOf(studentData.id) + 1 : null;
+  const classSize = classHistories.length || null;
+
+  const weekdayByIndex = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] as const;
+  const todayWeekday = weekdayByIndex[new Date().getDay()];
+  const todaySchedule = schedule.filter((item) => item.weekday === todayWeekday);
+
+  const activityItems = [
+    ...notices.map((notice) => ({
+      id: notice.id,
+      icon: Bell,
+      color: "amber" as const,
+      title: notice.from ?? "School notice",
+      detail: notice.message,
+      time: relativeDaysLabel(notice.publishedAt ?? notice.createdAt),
+      createdAt: notice.publishedAt ?? notice.createdAt,
+    })),
+    ...results.slice(0, 4).map((result) => ({
+      id: result.id,
+      icon: Award,
+      color: "indigo" as const,
+      title: "Result updated",
+      detail: `${result.subject.name} · ${Math.round(result.totalScore ?? 0)}%`,
+      time: relativeDaysLabel(result.createdAt),
+      createdAt: result.createdAt,
+    })),
+  ]
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+    .slice(0, 6);
+
+  const now = new Date();
+
+  return (
+    <div id="dashboard" className="space-y-6">
+      <div className="bg-linear-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+        <div className="relative z-10">
+          <p className="text-xs uppercase tracking-[0.2em] text-white/60">Student Overview</p>
+          <h1 className="text-2xl font-bold mt-2">{`${greetingForHour(now.getHours())}, ${studentData.user.firstName}.`}</h1>
+          <p className="text-white/70 max-w-2xl mt-2">
+            Current term: <span className="text-white font-semibold">{currentTerm.name ?? "N/A"}</span> - Session
+            <span className="text-white font-semibold"> {currentTerm.session?.name ?? "N/A"}</span>
+          </p>
         </div>
-    );
-}
+        <div className="absolute right-4 top-4 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
+        <div className="absolute left-0 bottom-0 w-56 h-56 rounded-full bg-indigo-500/20 blur-3xl" />
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <p className="text-xs uppercase tracking-wide text-slate-500">Attendance Rate</p>
+            <CalendarCheck className="h-4 w-4 text-blue-500" />
+          </div>
+          <p className="mt-3 text-3xl font-bold text-slate-900">{attendanceRate.toFixed(1)}%</p>
+          <p className="mt-2 text-xs text-slate-500">This term</p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <p className="text-xs uppercase tracking-wide text-slate-500">Average Score</p>
+            <Award className="h-4 w-4 text-emerald-500" />
+          </div>
+          <p className="mt-3 text-3xl font-bold text-slate-900">{averageScore.toFixed(1)}%</p>
+          <p className="mt-2 text-xs text-slate-500">Across results</p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <p className="text-xs uppercase tracking-wide text-slate-500">Class Position</p>
+            <TrendingUp className="h-4 w-4 text-amber-500" />
+          </div>
+          <p className="mt-3 text-3xl font-bold text-slate-900">{formatPosition(classPosition)}</p>
+          <p className="mt-2 text-xs text-slate-500">{classSize ? `Out of ${classSize} students` : "Class not set"}</p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-linear-to-br from-indigo-50 via-white to-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <p className="text-xs uppercase tracking-wide text-slate-500">Total Subjects</p>
+            <BookOpen className="h-4 w-4 text-indigo-400" />
+          </div>
+          <p className="mt-3 text-3xl font-bold text-slate-900">{subjectCount}</p>
+          <p className="mt-2 text-xs text-slate-500">Active subjects</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <p className="text-xs uppercase tracking-wide text-slate-500">Present Days</p>
+            <CalendarCheck className="h-4 w-4 text-emerald-500" />
+          </div>
+          <p className="mt-3 text-2xl font-semibold text-slate-900">{present}</p>
+          <p className="mt-2 text-xs text-slate-500">On time</p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <p className="text-xs uppercase tracking-wide text-slate-500">Late Days</p>
+            <CalendarCheck className="h-4 w-4 text-amber-500" />
+          </div>
+          <p className="mt-3 text-2xl font-semibold text-slate-900">{late}</p>
+          <p className="mt-2 text-xs text-slate-500">Late arrivals</p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <p className="text-xs uppercase tracking-wide text-slate-500">Notices</p>
+            <Bell className="h-4 w-4 text-amber-500" />
+          </div>
+          <p className="mt-3 text-2xl font-semibold text-slate-900">{notices.length}</p>
+          <p className="mt-2 text-xs text-slate-500">Latest updates</p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-linear-to-r from-slate-900 to-slate-800 p-5 text-white shadow-sm">
+          <div className="flex items-center justify-between">
+            <p className="text-xs uppercase tracking-wide text-white/70">Today&apos;s Classes</p>
+            <FileText className="h-4 w-4 text-white/70" />
+          </div>
+          <p className="mt-3 text-2xl font-semibold">{todaySchedule.length}</p>
+          <p className="mt-2 text-xs text-white/70">Scheduled periods</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-800">Recent Activity</h3>
+              <p className="text-xs text-slate-500">Results and school notices</p>
+            </div>
+            <Link href="/student/results" className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
+              View Results
+            </Link>
+          </div>
+          <div className="divide-y divide-slate-100">
+            {activityItems.length === 0 ? (
+              <div className="px-6 py-6 text-sm text-slate-500">No recent activity yet.</div>
+            ) : (
+              activityItems.map((activity) => {
+                const Icon = activity.icon;
+                const colorClass =
+                  activity.color === "amber"
+                    ? "bg-amber-100 text-amber-600"
+                    : "bg-indigo-100 text-indigo-600";
+                return (
+                  <div className="px-6 py-4 flex items-start gap-4" key={activity.id}>
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${colorClass}`}>
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-slate-900">{activity.title}</p>
+                      <p className="text-xs text-slate-500 mt-1">{activity.detail}</p>
+                      <p className="text-xs text-slate-400 mt-1">{activity.time}</p>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+            <h3 className="font-semibold text-slate-800 mb-4">Quick Actions</h3>
+            <div className="space-y-3">
+              <Link
+                href="/student/results"
+                className="w-full flex items-center gap-3 p-4 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors"
+              >
+                <div className="p-2 bg-indigo-600 text-white rounded-lg">
+                  <Award className="w-5 h-5" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="font-semibold text-slate-900 text-sm">View Results</p>
+                  <p className="text-xs text-slate-500">Grades and performance</p>
+                </div>
+              </Link>
+              <Link
+                href="/student/attendance"
+                className="w-full flex items-center gap-3 p-4 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors"
+              >
+                <div className="p-2 bg-emerald-600 text-white rounded-lg">
+                  <CalendarCheck className="w-5 h-5" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="font-semibold text-slate-900 text-sm">Attendance</p>
+                  <p className="text-xs text-slate-500">Daily logs</p>
+                </div>
+              </Link>
+              <Link
+                href="/student/subjects"
+                className="w-full flex items-center gap-3 p-4 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors"
+              >
+                <div className="p-2 bg-slate-900 text-white rounded-lg">
+                  <BookOpen className="w-5 h-5" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="font-semibold text-slate-900 text-sm">Subjects</p>
+                  <p className="text-xs text-slate-500">Class subjects</p>
+                </div>
+              </Link>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-slate-800">Attendance Summary</h3>
+              <span className="text-xs text-slate-500">This term</span>
+            </div>
+            <AttendanceRateCards present={present} absent={absent} late={late} />
+          </div>
+        </div>
+      </div>
+
+      <ScheduleAndNotices schedule={schedule} notices={notices} />
+    </div>
+  );
+};
 export default Page;

@@ -265,19 +265,16 @@ const Page = async ({ searchParams }: { searchParams?: { studentId?: string, ses
             />
             <div className="space-y-6 max-w-400 mx-auto w-full">
                 <div className="bg-linear-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
-                    <div className="relative z-10">
+                    <div className="relative z-10 mb-2">
                         <p className="text-xs uppercase tracking-[0.2em] text-white/60">Ward Results</p>
-                        <h1 className="text-2xl font-bold mt-2">
+                        <h1 className="text-2xl font-bold mt-2 text-white/80">
                             {selectedStudent.user.firstName} {selectedStudent.user.lastName}
                         </h1>
-                        <p className="text-white/70 max-w-2xl mt-2">
-                            {classHistory?.class.name ?? "Class not assigned"} — {selectedTerm?.name ?? "Term"} {selectedSession?.name ?? ""}
-                        </p>
                     </div>
                     <div className="absolute right-4 top-4 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
                     <div className="absolute left-0 bottom-0 w-56 h-56 rounded-full bg-indigo-500/20 blur-3xl" />
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-8">
                             {/* Student Passport Photo */}
                             <UserAvatar
                                 src={selectedStudent.user.image ?? undefined}
@@ -286,7 +283,7 @@ const Page = async ({ searchParams }: { searchParams?: { studentId?: string, ses
                                 className="w-20 h-20 rounded-2xl border-4 border-white/20 shadow-sm"
                             />
                             <div className="text-white/80 text-sm">
-                                <div className="flex items-center gap-3">
+                                <div className="grid grid-cols-1 gap-3">
                                     <span className="flex items-center gap-1">
                                         <Hash className="w-4 h-4" />
                                         {selectedStudent.admissionNumber}
@@ -303,22 +300,22 @@ const Page = async ({ searchParams }: { searchParams?: { studentId?: string, ses
                             </div>
                         </div>
                         {/* Action Buttons */}
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                             {classHistory?.id ? (
                                 <Link
                                     href={`/print/${selectedStudent.id}?studentId=${selectedStudent.id}&sessionId=${selectedSessionId}&termId=${selectedTermId}`}
-                                    className="px-4 py-2 bg-white/10 border border-white/20 text-white rounded-lg text-sm font-medium hover:bg-white/20 transition-colors flex items-center gap-2"
+                                    className="px-4 py-2 bg-white/10 border border-white/20 text-white rounded-lg text-sm font-medium hover:bg-white/20 transition-colors flex items-center gap-2 justify-center"
                                 >
                                     <Printer className="w-4 h-4" />
                                     Print Result
                                 </Link>
                             ) : (
-                                <span className="px-4 py-2 bg-white/10 border border-white/20 text-white/70 rounded-lg text-sm font-medium flex items-center gap-2 cursor-not-allowed">
+                                <span className="px-4 py-2 bg-white/10 border border-white/20 text-white/70 rounded-lg text-sm font-medium flex items-center gap-2 cursor-not-allowed justify-center">
                                     <Printer className="w-4 h-4" />
                                     Print Result
                                 </span>
                             )}
-                            <button className="px-4 py-2 bg-white text-slate-900 rounded-lg text-sm font-medium hover:bg-white/90 transition-colors shadow-lg flex items-center gap-2">
+                            <button className="px-4 py-2 bg-white text-slate-900 rounded-lg text-sm font-medium hover:bg-white/90 transition-colors shadow-lg flex items-center gap-2 justify-center">
                                 <Download className="w-4 h-4" />
                                 Download PDF
                             </button>

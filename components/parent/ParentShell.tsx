@@ -4,8 +4,20 @@ import { useEffect, useState } from "react";
 import ParentMenu from "./ParentMenu";
 import ParentNav from "./ParentNav";
 
+type ParentInfo = {
+  name: string;
+  image: string | null;
+  status: string;
+  childrenCount: number;
+} | null;
 
-export default function ParentShell({ children }: { children: React.ReactNode }) {
+export default function ParentShell({
+  children,
+  parentInfo,
+}: {
+  children: React.ReactNode;
+  parentInfo: ParentInfo;
+}) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Close on ESC
@@ -23,6 +35,7 @@ export default function ParentShell({ children }: { children: React.ReactNode })
       < ParentMenu
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
+        parentInfo={parentInfo}
       />
 
       {/* Backdrop (mobile only) */}

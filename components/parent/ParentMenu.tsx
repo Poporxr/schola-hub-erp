@@ -8,7 +8,6 @@ import {
     LogOut,
     FileText,
     CalendarCheck,
-    CreditCard,
     PanelRightOpen,
     GraduationCap,
 } from "lucide-react";
@@ -19,9 +18,15 @@ import { toast } from "sonner";
 type AdminMenuProps = {
     open: boolean;
     onClose: () => void;
+    parentInfo: {
+        name: string;
+        image: string | null;
+        status: string;
+        childrenCount: number;
+    } | null;
 };
 
-const ParentMenu = ({ open, onClose }: AdminMenuProps) => {
+const ParentMenu = ({ open, onClose, parentInfo }: AdminMenuProps) => {
      const {signOut} = useClerk();
     const pathname = usePathname();
 
@@ -35,7 +40,10 @@ const ParentMenu = ({ open, onClose }: AdminMenuProps) => {
     };
 
     const linkClass = (href: string) =>
-        ` w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-50 hover:text-slate-900 transition-colors ${isActive(href) ? "bg-purple-50 font-semibold text-purple-700" : "text-slate-600"
+        `w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors border-l-2 ${
+            isActive(href)
+                ? "bg-indigo-50 text-slate-900 font-semibold border-indigo-500"
+                : "text-slate-600 border-transparent hover:bg-slate-100 hover:text-slate-900"
         }`;
 
     return (
@@ -46,9 +54,9 @@ const ParentMenu = ({ open, onClose }: AdminMenuProps) => {
             open ? "translate-x-0" : "-translate-x-full",
             "lg:translate-x-0",
         ].join(" ")}>
-            <div className="h-16 flex items-center justify-between px-2 border-b border-slate-100">
+            <div className="h-16 flex items-center justify-between px-2 border-b border-slate-200">
                 <div className="flex items-center gap-2 text-slate-900 font-bold text-xl">
-                    <GraduationCap className="w-8 h-8" />
+                    <GraduationCap className="w-8 h-8 text-indigo-500" />
                     <span>Schola | Hub</span>
                 </div>
                 <button
@@ -60,16 +68,18 @@ const ParentMenu = ({ open, onClose }: AdminMenuProps) => {
                 </button>
             </div>
 
-            <div className="p-4 flex flex-col items-center border-b border-gray-100">
+            <div className="p-4 flex flex-col items-center border-b border-slate-100">
                 <UserAvatar
-                    src={undefined}
+                    src={parentInfo?.image ?? undefined}
                     alt="Parent Profile"
                     size={80}
-                    className="w-20 h-20 border-4 border-accent-soft mb-3"
+                    className="w-20 h-20 border-4 border-slate-100 mb-3"
                 />
-                <h3 className="font-semibold text-gray-900">Mr. Okafor Emmanuel</h3>
-                <p className="text-sm text-gray-500">Parent/Guardian</p>
-                <span className="mt-2 px-3 py-1 bg-purple-50 text-purple-700 text-xs font-medium rounded-full">2 Children Enrolled</span>
+                <h3 className="font-semibold text-slate-900">{parentInfo?.name ?? "Parent"}</h3>
+                <p className="text-sm text-slate-500">Parent/Guardian</p>
+                <span className="mt-2 px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-medium rounded-full">
+                    {parentInfo?.childrenCount ?? 0} {parentInfo?.childrenCount === 1 ? "Child" : "Children"} Enrolled
+                </span>
             </div>
 
             <nav className="flex-1 overflow-y-auto p-4 space-y-1">
@@ -98,7 +108,7 @@ const ParentMenu = ({ open, onClose }: AdminMenuProps) => {
                 </Link>
             </nav>
 
-            <div className="p-4 border-t border-gray-100">
+            <div className="p-4 border-t border-slate-100">
                 <button
                     onClick={async () => {
                         try {

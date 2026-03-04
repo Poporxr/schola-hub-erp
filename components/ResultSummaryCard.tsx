@@ -37,7 +37,7 @@ const ResultCardSummary = ({ summary }: { summary?: ResultSummary }) => {
             : "No subject data";
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-6">
             {/*Overall Average Card */}
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="flex items-center justify-between">
@@ -83,7 +83,7 @@ const ResultCardSummary = ({ summary }: { summary?: ResultSummary }) => {
             </div>
 
             {/* Pass/Fail Status Card */}
-            <div className="rounded-2xl border border-slate-200 bg-linear-to-r from-slate-900 to-slate-800 p-5 text-white shadow-sm">
+            <div className="rounded-2xl border border-slate-200 bg-linear-to-r from-slate-900 to-slate-800 p-5 text-white shadow-sm col-span-2 md:col-span-2 lg:col-span-1">
                 <div className="flex items-center justify-between">
                     <p className="text-xs uppercase tracking-wide text-white/70">Status</p>
                     <CheckCircle2 className="h-4 w-4 text-white/70" />

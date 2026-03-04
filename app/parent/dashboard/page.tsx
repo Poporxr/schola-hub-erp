@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import ParentAnnouncements from "@/components/parent/ParentAnnouncements";
 import ParentAttendanceSummary from "@/components/parent/ParentAttendanceSummary";
+import { greetingForHour } from "@/lib/settings";
 
 const Page = async () => {
     const { userId } = await auth();
@@ -41,12 +42,20 @@ const Page = async () => {
                 },
             },
         }),
-        prisma.term.findFirst({
-            where: { isCurrent: true, session: { isCurrent: true } },
-            select: { id: true, sessionId: true, startDate: true, endDate: true },
-        }),
+    prisma.term.findFirst({
+      where: { isCurrent: true, session: { isCurrent: true } },
+      select: {
+        id: true,
+        sessionId: true,
+        name: true,
+        startDate: true,
+        endDate: true,
+        session: { select: { name: true } },
+      },
+    }),
     ]);
 
+    
     if (!parent) {
         return <div className="p-6 text-sm text-slate-600">Parent profile not found.</div>;
     }
@@ -64,6 +73,7 @@ const Page = async () => {
     const classIds = Array.from(new Set(classHistories.map((history) => history.class.id)));
     const classHistoryIds = classHistories.map((history) => history.id);
 
+    const now = new Date();
     const today = new Date();
     const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
     const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
@@ -182,26 +192,18 @@ const Page = async () => {
 
     return (
         <div className=" active space-y-6">
-            <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-indigo-600 via-purple-600 to-fuchsia-500 p-6 sm:p-8 text-white shadow-[0_8px_20px_rgba(0,0,0,0.15)]">
-
-                {/* Soft Glow Overlay */}
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.15),transparent_60%)] pointer-events-none" />
-
-                {/* Floating Accent Shapes */}
-                <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
-                <div className="absolute right-0 top-8 h-16 w-16 rounded-full bg-white/5 blur-xl" />
-
-                {/* Content */}
-                <div className="relative z-10">
-                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">
-                        Welcome Back, {parent.user.firstName} {parent.user.lastName}!
-                    </h1>
-
-                    <p className="text-sm sm:text-base text-indigo-100 leading-relaxed">
-                        Your children are doing great this term — explore their progress below.
-                    </p>
-                </div>
-            </div>
+      <div className="bg-linear-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+        <div className="relative z-10">
+          <p className="text-xs uppercase tracking-[0.2em] text-white/60">Parent Overview</p>
+          <h1 className="text-2xl font-bold mt-2">{`${greetingForHour(now.getHours())}, ${parent.user.firstName}.`}</h1>
+          <p className="text-white/70 max-w-2xl mt-2">
+            Current term: <span className="text-white font-semibold">{currentTerm.name ?? "N/A"}</span> - Session
+            <span className="text-white font-semibold"> {currentTerm.session?.name ?? "N/A"}</span>
+          </p>
+        </div>
+        <div className="absolute right-4 top-4 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
+        <div className="absolute left-0 bottom-0 w-56 h-56 rounded-full bg-indigo-500/20 blur-3xl" />
+      </div>
             <div>
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Your Children</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
