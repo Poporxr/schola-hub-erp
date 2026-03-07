@@ -1,7 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import UserAvatar from "@/components/UserAvatar";
-
+import {
+  createStudentSchema,
+  studentSchema,
+  type CreateStudentFormValues,
+  type StudentFormValues,
+} from "../zod-schemas/studentForm";
+import Field from "./Field";
 type ModalMode = "create" | "edit";
 
 export type StudentFormClasses = { id: string; name: string }[];
@@ -11,10 +18,10 @@ export type StudentFormData = {
   firstName?: string;
   lastName?: string;
   middleName?: string;
+  email?: string;
   dateOfBirth?: string;
   gender?: "MALE" | "FEMALE";
   classId?: string;
-  arm?: string;
   admissionNumber?: string;
   admissionDate?: string;
   previousSchool?: string;
@@ -30,24 +37,82 @@ export type StudentFormData = {
   additionalInfo?: string;
 };
 
+type FieldErrors = Partial<Record<keyof StudentFormValues, string>>;
+
 export default function StudentForm({
   mode,
   data,
   classes,
+  action,
+  formId,
+  showSubmitButton = true,
 }: {
   mode: ModalMode;
   data?: StudentFormData;
   classes?: StudentFormClasses;
+  action?: (formData: FormData) => void | Promise<void>;
+  formId?: string;
+  showSubmitButton?: boolean;
 }) {
-  void mode;
   const defaultGender = "MALE" as const;
+  const [errors, setErrors] = useState<FieldErrors>({});
+
   const input =
     "w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20";
 
+  const inputError =
+    "w-full rounded-xl border border-red-500 px-4 py-3 text-gray-900 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20";
+
   const sectionTitle = "text-lg font-bold text-gray-900 flex items-center gap-3";
 
+  function getError(name: keyof StudentFormValues) {
+    return errors[name];
+  }
+
+  function getInputClass(name: keyof StudentFormValues) {
+    return getError(name) ? inputError : input;
+  }
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    const formData = new FormData(e.currentTarget);
+    const raw = Object.fromEntries(formData.entries());
+    const result =
+      mode === "create"
+        ? createStudentSchema.safeParse(raw)
+        : studentSchema.safeParse(raw);
+
+    if (!result.success) {
+      e.preventDefault();
+
+      const nextErrors: Partial<
+        Record<keyof StudentFormValues | keyof CreateStudentFormValues, string>
+      > = {};
+
+      for (const issue of result.error.issues) {
+        const field = issue.path[0];
+        if (typeof field === "string" && !(field in nextErrors)) {
+          nextErrors[field as keyof StudentFormValues] = issue.message;
+        }
+      }
+
+      setErrors(nextErrors as FieldErrors);
+      return;
+    }
+
+    setErrors({});
+  }
+
   return (
-    <div className="space-y-8 ">
+    <form
+      id={formId}
+      action={action}
+      onSubmit={handleSubmit}
+      className="space-y-8"
+    >
+      {mode === "edit" && data?.id ? (
+        <input type="hidden" name="id" value={String(data.id)} />
+      ) : null}
+
       {/* 1 Personal */}
       <section>
         <div className={sectionTitle}>
@@ -58,44 +123,44 @@ export default function StudentForm({
         </div>
 
         <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-5">
-          <Field label="First Name *">
+          <Field label="First Name *" error={getError("firstName")}>
             <input
               name="firstName"
               defaultValue={data?.firstName ?? ""}
-              className={input}
+              className={getInputClass("firstName")}
             />
           </Field>
 
-          <Field label="Last Name *">
+          <Field label="Last Name *" error={getError("lastName")}>
             <input
               name="lastName"
               defaultValue={data?.lastName ?? ""}
-              className={input}
+              className={getInputClass("lastName")}
             />
           </Field>
 
-          <Field label="Middle Name">
+          <Field label="Middle Name" error={getError("middleName")}>
             <input
               name="middleName"
               defaultValue={data?.middleName ?? ""}
-              className={input}
+              className={getInputClass("middleName")}
             />
           </Field>
 
-          <Field label="Date of Birth *">
+          <Field label="Date of Birth *" error={getError("dateOfBirth")}>
             <input
               name="dateOfBirth"
               type="date"
               defaultValue={data?.dateOfBirth ?? ""}
-              className={input}
+              className={getInputClass("dateOfBirth")}
             />
           </Field>
 
-          <Field label="Gender *">
+          <Field label="Gender *" error={getError("gender")}>
             <select
               name="gender"
               defaultValue={data?.gender ?? defaultGender}
-              className={input}
+              className={getInputClass("gender")}
             >
               <option value="MALE">Male</option>
               <option value="FEMALE">Female</option>
@@ -131,11 +196,11 @@ export default function StudentForm({
         </div>
 
         <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-5">
-          <Field label="Class *">
+          <Field label="Class *" error={getError("classId")}>
             <select
               name="classId"
               defaultValue={data?.classId ?? ""}
-              className={input}
+              className={getInputClass("classId")}
             >
               <option value="" disabled>
                 Select class
@@ -148,38 +213,50 @@ export default function StudentForm({
             </select>
           </Field>
 
-          <Field label="Section (Arm)">
+          <Field label="Student Email *" error={getError("email")}>
             <input
-              name="arm"
-              defaultValue={data?.arm ?? ""}
-              className={input}
+              name="email"
+              type="email"
+              defaultValue={data?.email ?? ""}
+              className={getInputClass("email")}
             />
           </Field>
 
-          <Field label="Admission No. *">
-            <input
-              name="admissionNumber"
-              defaultValue={data?.admissionNumber ?? ""}
-              className={input}
-            />
-          </Field>
+          {mode === "edit" ? (
+            <Field label="Admission No. *" error={getError("admissionNumber")}>
+              <input
+                name="admissionNumber"
+                defaultValue={data?.admissionNumber ?? ""}
+                className={getInputClass("admissionNumber")}
+              />
+            </Field>
+          ) : (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700">
+                Admission No.
+              </label>
+              <div className="mt-2 rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+                This will be generated automatically when the student is created.
+              </div>
+            </div>
+          )}
 
-          <Field label="Admission Date *">
+          <Field label="Admission Date *" error={getError("admissionDate")}>
             <input
               name="admissionDate"
               type="date"
               defaultValue={data?.admissionDate ?? ""}
-              className={input}
+              className={getInputClass("admissionDate")}
             />
           </Field>
 
           <div className="md:col-span-2">
-            <Field label="Previous School">
+            <Field label="Previous School" error={getError("previousSchool")}>
               <input
                 name="previousSchool"
                 placeholder="Optional"
                 defaultValue={data?.previousSchool ?? ""}
-                className={input}
+                className={getInputClass("previousSchool")}
               />
             </Field>
           </div>
@@ -196,19 +273,22 @@ export default function StudentForm({
         </div>
 
         <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-5">
-          <Field label="Full Name *">
+          <Field label="Full Name *" error={getError("guardianName")}>
             <input
               name="guardianName"
               defaultValue={data?.guardianName ?? ""}
-              className={input}
+              className={getInputClass("guardianName")}
             />
           </Field>
 
-          <Field label="Relationship *">
+          <Field
+            label="Relationship *"
+            error={getError("guardianRelationship")}
+          >
             <select
               name="guardianRelationship"
               defaultValue={data?.guardianRelationship ?? "Father"}
-              className={input}
+              className={getInputClass("guardianRelationship")}
             >
               <option value="Father">Father</option>
               <option value="Mother">Mother</option>
@@ -216,31 +296,31 @@ export default function StudentForm({
             </select>
           </Field>
 
-          <Field label="Phone Number *">
+          <Field label="Phone Number *" error={getError("guardianPhone")}>
             <input
               name="guardianPhone"
               type="tel"
               defaultValue={data?.guardianPhone ?? ""}
-              className={input}
+              className={getInputClass("guardianPhone")}
             />
           </Field>
 
-          <Field label="Email">
+          <Field label="Email" error={getError("guardianEmail")}>
             <input
               name="guardianEmail"
               type="email"
               defaultValue={data?.guardianEmail ?? ""}
-              className={input}
+              className={getInputClass("guardianEmail")}
             />
           </Field>
 
           <div className="md:col-span-2">
-            <Field label="Address">
+            <Field label="Address" error={getError("guardianAddress")}>
               <textarea
                 name="guardianAddress"
                 rows={2}
                 defaultValue={data?.guardianAddress ?? ""}
-                className={input}
+                className={getInputClass("guardianAddress")}
               />
             </Field>
           </div>
@@ -257,45 +337,47 @@ export default function StudentForm({
         </div>
 
         <div className="mt-5 space-y-5">
-          <Field label="Health Notes">
+          <Field label="Health Notes" error={getError("healthNotes")}>
             <textarea
               name="healthNotes"
               rows={2}
               placeholder="Any medical conditions or health concerns"
               defaultValue={data?.healthNotes ?? ""}
-              className={input}
+              className={getInputClass("healthNotes")}
             />
           </Field>
 
-          <Field label="Allergies">
+          <Field label="Allergies" error={getError("allergies")}>
             <input
               name="allergies"
               placeholder="e.g., Peanuts, Penicillin"
               defaultValue={data?.allergies ?? ""}
-              className={input}
+              className={getInputClass("allergies")}
             />
           </Field>
 
-          <Field label="Additional Information">
+          <Field label="Additional Information" error={getError("additionalInfo")}>
             <textarea
               name="additionalInfo"
               rows={3}
               placeholder="Any other relevant information"
               defaultValue={data?.additionalInfo ?? ""}
-              className={input}
+              className={getInputClass("additionalInfo")}
             />
           </Field>
         </div>
       </section>
-    </div>
-  );
-}
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label className="block text-sm font-semibold text-gray-700">{label}</label>
-      <div className="mt-2">{children}</div>
-    </div>
+      {showSubmitButton ? (
+        <div className="flex justify-end gap-3 pt-4">
+          <button
+            type="submit"
+            className="rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white hover:bg-indigo-700 transition"
+          >
+            {mode === "create" ? "Create Student" : "Save Changes"}
+          </button>
+        </div>
+      ) : null}
+    </form>
   );
 }

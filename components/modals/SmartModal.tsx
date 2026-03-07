@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { ModalShell}  from "@/components/modals/ModalShell";
 import ClassForm, { type ClassFormData } from "./forms/ClassForm";
 import StudentForm, { type StudentFormClasses, type StudentFormData } from "./forms/StudentForm";
 import SubjectForm, { type SubjectFormData } from "./forms/SubjectForm";
 import TeacherForm, { type TeacherFormData } from "./forms/TeacherForm";
 import { toast } from "sonner";
+import { Spinner } from "@/components/ui/spinner";
 
 export type ModalType = "teacher" | "student" | "class" | "subject";
 type ModalMode = "create" | "edit";
@@ -42,19 +44,25 @@ export default function SmartModal(props: Props) {
   const studentClasses = type === "student" ? props.classes : undefined;
   const meta = getMeta(type, mode);
   const shouldToast = type === "student";
+  const formId = `smart-modal-${type}-${mode}-form`;
+  const [pending, setPending] = useState(false);
 
   async function handleAction(formData: FormData) {
+    setPending(true);
+
     try {
       await action(formData);
       if (shouldToast) {
         const label = mode === "edit" ? "Student updated" : "Student created";
         toast.success(label);
       }
+      setPending(false);
       onClose();
-    } catch (error) {
+    } catch {
       if (shouldToast) {
         toast.error("Failed to save student");
       }
+      setPending(false);
     }
   }
 
@@ -67,24 +75,17 @@ export default function SmartModal(props: Props) {
       maxWidth={meta.maxWidth}
       footer={
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-          <form action={handleAction} className="flex-1">
-            {type === "student" && mode === "edit" && studentData?.id ? (
-              <input type="hidden" name="id" value={String(studentData.id)} />
-            ) : null}
-            {type === "teacher" && mode === "edit" && props.data?.id ? (
-              <input type="hidden" name="id" value={String(props.data.id)} />
-            ) : null}
-            {type === "subject" && mode === "edit" && props.data?.id ? (
-              <input type="hidden" name="id" value={String(props.data.id)} />
-            ) : null}
-            {type === "subject" && props.data?.classId ? (
-              <input type="hidden" name="classId" value={String(props.data.classId)} />
-            ) : null}
-
-            <button className="w-full rounded-xl bg-indigo-600 px-6 py-4 text-white font-semibold hover:bg-indigo-700 transition">
+          <button
+            type="submit"
+            form={formId}
+            disabled={pending}
+            className="w-full flex-1 rounded-xl bg-indigo-600 px-6 py-4 text-white font-semibold hover:bg-indigo-700 transition"
+          >
+            <span className="inline-flex items-center justify-center gap-2">
+              {pending ? <Spinner className="size-4" /> : null}
               {meta.primaryCta}
-            </button>
-          </form>
+            </span>
+          </button>
 
           <button
             type="button"
@@ -96,10 +97,32 @@ export default function SmartModal(props: Props) {
         </div>
       }
     >
-      {type === "class" && <ClassForm mode={mode} data={props.data} />}
-      {type === "student" && <StudentForm classes={studentClasses} mode={mode} data={studentData} />}
-      {type === "subject" && <SubjectForm mode={mode} data={props.data} />}
-      {type === "teacher" && <TeacherForm mode={mode} data={props.data} />}
+      {type === "student" ? (
+        <StudentForm
+          formId={formId}
+          action={handleAction}
+          classes={studentClasses}
+          mode={mode}
+          data={studentData}
+          showSubmitButton={false}
+        />
+      ) : (
+        <form id={formId} action={handleAction} className="space-y-8">
+          {type === "teacher" && mode === "edit" && props.data?.id ? (
+          <input type="hidden" name="id" value={String(props.data.id)} />
+          ) : null}
+          {type === "subject" && mode === "edit" && props.data?.id ? (
+            <input type="hidden" name="id" value={String(props.data.id)} />
+          ) : null}
+          {type === "subject" && props.data?.classId ? (
+            <input type="hidden" name="classId" value={String(props.data.classId)} />
+          ) : null}
+
+          {type === "class" && <ClassForm mode={mode} data={props.data} />}
+          {type === "subject" && <SubjectForm mode={mode} data={props.data} />}
+          {type === "teacher" && <TeacherForm mode={mode} data={props.data} />}
+        </form>
+      )}
     </ModalShell>
   );
 }

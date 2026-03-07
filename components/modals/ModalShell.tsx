@@ -1,7 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
+import { X } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type ModalShellProps = {
   open: boolean;
@@ -29,62 +34,28 @@ export function ModalShell({
   footer,
   maxWidth = "lg",
 }: ModalShellProps) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // ESC + lock background scroll
-  useEffect(() => {
-    if (!open) return;
-
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKeyDown);
-
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      window.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = prev;
-    };
-  }, [open, onClose]);
-
-  if (!open || !mounted) return null;
-
-  const modal = (
-    <div className="fixed inset-0 z-50">
-      {/* Backdrop */}
-      <button
-        type="button"
-        aria-label="Close"
-        onClick={onClose}
-        className="absolute inset-0 bg-black/40"
-      />
-
-      {/* Center */}
-      <div className="absolute inset-0 flex items-center justify-center p-4 sm:p-6">
+  return (
+    <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
+      <DialogContent
+        showCloseButton={false}
+        className="w-full max-w-[calc(100%-2rem)] border-none bg-transparent p-0 shadow-none sm:max-w-[calc(100%-3rem)]"
+      >
         <div
           className={[
-            "w-full bg-white rounded-2xl shadow-2xl ring-1 ring-black/10 overflow-hidden flex flex-col",
+            "mx-auto w-full rounded-2xl bg-white shadow-2xl ring-1 ring-black/10 overflow-hidden flex flex-col",
             widthMap[maxWidth],
-            // breathing room top/bottom
             "max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3rem)]",
           ].join(" ")}
-          role="dialog"
-          aria-modal="true"
         >
-          {/* Header */}
           <div className="px-5 sm:px-8 pt-6 pb-4 border-b border-gray-200 shrink-0 flex items-start justify-between gap-4">
             <div>
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+              <DialogTitle className="text-xl sm:text-2xl font-bold text-gray-900">
                 {title}
-              </h2>
+              </DialogTitle>
               {subtitle ? (
-                <p className="mt-1 text-sm text-gray-500">{subtitle}</p>
+                <DialogDescription className="mt-1 text-sm text-gray-500">
+                  {subtitle}
+                </DialogDescription>
               ) : null}
             </div>
 
@@ -94,25 +65,21 @@ export function ModalShell({
               className="rounded-full p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition"
               aria-label="Close modal"
             >
-              ✕
+              <X className="h-5 w-5" />
             </button>
           </div>
 
-          {/* Body scrolls */}
           <div className="px-5 sm:px-8 py-5 overflow-y-auto flex-1">
             {children}
           </div>
 
-          {/* Footer stays visible */}
           {footer ? (
             <div className="border-t border-gray-200 bg-white px-5 sm:px-8 py-4 shrink-0">
               {footer}
             </div>
           ) : null}
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
-
-  return createPortal(modal, document.body);
 }

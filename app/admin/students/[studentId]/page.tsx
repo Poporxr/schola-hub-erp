@@ -150,7 +150,7 @@ const Page = async ({ params }: { params: { studentId?: string } | Promise<{ stu
                             className="w-20 h-20 rounded-2xl border border-white/20"
                         />
                         <div>
-                            <h1 className="text-2xl font-bold">{name || "Student"}</h1>
+                            <h1 className="text-2xl font-bold  text-white/80">{name || "Student"}</h1>
                             <p className="text-white/70 text-sm">Admission No: {student.admissionNumber}</p>
                             <span className={`mt-2 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
                                 student.user.status === "ACTIVE" ? "bg-emerald-500/20 text-emerald-100" : "bg-white/10 text-white/70"

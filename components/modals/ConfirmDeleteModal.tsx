@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useMemo } from "react";
 import { ModalShell } from "./ModalShell";
 import { toast } from "sonner";
+import { Spinner } from "@/components/ui/spinner";
 
 type EntityType = "class" | "student" | "teacher" | "subject" | "parent";
 
@@ -41,9 +42,8 @@ export default function ConfirmDeleteModal({
   requireText = true,
 }: Props) {
   const meta = useMemo(() => getDeleteMeta(type), [type]);
-  const phrase = useMemo(() => `delete ${label}`.toLowerCase(), [label]);
 
-  const [state, formAction] = useActionState(action, initialState);
+  const [state, formAction, pending] = useActionState(action, initialState);
 
   // auto-close when server says ok
   useEffect(() => {
@@ -94,9 +94,14 @@ export default function ConfirmDeleteModal({
               ) : null}
 
               <button
+                type="submit"
+                disabled={pending}
                 className="w-full rounded-xl bg-red-600 px-6 py-4 text-white font-semibold hover:bg-red-700 transition"
               >
-                Delete
+                <span className="inline-flex items-center justify-center gap-2">
+                  {pending ? <Spinner className="size-4" /> : null}
+                  Delete
+                </span>
               </button>
             </form>
 

@@ -18,6 +18,7 @@ import { prisma } from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/utils";
 import ParentsFilters from "@/components/parents/ParentsFilters";
 import AddParentModal from "@/components/modals/AddParentModal";
+import { FunctionButttons } from "@/components/FunctionButtons";
 
 type SearchParams = {
   search?: string | string[];
@@ -181,15 +182,7 @@ const Page = async ({
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <button className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 flex items-center gap-2">
-              <Mail className="w-4 h-4" />
-              Message
-            </button>
-
-            <button className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-indigo-50 flex items-center gap-2">
-              <Download className="w-4 h-4" />
-              Export
-            </button>
+          <FunctionButttons />
 
             <AddParentModal />
           </div>

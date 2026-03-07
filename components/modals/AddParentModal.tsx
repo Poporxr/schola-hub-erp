@@ -5,9 +5,22 @@ import { Plus } from "lucide-react";
 import { ModalShell } from "@/components/modals/ModalShell";
 import ParentForm from "@/components/modals/forms/ParentForm";
 import { createParentAction } from "@/components/actions/actions";
+import { Spinner } from "@/components/ui/spinner";
 
 const AddParentModal = () => {
   const [open, setOpen] = useState(false);
+  const [pending, setPending] = useState(false);
+
+  async function handleCreateParent(formData: FormData) {
+    setPending(true);
+
+    try {
+      await createParentAction(formData);
+      setOpen(false);
+    } finally {
+      setPending(false);
+    }
+  }
 
   return (
     <>
@@ -30,9 +43,13 @@ const AddParentModal = () => {
             <button
               form="parent-create-form"
               type="submit"
+              disabled={pending}
               className="w-full rounded-xl bg-slate-900 px-6 py-4 text-white font-semibold hover:bg-slate-800 transition"
             >
-              Save Parent
+              <span className="inline-flex items-center justify-center gap-2">
+                {pending ? <Spinner className="size-4" /> : null}
+                Save Parent
+              </span>
             </button>
             <button
               type="button"
@@ -44,7 +61,7 @@ const AddParentModal = () => {
           </div>
         }
       >
-        <form id="parent-create-form" action={createParentAction} className="space-y-5">
+        <form id="parent-create-form" action={handleCreateParent} className="space-y-5">
           <ParentForm mode="create" />
         </form>
       </ModalShell>

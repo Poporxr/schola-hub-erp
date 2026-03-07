@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { UserButton } from "@clerk/nextjs";
+import dynamic from "next/dynamic";
 import {
   GraduationCap,
   LayoutDashboard,
@@ -10,12 +10,15 @@ import {
   School,
   BookOpen,
   FileBarChart,
-  CreditCard,
   UserPlus,
-  Settings,
   PanelRightOpen,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
+
+const ClientUserButton = dynamic(
+  () => import("@clerk/nextjs").then((mod) => mod.UserButton),
+  { ssr: false }
+);
 
 type AdminMenuProps = {
   open: boolean;
@@ -154,13 +157,18 @@ const AdminMenu = ({ open, onClose }: AdminMenuProps) => {
       {/* User footer */}
       <div className="p-4 border-t border-slate-200">
         <div className="flex items-center gap-3">
-          <UserButton
-            appearance={{
-              elements: {
-                userButtonAvatarBox: "w-9 h-9",
-              },
-            }}
-          />
+          <div className="relative h-9 w-9 shrink-0">
+            <div className="h-9 w-9 rounded-full bg-slate-200" aria-hidden="true" />
+            <div className="absolute inset-0">
+              <ClientUserButton
+                appearance={{
+                  elements: {
+                    userButtonAvatarBox: "w-9 h-9",
+                  },
+                }}
+              />
+            </div>
+          </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-slate-900 truncate">
               Alex Morgan
