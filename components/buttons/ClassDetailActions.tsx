@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { BookPlus, UserPlus } from "lucide-react";
 import SmartModal from "@/components/modals/SmartModal";
-import { createStudentAction, createSubjectAction } from "@/components/actions/actions";
+import { createSubjectAction } from "@/components/actions/actions";
+import { createStudentAction } from "@/components/actions/student-actions";
 import type { StudentFormClasses, StudentFormData } from "@/components/modals/forms/StudentForm";
 import type { SubjectFormData } from "@/components/modals/forms/SubjectForm";
 

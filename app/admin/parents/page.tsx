@@ -177,14 +177,14 @@ const Page = async ({
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Parents</h1>
             <p className="text-slate-500 text-sm mt-1">
-              Premium overview of parent engagement and student relationships
+              Overview of parent engagement and student relationships
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
           <FunctionButttons />
 
-            <AddParentModal />
+          <AddParentModal />
           </div>
         </div>
 
@@ -254,13 +254,9 @@ const Page = async ({
             <p className="mt-1 text-xs text-white/70">Parents actively linked this term</p>
           </div>
         </div>
-
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-          <ParentsFilters classes={classes} initialSearch={search} initialClassId={classId} />
-        </div>
-
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex-1 flex flex-col">
-          <div className="border-b border-slate-200 bg-linear-to-r from-slate-50 via-white to-slate-50 p-4">
+          <div className="border-b border-slate-200 bg-linear-to-r from-slate-50 via-white to-slate-50 p-4 grid grid-cols-1 gap-4">
+            
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-semibold text-slate-900">Parent Directory</h3>
@@ -268,6 +264,7 @@ const Page = async ({
               </div>
               <span className="text-xs text-slate-500">{totalParents} records</span>
             </div>
+          <ParentsFilters classes={classes} initialSearch={search} initialClassId={classId} />
           </div>
 
           <div className="overflow-x-auto flex-1">

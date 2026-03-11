@@ -6,17 +6,24 @@ import { ModalShell } from "@/components/modals/ModalShell";
 import ParentForm from "@/components/modals/forms/ParentForm";
 import { createParentAction } from "@/components/actions/actions";
 import { Spinner } from "@/components/ui/spinner";
+import { toast } from "sonner";
 
 const AddParentModal = () => {
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
 
   async function handleCreateParent(formData: FormData) {
+    if (pending) return;
     setPending(true);
 
     try {
-      await createParentAction(formData);
+      const result = await createParentAction(formData);
+      toast.success(result?.message ?? "Parent created");
       setOpen(false);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to create parent"
+      );
     } finally {
       setPending(false);
     }
@@ -26,6 +33,7 @@ const AddParentModal = () => {
     <>
       <button
         onClick={() => setOpen(true)}
+        disabled={pending}
         className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium hover:bg-slate-800 flex items-center gap-2 shadow-sm"
       >
         <Plus className="w-4 h-4" />
@@ -54,6 +62,7 @@ const AddParentModal = () => {
             <button
               type="button"
               onClick={() => setOpen(false)}
+              disabled={pending}
               className="w-full sm:w-auto rounded-xl bg-gray-100 px-8 py-4 font-semibold text-gray-900 hover:bg-gray-200 transition"
             >
               Cancel
@@ -62,7 +71,7 @@ const AddParentModal = () => {
         }
       >
         <form id="parent-create-form" action={handleCreateParent} className="space-y-5">
-          <ParentForm mode="create" />
+          <ParentForm mode="create" disabled={pending} />
         </form>
       </ModalShell>
     </>

@@ -26,12 +26,6 @@ export type StudentFormData = {
   admissionDate?: string;
   previousSchool?: string;
 
-  guardianName?: string;
-  guardianRelationship?: string;
-  guardianPhone?: string;
-  guardianEmail?: string;
-  guardianAddress?: string;
-
   healthNotes?: string;
   allergies?: string;
   additionalInfo?: string;
@@ -44,6 +38,7 @@ export default function StudentForm({
   data,
   classes,
   action,
+  disabled = false,
   formId,
   showSubmitButton = true,
 }: {
@@ -51,6 +46,7 @@ export default function StudentForm({
   data?: StudentFormData;
   classes?: StudentFormClasses;
   action?: (formData: FormData) => void | Promise<void>;
+  disabled?: boolean;
   formId?: string;
   showSubmitButton?: boolean;
 }) {
@@ -109,6 +105,7 @@ export default function StudentForm({
       onSubmit={handleSubmit}
       className="space-y-8"
     >
+      <fieldset disabled={disabled} className="space-y-8 disabled:opacity-70">
       {mode === "edit" && data?.id ? (
         <input type="hidden" name="id" value={String(data.id)} />
       ) : null}
@@ -263,75 +260,11 @@ export default function StudentForm({
         </div>
       </section>
 
-      {/* 3 Guardian */}
-      <section>
-        <div className={sectionTitle}>
-          <span className="w-10 h-10 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-sm font-bold">
-            3
-          </span>
-          Parent/Guardian Information
-        </div>
-
-        <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-5">
-          <Field label="Full Name *" error={getError("guardianName")}>
-            <input
-              name="guardianName"
-              defaultValue={data?.guardianName ?? ""}
-              className={getInputClass("guardianName")}
-            />
-          </Field>
-
-          <Field
-            label="Relationship *"
-            error={getError("guardianRelationship")}
-          >
-            <select
-              name="guardianRelationship"
-              defaultValue={data?.guardianRelationship ?? "Father"}
-              className={getInputClass("guardianRelationship")}
-            >
-              <option value="Father">Father</option>
-              <option value="Mother">Mother</option>
-              <option value="Guardian">Guardian</option>
-            </select>
-          </Field>
-
-          <Field label="Phone Number *" error={getError("guardianPhone")}>
-            <input
-              name="guardianPhone"
-              type="tel"
-              defaultValue={data?.guardianPhone ?? ""}
-              className={getInputClass("guardianPhone")}
-            />
-          </Field>
-
-          <Field label="Email" error={getError("guardianEmail")}>
-            <input
-              name="guardianEmail"
-              type="email"
-              defaultValue={data?.guardianEmail ?? ""}
-              className={getInputClass("guardianEmail")}
-            />
-          </Field>
-
-          <div className="md:col-span-2">
-            <Field label="Address" error={getError("guardianAddress")}>
-              <textarea
-                name="guardianAddress"
-                rows={2}
-                defaultValue={data?.guardianAddress ?? ""}
-                className={getInputClass("guardianAddress")}
-              />
-            </Field>
-          </div>
-        </div>
-      </section>
-
-      {/* 4 Health */}
+      {/* 3 Health */}
       <section>
         <div className={sectionTitle}>
           <span className="w-10 h-10 rounded-full bg-red-100 text-red-700 flex items-center justify-center text-sm font-bold">
-            4
+            3
           </span>
           Health & Additional Notes
         </div>
@@ -378,6 +311,7 @@ export default function StudentForm({
           </button>
         </div>
       ) : null}
+      </fieldset>
     </form>
   );
 }

@@ -38,7 +38,7 @@ export function ModalShell({
     <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
       <DialogContent
         showCloseButton={false}
-        className="w-full max-w-[calc(100%-2rem)] border-none bg-transparent p-0 shadow-none sm:max-w-[calc(100%-3rem)]"
+        className="w-[calc(100vw-1.5rem)] border-none bg-transparent p-0 shadow-none sm:w-[calc(100vw-3rem)]"
       >
         <div
           className={[

@@ -10,6 +10,7 @@ function getTitleFromPath(pathname: string) {
   if (/^\/admin\/teachers\/[^/]+$/.test(path)) return "Teacher Profile";
   if (/^\/admin\/classes\/[^/]+$/.test(path)) return "Class Overview";
   if (/^\/admin\/parents\/[^/]+$/.test(path)) return "Parent Overview";
+ if (/^\/admin\/students\/[^/]+\/parents$/.test(path)) return "Parent Linking";
 
   if (path === "/admin/students") return "Students";
   if (path === "/admin/teachers") return "Teachers";

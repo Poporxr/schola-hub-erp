@@ -118,28 +118,6 @@ export default async function page({
             orderBy: { createdAt: Prisma.SortOrder.desc },
             select: { class: { select: { id: true, name: true } } },
           },
-    parentStudents: {
-      orderBy: [
-        { isPrimary: Prisma.SortOrder.desc },
-        { createdAt: Prisma.SortOrder.asc },
-      ],
-      take: 1,
-      select: {
-        relation: true,
-        parent: {
-          select: {
-            user: {
-              select: {
-                firstName: true,
-                lastName: true,
-                email: true,
-                phone: true,
-              },
-            },
-          },
-        },
-      },
-    },
   } satisfies Prisma.StudentSelect;
 
   const [students, total, totalAll, male, female, active, recentAdmissions] =
@@ -166,9 +144,6 @@ export default async function page({
   const classSizeAvg = classes.length ? totalAll / classes.length : 0;
 
   const toStudentFormData = (student: (typeof students)[number]): StudentFormData => {
-    const primaryParent = student.parentStudents[0];
-    const parentUser = primaryParent?.parent.user;
-
     return {
       id: student.id,
       firstName: student.user.firstName,
@@ -180,13 +155,6 @@ export default async function page({
         ? student.dateOfBirth.toISOString().slice(0, 10)
         : undefined,
       classId: student.classHistories[0]?.class?.id,
-      guardianName: parentUser
-        ? `${parentUser.firstName} ${parentUser.lastName}`.trim()
-        : undefined,
-      guardianRelationship: primaryParent?.relation ?? undefined,
-      guardianPhone: parentUser?.phone ?? undefined,
-      guardianEmail: parentUser?.email ?? undefined,
-      guardianAddress: student.address ?? undefined,
     };
   };
 

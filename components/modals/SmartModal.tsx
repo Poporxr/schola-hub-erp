@@ -16,7 +16,7 @@ type BaseProps = {
   open: boolean;
   onClose: () => void;
   mode: ModalMode;
-  action: (formData: FormData) => void | Promise<void>;
+  action: (formData: FormData) => unknown | Promise<unknown>;
 };
 
 type Props =
@@ -38,96 +38,7 @@ type Props =
       data?: TeacherFormData;
     });
 
-export default function SmartModal(props: Props) {
-  const { open, onClose, type, mode, action } = props;
-  const studentData = type === "student" ? props.data : undefined;
-  const studentClasses = type === "student" ? props.classes : undefined;
-  const meta = getMeta(type, mode);
-  const shouldToast = type === "student";
-  const formId = `smart-modal-${type}-${mode}-form`;
-  const [pending, setPending] = useState(false);
-
-  async function handleAction(formData: FormData) {
-    setPending(true);
-
-    try {
-      await action(formData);
-      if (shouldToast) {
-        const label = mode === "edit" ? "Student updated" : "Student created";
-        toast.success(label);
-      }
-      setPending(false);
-      onClose();
-    } catch {
-      if (shouldToast) {
-        toast.error("Failed to save student");
-      }
-      setPending(false);
-    }
-  }
-
-  return (
-    <ModalShell
-      open={open}
-      onClose={onClose}
-      title={meta.title}
-      subtitle={meta.subtitle}
-      maxWidth={meta.maxWidth}
-      footer={
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-          <button
-            type="submit"
-            form={formId}
-            disabled={pending}
-            className="w-full flex-1 rounded-xl bg-indigo-600 px-6 py-4 text-white font-semibold hover:bg-indigo-700 transition"
-          >
-            <span className="inline-flex items-center justify-center gap-2">
-              {pending ? <Spinner className="size-4" /> : null}
-              {meta.primaryCta}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-full sm:w-auto rounded-xl bg-gray-100 px-8 py-4 font-semibold text-gray-900 hover:bg-gray-200 transition"
-          >
-            Cancel
-          </button>
-        </div>
-      }
-    >
-      {type === "student" ? (
-        <StudentForm
-          formId={formId}
-          action={handleAction}
-          classes={studentClasses}
-          mode={mode}
-          data={studentData}
-          showSubmitButton={false}
-        />
-      ) : (
-        <form id={formId} action={handleAction} className="space-y-8">
-          {type === "teacher" && mode === "edit" && props.data?.id ? (
-          <input type="hidden" name="id" value={String(props.data.id)} />
-          ) : null}
-          {type === "subject" && mode === "edit" && props.data?.id ? (
-            <input type="hidden" name="id" value={String(props.data.id)} />
-          ) : null}
-          {type === "subject" && props.data?.classId ? (
-            <input type="hidden" name="classId" value={String(props.data.classId)} />
-          ) : null}
-
-          {type === "class" && <ClassForm mode={mode} data={props.data} />}
-          {type === "subject" && <SubjectForm mode={mode} data={props.data} />}
-          {type === "teacher" && <TeacherForm mode={mode} data={props.data} />}
-        </form>
-      )}
-    </ModalShell>
-  );
-}
-
-function getMeta(type: ModalType, mode: ModalMode) {
+    function getMeta(type: ModalType, mode: ModalMode) {
   const isEdit = mode === "edit";
 
   if (type === "class") {
@@ -164,3 +75,125 @@ function getMeta(type: ModalType, mode: ModalMode) {
     maxWidth: "lg" as const,
   };
 }
+
+
+export default function SmartModal(props: Props) {
+  const { open, onClose, type, mode, action } = props;
+  const studentData = type === "student" ? props.data : undefined;
+  const studentClasses = type === "student" ? props.classes : undefined;
+  const meta = getMeta(type, mode);
+  const shouldToast = type === "student" || type === "teacher";
+  const formId = `smart-modal-${type}-${mode}-form`;
+  const [pending, setPending] = useState(false);
+
+  async function handleAction(formData: FormData) {
+    if (pending) return;
+    setPending(true);
+
+    try {
+      const result = await action(formData);
+
+      if (
+        result &&
+        typeof result === "object" &&
+        "ok" in result &&
+        (result as { ok?: boolean; message?: string }).ok === false
+      ) {
+        throw new Error(
+          (result as { message?: string }).message ??
+            (type === "teacher" ? "Failed to save teacher" : "Failed to save student")
+        );
+      }
+
+      if (shouldToast) {
+        const label =
+          type === "teacher"
+            ? mode === "edit"
+              ? "Teacher updated"
+              : "Teacher created"
+            : mode === "edit"
+              ? "Student updated"
+              : "Student created";
+        toast.success(label);
+      }
+      onClose();
+    } catch (error) {
+      if (shouldToast) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : type === "teacher"
+              ? "Failed to save teacher"
+              : "Failed to save student";
+        toast.error(message);
+      }
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <ModalShell
+      open={open}
+      onClose={onClose}
+      title={meta.title}
+      subtitle={meta.subtitle}
+      maxWidth={meta.maxWidth}
+      footer={
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+          <button
+            type="submit"
+            form={formId}
+            disabled={pending}
+            className="w-full flex-1 rounded-xl bg-indigo-600 px-6 py-4 text-white font-semibold hover:bg-indigo-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            <span className="inline-flex items-center justify-center gap-2">
+              {pending ? <Spinner className="size-4" /> : null}
+              {pending ? "Saving..." : meta.primaryCta}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={pending}
+            className="w-full sm:w-auto rounded-xl bg-gray-100 px-8 py-4 font-semibold text-gray-900 hover:bg-gray-200 transition disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            Cancel
+          </button>
+        </div>
+      }
+    >
+      {type === "student" ? (
+        <StudentForm
+          formId={formId}
+          action={handleAction}
+          classes={studentClasses}
+          mode={mode}
+          data={studentData}
+          disabled={pending}
+          showSubmitButton={false}
+        />
+      ) : (
+        <form id={formId} action={handleAction} className="space-y-8">
+          <fieldset disabled={pending} className="space-y-8 disabled:opacity-70">
+          {type === "teacher" && mode === "edit" && props.data?.id ? (
+          <input type="hidden" name="id" value={String(props.data.id)} />
+          ) : null}
+          {type === "subject" && mode === "edit" && props.data?.id ? (
+            <input type="hidden" name="id" value={String(props.data.id)} />
+          ) : null}
+          {type === "subject" && props.data?.classId ? (
+            <input type="hidden" name="classId" value={String(props.data.classId)} />
+          ) : null}
+
+          {type === "class" && <ClassForm mode={mode} data={props.data} />}
+          {type === "subject" && <SubjectForm mode={mode} data={props.data} />}
+          {type === "teacher" && <TeacherForm mode={mode} data={props.data} />}
+          </fieldset>
+        </form>
+      )}
+    </ModalShell>
+  );
+}
+

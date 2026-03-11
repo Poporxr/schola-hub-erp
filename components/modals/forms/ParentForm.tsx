@@ -2,6 +2,7 @@
 
 type ParentFormProps = {
   mode: "create" | "edit";
+  disabled?: boolean;
   data?: {
     id?: string;
     firstName?: string;
@@ -15,16 +16,16 @@ type ParentFormProps = {
 const input =
   "w-full px-3 py-2 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm";
 
-const ParentForm = ({ mode, data }: ParentFormProps) => {
+const ParentForm = ({ mode, data, disabled = false }: ParentFormProps) => {
   return (
-    <div className="space-y-5">
+    <fieldset disabled={disabled} className="space-y-5 disabled:opacity-70">
       {mode === "edit" && data?.id ? (
         <input type="hidden" name="id" value={String(data.id)} />
       ) : null}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">First Name</label>
+          <label className="block text-sm font-medium text-slate-700 mb-2">First Name *</label>
           <input
             name="firstName"
             defaultValue={data?.firstName ?? ""}
@@ -33,7 +34,7 @@ const ParentForm = ({ mode, data }: ParentFormProps) => {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">Last Name</label>
+          <label className="block text-sm font-medium text-slate-700 mb-2">Last Name *</label>
           <input
             name="lastName"
             defaultValue={data?.lastName ?? ""}
@@ -45,7 +46,7 @@ const ParentForm = ({ mode, data }: ParentFormProps) => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">Email Address</label>
+          <label className="block text-sm font-medium text-slate-700 mb-2">Email Address *</label>
           <input
             name="email"
             type="email"
@@ -74,7 +75,7 @@ const ParentForm = ({ mode, data }: ParentFormProps) => {
           placeholder="Father, Mother, Guardian"
         />
       </div>
-    </div>
+    </fieldset>
   );
 };
 

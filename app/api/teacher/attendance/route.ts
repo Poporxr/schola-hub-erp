@@ -43,14 +43,6 @@ export async function GET(req: Request) {
   });
   if (!currentTerm) return Response.json({ error: "No current term configured" }, { status: 400 });
 
-  const assignmentCount = await prisma.subjectTeacher.count({
-    where: {
-      teacherId: teacher.id,
-      classId,
-      sessionId: currentTerm.sessionId,
-      termId: currentTerm.id,
-    },
-  });
   const homeroomCount = await prisma.classTeacher.count({
     where: {
       teacherId: teacher.id,
@@ -59,8 +51,8 @@ export async function GET(req: Request) {
       termId: currentTerm.id,
     },
   });
-  if (!assignmentCount && !homeroomCount) {
-    return Response.json({ error: "You are not assigned to this class" }, { status: 403 });
+  if (!homeroomCount) {
+    return Response.json({ error: "You are not the class teacher for this class" }, { status: 403 });
   }
 
   const [studentsInClass, attendanceRows] = await Promise.all([
@@ -132,14 +124,6 @@ export async function POST(req: Request) {
   });
   if (!currentTerm) return Response.json({ error: "No current term configured" }, { status: 400 });
 
-  const assignmentCount = await prisma.subjectTeacher.count({
-    where: {
-      teacherId: teacher.id,
-      classId,
-      sessionId: currentTerm.sessionId,
-      termId: currentTerm.id,
-    },
-  });
   const homeroomCount = await prisma.classTeacher.count({
     where: {
       teacherId: teacher.id,
@@ -148,8 +132,8 @@ export async function POST(req: Request) {
       termId: currentTerm.id,
     },
   });
-  if (!assignmentCount && !homeroomCount) {
-    return Response.json({ error: "You are not assigned to this class" }, { status: 403 });
+  if (!homeroomCount) {
+    return Response.json({ error: "You are not the class teacher for this class" }, { status: 403 });
   }
 
   const dateValue = parseDateOnly(date);

@@ -117,13 +117,7 @@ export default async function Page({
     lastName: teacher.user.lastName,
     email: teacher.user.email,
     phone: teacher.user.phone ?? undefined,
-    classIds: Array.from(
-      new Set([
-        ...(teacher.class?.id ? [teacher.class.id] : []),
-        ...teacher.classTeachers.map((row) => row.class.id),
-      ])
-    ),
-    subjectIds: Array.from(new Set(teacher.subjectTeachers.map((row) => row.subjectId))),
+    department: teacher.department ?? undefined,
     status:
       teacher.user.status === "ACTIVE"
         ? "active"

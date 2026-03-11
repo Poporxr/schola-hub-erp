@@ -3,7 +3,8 @@
 import { Edit, Edit2, Plus } from "lucide-react"
 import { useState } from "react";
 import SmartModal, { ModalType } from "../modals/SmartModal";
-import { createClassAction, createStudentAction, createSubjectAction, createTeacherAction, updateClassAction, updateStudentAction, updateSubjectAction, updateTeacherAction } from "../actions/actions";
+import { createClassAction, createSubjectAction, createTeacherAction, updateClassAction, updateSubjectAction, updateTeacherAction } from "../actions/actions";
+import { createStudentAction, updateStudentAction } from "../actions/student-actions";
 import type { StudentFormClasses, StudentFormData } from "../modals/forms/StudentForm";
 import type { SubjectFormData } from "../modals/forms/SubjectForm";
 import type { TeacherFormData } from "../modals/forms/TeacherForm";

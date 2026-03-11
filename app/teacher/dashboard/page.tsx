@@ -240,7 +240,7 @@ const Page = async () => {
           <p className="text-xs uppercase tracking-[0.2em] text-white/60">
             Teacher Overview
           </p>
-          <h1 className="text-2xl font-bold mt-2">
+          <h1 className="text-2xl font-bold mt-2  text-white/80">
             {greeting}, {teacherName}!
           </h1>
           <p className="text-white/70 max-w-2xl mt-2">

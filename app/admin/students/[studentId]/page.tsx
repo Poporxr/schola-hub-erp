@@ -4,6 +4,8 @@ import StudentTabs from "@/components/StudentTab";
 import BackButton from "@/components/BackButton";
 import { prisma } from "@/lib/prisma";
 import { formatDate, yearsSince } from "@/lib/settings";
+import Link from "next/link";
+import { ChevronRight, Link2, UserRoundCheck } from "lucide-react";
 
 const Page = async ({ params }: { params: { studentId?: string } | Promise<{ studentId?: string }> }) => {
     const { studentId } = await params;
@@ -87,6 +89,7 @@ const Page = async ({ params }: { params: { studentId?: string } | Promise<{ stu
         relation: p.relation,
         isPrimary: p.isPrimary,
     }));
+    const linkedParentCount = parents.length;
 
     const subjects = classId
         ? await prisma.classSubject.findMany({
@@ -138,7 +141,31 @@ const Page = async ({ params }: { params: { studentId?: string } | Promise<{ stu
 
     return (
         <div className="space-y-6">
-            <BackButton />
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+               <BackButton />
+               <Link
+                    href={`/admin/students/${studentId}/parents`}
+                    className="group inline-flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-linear-to-r from-white to-slate-50 px-3 py-2.5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md sm:w-auto sm:px-3.5"
+                >
+                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-white shadow-sm">
+                        <Link2 size={15} />
+                    </span>
+                    <span className="mr-auto leading-tight">
+                        <span className="block text-sm font-semibold text-slate-900 sm:hidden">Parent Links</span>
+                        <span className="hidden text-sm font-semibold text-slate-900 sm:block">Manage Parent Links</span>
+                        <span className="hidden text-xs text-slate-500 md:block">Link or unlink guardians</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-700">
+                        <UserRoundCheck size={12} />
+                        {linkedParentCount}
+                    </span>
+                    <ChevronRight
+                        size={16}
+                        className="text-slate-400 transition-transform group-hover:translate-x-0.5 group-hover:text-slate-600"
+                    />
+                </Link>
+            </div>
+            
 
             <div className="bg-linear-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
                 <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">

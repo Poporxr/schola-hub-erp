@@ -34,30 +34,6 @@ export const studentSchema = z.object({
     z.string().trim().optional()
   ),
 
-  guardianName: z
-    .string()
-    .trim()
-    .min(1, { error: "Guardian name is required" }),
-
-  guardianRelationship: z.enum(["Father", "Mother", "Guardian"], {
-    error: "Relationship is required",
-  }),
-
-  guardianPhone: z
-    .string()
-    .trim()
-    .min(1, { error: "Phone number is required" }),
-
-  guardianEmail: z.preprocess(
-    emptyToUndefined,
-    z.email({ error: "Invalid email address" }).optional()
-  ),
-
-  guardianAddress: z.preprocess(
-    emptyToUndefined,
-    z.string().trim().optional()
-  ),
-
   healthNotes: z.preprocess(
     emptyToUndefined,
     z.string().trim().optional()

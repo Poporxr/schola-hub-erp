@@ -4,14 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, CheckCircle2, Clock, UserCheck, Users } from "lucide-react";
 import { toast } from "sonner";
 
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 type AttendanceStatus = "present" | "absent" | "late";
 
@@ -68,7 +60,7 @@ export default function AttendanceClient({
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
-  const [selectedClass, setSelectedClass] = useState(initialClassId);
+  const selectedClass = initialClassId;
   const [date, setDate] = useState(initialDate);
 
   useEffect(() => {
@@ -141,7 +133,7 @@ export default function AttendanceClient({
           <p className="text-xs uppercase tracking-[0.2em] text-white/60">
             Attendance
           </p>
-          <h1 className="text-2xl font-bold">Mark Daily Attendance</h1>
+          <h1 className="text-2xl font-bold  text-white/80">Mark Daily Attendance</h1>
           <p className="text-sm text-white/70">
             Track attendance for your assigned classes with live updates.
           </p>
@@ -212,9 +204,9 @@ export default function AttendanceClient({
             <h3 className="font-semibold text-slate-900 text-lg">
               Attendance Filters
             </h3>
-            <p className="text-sm text-slate-500">
-              Select class and date to update records
-            </p>
+          <p className="text-sm text-slate-500">
+            Select date to update records
+          </p>
           </div>
           <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-sm text-slate-700">
             <CalendarDays className="w-4 h-4 text-slate-500" />
@@ -225,23 +217,14 @@ export default function AttendanceClient({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
-              Select Class
+              Class Teacher Assignment
             </label>
-
-            <Select value={selectedClass} onValueChange={setSelectedClass}>
-              <SelectTrigger className="w-full px-3 py-3 border border-slate-200 rounded-xl bg-white text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/20">
-                <SelectValue placeholder="Select class" />
-              </SelectTrigger>
-              <SelectContent className="bg-white border-slate-200">
-                <SelectGroup>
-                  {classOptions.map((item) => (
-                    <SelectItem key={item.id} className="cursor-pointer" value={item.id}>
-                      {item.name}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
+            <input
+              type="text"
+              value={classOptions.find((c) => c.id === selectedClass)?.name ?? "-"}
+              readOnly
+              className="w-full bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl block p-3"
+            />
           </div>
 
           <div>

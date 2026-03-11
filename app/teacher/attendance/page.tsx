@@ -13,11 +13,6 @@ type StudentRow = {
   status: "present" | "absent" | "late";
 };
 
-type ClassOption = {
-  id: string;
-  name: string;
-};
-
 export default async function Page() {
   const { userId } = await auth();
   if (!userId) return <div className="p-6 text-sm text-slate-600">Sign in to view attendance.</div>;
@@ -28,13 +23,6 @@ export default async function Page() {
       select: {
         id: true,
         classTeachers: {
-          where: {
-            session: { isCurrent: true },
-            term: { isCurrent: true },
-          },
-          select: { class: { select: { id: true, name: true } } },
-        },
-        subjectTeachers: {
           where: {
             session: { isCurrent: true },
             term: { isCurrent: true },
@@ -52,13 +40,12 @@ export default async function Page() {
   if (!teacher) return <div className="p-6 text-sm text-slate-600">Teacher profile not found.</div>;
   if (!currentTerm) return <div className="p-6 text-sm text-slate-600">No current term configured.</div>;
 
-  const classMap = new Map<string, ClassOption>();
-  teacher.classTeachers.forEach((row) => classMap.set(row.class.id, row.class));
-  teacher.subjectTeachers.forEach((row) => classMap.set(row.class.id, row.class));
-  const classOptions = Array.from(classMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+  const classOptions = teacher.classTeachers
+    .map((row) => row.class)
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   if (!classOptions.length) {
-    return <div className="p-6 text-sm text-slate-600">No classes assigned to this teacher.</div>;
+    return <div className="p-6 text-sm text-slate-600">No class teacher assignment found.</div>;
   }
 
   const selectedClassId = classOptions[0].id;

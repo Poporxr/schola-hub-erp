@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { deleteStudentAction } from "@/components/actions/actions";
+import { deleteStudentAction } from "@/components/actions/student-actions";
 import { DeleteButton } from "@/components/buttons/DeleteButton";
 import FormButton from "@/components/buttons/FormButton";
 import UserAvatar from "@/components/UserAvatar";
