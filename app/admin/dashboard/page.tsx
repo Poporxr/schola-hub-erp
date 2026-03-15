@@ -1,4 +1,5 @@
 import AdminCharts from "@/components/AdminCharts";
+import KpiGrid from "@/components/kpi/KpiGrid";
 import { prisma } from "@/lib/prisma";
 import { greetingForHour, relativeDaysLabel } from "@/lib/settings";
 import {
@@ -292,98 +293,108 @@ export default async function Home() {
         <div className="absolute left-0 bottom-0 w-56 h-56 rounded-full bg-indigo-500/20 blur-3xl" />
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 lg:grid-cols-4">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <KpiGrid>
+        <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-5">
           <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Total Students</p>
-            <Users className="h-4 w-4 text-slate-400" />
+          <p className="truncate text-[10px] uppercase tracking-wide text-slate-500 sm:text-xs">Total Students</p>
+            <Users className="h-3.5 w-3.5 text-slate-400 sm:h-4 sm:w-4" />
           </div>
-          <p className="mt-3 text-3xl font-bold text-slate-900">{totalStudents}</p>
-          <div className="mt-3 flex items-center text-xs">
+          <p className="mt-1.5 text-xl font-bold text-slate-900 sm:mt-3 sm:text-3xl">{totalStudents}</p>
+          <div className="mt-2 flex items-center text-[11px] sm:mt-3 sm:text-xs">
             <span className={`font-semibold flex items-center gap-1 ${studentDelta >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
               {studentDelta >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />} {formatDelta(studentDelta)}
             </span>
-            <span className="text-slate-400 ml-2">last 30 days</span>
+            <span className="text-slate-400 ml-1 sm:ml-2">
+              <span className="sm:hidden">30d</span>
+              <span className="hidden sm:inline">last 30 days</span>
+            </span>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-5">
           <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Total Teachers</p>
-            <Presentation className="h-4 w-4 text-emerald-400" />
+            <p className="truncate text-[10px] uppercase tracking-wide text-slate-500 sm:text-xs">Total Teachers</p>
+            <Presentation className="h-3.5 w-3.5 text-emerald-400 sm:h-4 sm:w-4" />
           </div>
-          <p className="mt-3 text-3xl font-bold text-slate-900">{totalTeachers}</p>
-          <div className="mt-3 flex items-center text-xs">
+          <p className="mt-1.5 text-xl font-bold text-slate-900 sm:mt-3 sm:text-3xl">{totalTeachers}</p>
+          <div className="mt-2 flex items-center text-[11px] sm:mt-3 sm:text-xs">
             <span className={`font-semibold flex items-center gap-1 ${teacherDelta >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
               {teacherDelta >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />} {formatDelta(teacherDelta)}
             </span>
-            <span className="text-slate-400 ml-2">last 30 days</span>
+            <span className="text-slate-400 ml-1 sm:ml-2">
+              <span className="sm:hidden">30d</span>
+              <span className="hidden sm:inline">last 30 days</span>
+            </span>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-5">
           <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Attendance Today</p>
-            <CalendarCheck className="h-4 w-4 text-blue-500" />
+            <p className="truncate text-[10px] uppercase tracking-wide text-slate-500 sm:text-xs">Attendance Today</p>
+            <CalendarCheck className="h-3.5 w-3.5 text-blue-500 sm:h-4 sm:w-4" />
           </div>
-          <p className="mt-3 text-3xl font-bold text-slate-900">{attendanceRateToday.toFixed(1)}%</p>
-          <div className="mt-2 text-xs text-slate-500">
+          <p className="mt-1.5 text-xl font-bold text-slate-900 sm:mt-3 sm:text-3xl">{attendanceRateToday.toFixed(1)}%</p>
+          <div className="mt-1.5 truncate text-[11px] text-slate-500 sm:mt-2 sm:text-xs">
             {attendanceTodayPresent} present � {attendanceTodayTotal} total
           </div>
-          <div className="mt-2 flex items-center text-xs">
+          <div className="hidden md:flex mt-1 lg:flex lg:items-center lg:text-[11px]">
             <span className={`font-semibold flex items-center gap-1 ${attendanceDelta >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
               {attendanceDelta >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />} {formatDelta(attendanceDelta)}
             </span>
-            <span className="text-slate-400 ml-2">vs yesterday</span>
+            <span className="text-slate-400 ml-1 sm:ml-2">
+              <span className="sm:hidden">vs yday</span>
+              <span className="hidden sm:inline">vs yesterday</span>
+            </span>
           </div>
+
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-linear-to-br from-indigo-50 via-white to-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-linear-to-br from-indigo-50 via-white to-white p-3 shadow-sm sm:p-5">
           <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Total Parents</p>
-            <Users className="h-4 w-4 text-indigo-400" />
+            <p className="truncate text-[10px] uppercase tracking-wide text-slate-500 sm:text-xs">Total Parents</p>
+            <Users className="h-3.5 w-3.5 text-indigo-400 sm:h-4 sm:w-4" />
           </div>
-          <p className="mt-3 text-3xl font-bold text-slate-900">{totalParents}</p>
-          <div className="mt-2 text-xs text-slate-500">Registered parent accounts</div>
+          <p className="mt-1.5 text-xl font-bold text-slate-900 sm:mt-3 sm:text-3xl">{totalParents}</p>
+          <div className="mt-1.5 text-[11px] text-slate-500 sm:mt-2 sm:text-xs">Registered parent accounts</div>
         </div>
-      </div>
+      </KpiGrid>
 
-      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <KpiGrid>
+        <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-5">
           <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Classes</p>
-            <Building className="h-4 w-4 text-slate-400" />
+            <p className="truncate text-[10px] uppercase tracking-wide text-slate-500 sm:text-xs">Classes</p>
+            <Building className="h-3.5 w-3.5 text-slate-400 sm:h-4 sm:w-4" />
           </div>
-          <p className="mt-3 text-2xl font-semibold text-slate-900">{totalClasses}</p>
-          <p className="mt-2 text-xs text-slate-500">Active class groups</p>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Subjects</p>
-            <GraduationCap className="h-4 w-4 text-slate-400" />
-          </div>
-          <p className="mt-3 text-2xl font-semibold text-slate-900">{totalSubjects}</p>
-          <p className="mt-2 text-xs text-slate-500">Curriculum coverage</p>
+          <p className="mt-1.5 text-xl font-semibold text-slate-900 sm:mt-3 sm:text-2xl">{totalClasses}</p>
+          <p className="mt-1.5 text-[11px] text-slate-500 sm:mt-2 sm:text-xs">Active class groups</p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-linear-to-r from-slate-900 to-slate-800 p-5 text-white shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-5">
           <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-white/70">Results This Term</p>
-            <NotebookText className="h-4 w-4 text-white/70" />
+            <p className="truncate text-[10px] uppercase tracking-wide text-slate-500 sm:text-xs">Subjects</p>
+            <GraduationCap className="h-3.5 w-3.5 text-slate-400 sm:h-4 sm:w-4" />
           </div>
-          <p className="mt-3 text-2xl font-semibold">{totalResultsCurrentTerm}</p>
-          <p className="mt-2 text-xs text-white/70">Assessments captured</p>
+          <p className="mt-1.5 text-xl font-semibold text-slate-900 sm:mt-3 sm:text-2xl">{totalSubjects}</p>
+          <p className="mt-1.5 text-[11px] text-slate-500 sm:mt-2 sm:text-xs">Curriculum coverage</p>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+
+        <div className="rounded-2xl border border-slate-200 bg-linear-to-r from-slate-900 to-slate-800 p-3 text-white shadow-sm sm:p-5">
           <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Notices Published</p>
-            <Bell className="h-4 w-4 text-amber-500" />
+            <p className="truncate text-[10px] uppercase tracking-wide text-white/70 sm:text-xs">Results This Term</p>
+            <NotebookText className="h-3.5 w-3.5 text-white/70 sm:h-4 sm:w-4" />
           </div>
-          <p className="mt-3 text-2xl font-semibold text-slate-900">{totalNotices}</p>
-          <p className="mt-2 text-xs text-slate-500">Public announcements</p>
+          <p className="mt-1.5 text-xl font-semibold sm:mt-3 sm:text-2xl">{totalResultsCurrentTerm}</p>
+          <p className="mt-1.5 text-[11px] text-white/70 sm:mt-2 sm:text-xs">Assessments captured</p>
         </div>
-      </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-5">
+          <div className="flex items-center justify-between">
+            <p className="truncate text-[10px] uppercase tracking-wide text-slate-500 sm:text-xs">Notices Published</p>
+            <Bell className="h-3.5 w-3.5 text-amber-500 sm:h-4 sm:w-4" />
+          </div>
+          <p className="mt-1.5 text-xl font-semibold text-slate-900 sm:mt-3 sm:text-2xl">{totalNotices}</p>
+          <p className="mt-1.5 text-[11px] text-slate-500 sm:mt-2 sm:text-xs">Public announcements</p>
+        </div>
+      </KpiGrid>
       
       <AdminCharts attendanceData={attendanceData} performanceData={performanceData} />
 
@@ -440,5 +451,3 @@ export default async function Home() {
     </div>
   );
 }
-
-

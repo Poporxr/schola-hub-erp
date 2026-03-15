@@ -16,6 +16,8 @@ import {
   todayDateInputValue,
   weekdayKeyFromDate,
 } from "@/lib/settings";
+import KpiCard from "@/components/kpi/KpiCard";
+import KpiGrid from "@/components/kpi/KpiGrid";
 import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
 
@@ -133,7 +135,7 @@ const Page = async () => {
           },
           orderBy: [{ startTime: "asc" }],
         })
-      : Promise.resolve([] as any[]),
+      : Promise.resolve([]),
     prisma.notice.findMany({
       where: {
         isPublished: true,
@@ -259,109 +261,57 @@ const Page = async () => {
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-slate-500">
-              Total Classes
-            </p>
-            <Users className="h-4 w-4 text-slate-400" />
-          </div>
-          <p className="mt-3 text-3xl font-bold text-slate-900">
-            {totalClasses}
-          </p>
-          <p className="mt-2 text-xs text-slate-500">Assigned this term</p>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-slate-500">
-              Subjects Taught
-            </p>
-            <BookOpen className="h-4 w-4 text-emerald-500" />
-          </div>
-          <p className="mt-3 text-3xl font-bold text-slate-900">
-            {totalSubjects}
-          </p>
-          <p className="mt-2 text-xs text-slate-500">Active allocations</p>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-slate-500">
-              Students Covered
-            </p>
-            <Users className="h-4 w-4 text-indigo-400" />
-          </div>
-          <p className="mt-3 text-3xl font-bold text-slate-900">
-            {totalStudents}
-          </p>
-          <p className="mt-2 text-xs text-slate-500">Across assigned classes</p>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-gradient-to-r from-slate-900 to-slate-800 p-5 text-white shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-white/70">
-              Classes Today
-            </p>
-            <CalendarDays className="h-4 w-4 text-white/70" />
-          </div>
-          <p className="mt-3 text-3xl font-bold">{classesToday}</p>
-          <p className="mt-2 text-xs text-white/70">{todayLabel}</p>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-slate-500">
-              Attendance Marked
-            </p>
-            <UserCheck className="h-4 w-4 text-emerald-500" />
-          </div>
-          <p className="mt-3 text-3xl font-bold text-slate-900">
-            {attendanceMarked}
-          </p>
-          <p className="mt-2 text-xs text-slate-500">Today&apos;s classes</p>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-slate-500">
-              Pending Attendance
-            </p>
-            <AlertTriangle className="h-4 w-4 text-amber-500" />
-          </div>
-          <p className="mt-3 text-3xl font-bold text-slate-900">
-            {pendingAttendance.length}
-          </p>
-          <p className="mt-2 text-xs text-slate-500">Needs submission</p>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-slate-500">
-              Term Timetable
-            </p>
-            <Clock className="h-4 w-4 text-slate-400" />
-          </div>
-          <p className="mt-3 text-3xl font-bold text-slate-900">
-            {totalTimetableEntries}
-          </p>
-          <p className="mt-2 text-xs text-slate-500">Scheduled periods</p>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-slate-500">
-              Announcements
-            </p>
-            <Megaphone className="h-4 w-4 text-indigo-400" />
-          </div>
-          <p className="mt-3 text-3xl font-bold text-slate-900">
-            {noticeCount}
-          </p>
-          <p className="mt-2 text-xs text-slate-500">This term</p>
-        </div>
-      </div>
+      <KpiGrid>
+        <KpiCard
+          label="Total Classes"
+          value={totalClasses}
+          icon={<Users className="h-3.5 w-3.5 text-slate-400 sm:h-4 sm:w-4" />}
+          subtext="Assigned this term"
+        />
+        <KpiCard
+          label="Subjects Taught"
+          value={totalSubjects}
+          icon={<BookOpen className="h-3.5 w-3.5 text-emerald-500 sm:h-4 sm:w-4" />}
+          subtext="Active allocations"
+        />
+        <KpiCard
+          label="Students Covered"
+          value={totalStudents}
+          icon={<Users className="h-3.5 w-3.5 text-indigo-400 sm:h-4 sm:w-4" />}
+          subtext="Across assigned classes"
+        />
+        <KpiCard
+          label="Classes Today"
+          value={classesToday}
+          tone="dark"
+          icon={<CalendarDays className="h-3.5 w-3.5 text-white/70 sm:h-4 sm:w-4" />}
+          subtext={todayLabel}
+        />
+        <KpiCard
+          label="Attendance Marked"
+          value={attendanceMarked}
+          icon={<UserCheck className="h-3.5 w-3.5 text-emerald-500 sm:h-4 sm:w-4" />}
+          subtext="Today&apos;s classes"
+        />
+        <KpiCard
+          label="Pending Attendance"
+          value={pendingAttendance.length}
+          icon={<AlertTriangle className="h-3.5 w-3.5 text-amber-500 sm:h-4 sm:w-4" />}
+          subtext="Needs submission"
+        />
+        <KpiCard
+          label="Term Timetable"
+          value={totalTimetableEntries}
+          icon={<Clock className="h-3.5 w-3.5 text-slate-400 sm:h-4 sm:w-4" />}
+          subtext="Scheduled periods"
+        />
+        <KpiCard
+          label="Announcements"
+          value={noticeCount}
+          icon={<Megaphone className="h-3.5 w-3.5 text-indigo-400 sm:h-4 sm:w-4" />}
+          subtext="This term"
+        />
+      </KpiGrid>
 
       {/* Timetable + tasks */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

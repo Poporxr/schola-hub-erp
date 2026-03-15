@@ -1,10 +1,7 @@
 import UserAvatar from "@/components/UserAvatar";
 import {
   Mail,
-  Download,
-  Plus,
   Phone,
-  MoreHorizontal,
   Users,
   ArrowUpRight,
   UserCheck,
@@ -19,6 +16,8 @@ import { ITEM_PER_PAGE } from "@/lib/utils";
 import ParentsFilters from "@/components/parents/ParentsFilters";
 import AddParentModal from "@/components/modals/AddParentModal";
 import { FunctionButttons } from "@/components/FunctionButtons";
+import KpiCard from "@/components/kpi/KpiCard";
+import KpiGrid from "@/components/kpi/KpiGrid";
 
 type SearchParams = {
   search?: string | string[];
@@ -188,72 +187,60 @@ const Page = async ({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <p className="text-xs uppercase tracking-wide text-slate-500">Total Parents</p>
-              <Users className="h-4 w-4 text-slate-400" />
-            </div>
-            <p className="mt-3 text-3xl font-bold text-slate-900">{totalParents}</p>
-            <p className="mt-2 text-xs text-slate-500">Active directory size</p>
-          </div>
+        <KpiGrid>
+          <KpiCard
+            label="Total Parents"
+            value={totalParents}
+            icon={<Users className="h-4 w-4 text-slate-400" />}
+            subtext="Active directory size"
+          />
+          <KpiCard
+            label="Linked Students"
+            value={totalLinkedStudents}
+            icon={<Layers className="h-4 w-4 text-indigo-400" />}
+            subtext="Across all parent profiles"
+            tone="soft"
+          />
+          <KpiCard
+            label="Parents With Students"
+            value={parentsWithStudents}
+            icon={<UserCheck className="h-4 w-4 text-emerald-500" />}
+            subtext={`${multiStudentParents} with multiple wards`}
+            className="bg-linear-to-br from-emerald-50 via-white to-white"
+          />
+          <KpiCard
+            label="Unlinked Parents"
+            value={parentsWithoutStudents}
+            icon={<UserMinus className="h-4 w-4 text-rose-400" />}
+            subtext="Pending student linkage"
+            className="bg-linear-to-br from-slate-50 via-white to-white"
+          />
+        </KpiGrid>
 
-          <div className="rounded-2xl border border-slate-200 bg-linear-to-br from-indigo-50 via-white to-white p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <p className="text-xs uppercase tracking-wide text-slate-500">Linked Students</p>
-              <Layers className="h-4 w-4 text-indigo-400" />
-            </div>
-            <p className="mt-3 text-3xl font-bold text-slate-900">{totalLinkedStudents}</p>
-            <p className="mt-2 text-xs text-slate-500">Across all parent profiles</p>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-linear-to-br from-emerald-50 via-white to-white p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <p className="text-xs uppercase tracking-wide text-slate-500">Parents With Students</p>
-              <UserCheck className="h-4 w-4 text-emerald-500" />
-            </div>
-            <p className="mt-3 text-3xl font-bold text-slate-900">{parentsWithStudents}</p>
-            <p className="mt-2 text-xs text-slate-500">{multiStudentParents} with multiple wards</p>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-linear-to-br from-slate-50 via-white to-white p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <p className="text-xs uppercase tracking-wide text-slate-500">Unlinked Parents</p>
-              <UserMinus className="h-4 w-4 text-rose-400" />
-            </div>
-            <p className="mt-3 text-3xl font-bold text-slate-900">{parentsWithoutStudents}</p>
-            <p className="mt-2 text-xs text-slate-500">Pending student linkage</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <p className="text-xs uppercase tracking-wide text-slate-500">Average Wards</p>
-              <TrendingUp className="h-4 w-4 text-slate-400" />
-            </div>
-            <p className="mt-3 text-2xl font-semibold text-slate-900">
-              {avgStudentsPerParent.toFixed(1)}
-              <span className="ml-2 text-xs text-slate-400">per parent</span>
-            </p>
-            <p className="mt-2 text-xs text-slate-500">Distribution of parent responsibility</p>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <p className="text-xs uppercase tracking-wide text-slate-500">Top Class</p>
-              <Users className="h-4 w-4 text-slate-400" />
-            </div>
-            <p className="mt-3 text-2xl font-semibold text-slate-900">{topClassName}</p>
-            <p className="mt-2 text-xs text-slate-500">{topClassCount} linked students</p>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-linear-to-r from-slate-900 to-slate-800 p-5 text-white shadow-sm">
-            <p className="text-xs uppercase tracking-wide text-white/70">Engagement Pulse</p>
-            <p className="mt-3 text-2xl font-semibold">{parentsWithStudents}</p>
-            <p className="mt-1 text-xs text-white/70">Parents actively linked this term</p>
-          </div>
-        </div>
+        <KpiGrid className="lg:grid-cols-3">
+          <KpiCard
+            label="Average Wards"
+            value={avgStudentsPerParent.toFixed(1)}
+            icon={<TrendingUp className="h-4 w-4 text-slate-400" />}
+            subtext="Distribution of parent responsibility"
+            footer={<span className="text-xs text-slate-400">per parent</span>}
+            valueClassName="text-2xl font-semibold sm:text-2xl"
+          />
+          <KpiCard
+            label="Top Class"
+            value={topClassName}
+            icon={<Users className="h-4 w-4 text-slate-400" />}
+            subtext={`${topClassCount} linked students`}
+            valueClassName="text-2xl font-semibold sm:text-2xl"
+          />
+          <KpiCard
+            label="Engagement Pulse"
+            value={parentsWithStudents}
+            subtext="Parents actively linked this term"
+            tone="dark"
+            valueClassName="text-2xl font-semibold sm:text-2xl"
+          />
+        </KpiGrid>
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex-1 flex flex-col">
           <div className="border-b border-slate-200 bg-linear-to-r from-slate-50 via-white to-slate-50 p-4 grid grid-cols-1 gap-4">
             

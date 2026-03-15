@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { formatDate, yearsSince } from "@/lib/settings";
 import Link from "next/link";
 import { ChevronRight, Link2, UserRoundCheck } from "lucide-react";
+import LoginCredentialsCard from "@/components/student/LoginCredentialsCard";
 
 const Page = async ({ params }: { params: { studentId?: string } | Promise<{ studentId?: string }> }) => {
     const { studentId } = await params;
@@ -39,6 +40,7 @@ const Page = async ({ params }: { params: { studentId?: string } | Promise<{ stu
                     email: true,
                     phone: true,
                     image: true,
+                    passwordHash: true,
                 },
             },
             classHistories: currentSession && currentTerm
@@ -90,6 +92,13 @@ const Page = async ({ params }: { params: { studentId?: string } | Promise<{ stu
         isPrimary: p.isPrimary,
     }));
     const linkedParentCount = parents.length;
+    const loginUsername = student.admissionNumber
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]/g, "_")
+        .replace(/_+/g, "_")
+        .replace(/^_+|_+$/g, "");
+    const loginPassword = student.user.passwordHash ?? "N/A";
 
     const subjects = classId
         ? await prisma.classSubject.findMany({
@@ -214,6 +223,11 @@ const Page = async ({ params }: { params: { studentId?: string } | Promise<{ stu
                     <p className="mt-2 text-xs text-white/70">Active session overview</p>
                 </div>
             </div>
+
+            <LoginCredentialsCard
+                username={loginUsername}
+                password={loginPassword}
+            />
 
             <StudentTabs
                 contact={{

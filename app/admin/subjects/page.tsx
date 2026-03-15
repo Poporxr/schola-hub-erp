@@ -6,6 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { unstable_noStore as noStore } from "next/cache";
 import { ITEM_PER_PAGE } from "@/lib/utils";
 import type { SubjectFormData } from "@/components/modals/forms/SubjectForm";
+import KpiCard from "@/components/kpi/KpiCard";
+import KpiGrid from "@/components/kpi/KpiGrid";
 
 type SearchParams = {
   page?: string | string[];
@@ -104,43 +106,33 @@ const Page = async ({
                 <div className="absolute left-0 bottom-0 w-56 h-56 rounded-full bg-indigo-500/20 blur-3xl" />
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <div className="flex items-center justify-between">
-                        <p className="text-xs uppercase tracking-wide text-slate-500">Total Subjects</p>
-                        <BookOpen className="h-4 w-4 text-slate-400" />
-                    </div>
-                    <p className="mt-3 text-3xl font-bold text-slate-900">{totalSubjects}</p>
-                    <p className="mt-2 text-xs text-slate-500">Across all grade levels</p>
-                </div>
-
-                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <div className="flex items-center justify-between">
-                        <p className="text-xs uppercase tracking-wide text-slate-500">Active Subjects</p>
-                        <CheckCircle className="h-4 w-4 text-emerald-500" />
-                    </div>
-                    <p className="mt-3 text-3xl font-bold text-slate-900">{totalSubjects}</p>
-                    <p className="mt-2 text-xs text-slate-500">Currently scheduled</p>
-                </div>
-
-                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <div className="flex items-center justify-between">
-                        <p className="text-xs uppercase tracking-wide text-slate-500">Assigned Teachers</p>
-                        <Users className="h-4 w-4 text-indigo-400" />
-                    </div>
-                    <p className="mt-3 text-3xl font-bold text-slate-900">{uniqueTeacherCount}</p>
-                    <p className="mt-2 text-xs text-slate-500">Distinct instructors</p>
-                </div>
-
-                <div className="rounded-2xl border border-slate-200 bg-linear-to-r from-slate-900 to-slate-800 p-5 text-white shadow-sm">
-                    <div className="flex items-center justify-between">
-                        <p className="text-xs uppercase tracking-wide text-white/70">Weekly Hours</p>
-                        <Clock className="h-4 w-4 text-white/70" />
-                    </div>
-                    <p className="mt-3 text-3xl font-bold">{totalHours}</p>
-                    <p className="mt-2 text-xs text-white/70">Total hours/week</p>
-                </div>
-            </div>
+            <KpiGrid>
+                <KpiCard
+                    label="Total Subjects"
+                    value={totalSubjects}
+                    icon={<BookOpen className="h-4 w-4 text-slate-400" />}
+                    subtext="Across all grade levels"
+                />
+                <KpiCard
+                    label="Active Subjects"
+                    value={totalSubjects}
+                    icon={<CheckCircle className="h-4 w-4 text-emerald-500" />}
+                    subtext="Currently scheduled"
+                />
+                <KpiCard
+                    label="Assigned Teachers"
+                    value={uniqueTeacherCount}
+                    icon={<Users className="h-4 w-4 text-indigo-400" />}
+                    subtext="Distinct instructors"
+                />
+                <KpiCard
+                    label="Weekly Hours"
+                    value={totalHours}
+                    icon={<Clock className="h-4 w-4 text-white/70" />}
+                    subtext="Total hours/week"
+                    tone="dark"
+                />
+            </KpiGrid>
 
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
                 <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
@@ -197,5 +189,4 @@ const Page = async ({
     )
 }
 export default Page;
-
 

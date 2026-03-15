@@ -1,7 +1,9 @@
 import FormButton from "@/components/buttons/FormButton";
 import { prisma } from "@/lib/prisma";
-import { Users, GraduationCap, UserCheck, Layers, Sparkles } from "lucide-react";
+import { Users, GraduationCap, Layers, Sparkles } from "lucide-react";
 import Link from "next/link";
+import KpiCard from "@/components/kpi/KpiCard";
+import KpiGrid from "@/components/kpi/KpiGrid";
 
 const Page = async () => {
     const classSelect = {
@@ -45,40 +47,34 @@ const Page = async () => {
                 <div className="absolute left-0 bottom-0 w-56 h-56 rounded-full bg-indigo-500/20 blur-3xl" />
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <div className="flex items-center justify-between">
-                        <p className="text-xs uppercase tracking-wide text-slate-500">Total Classes</p>
-                        <Layers className="h-4 w-4 text-slate-400" />
-                    </div>
-                    <p className="mt-3 text-3xl font-bold text-slate-900">{totalClasses}</p>
-                    <p className="mt-2 text-xs text-slate-500">Across all levels</p>
-                </div>
-                <div className="rounded-2xl border border-slate-200 bg-linear-to-br from-indigo-50 via-white to-white p-5 shadow-sm">
-                    <div className="flex items-center justify-between">
-                        <p className="text-xs uppercase tracking-wide text-slate-500">Total Students</p>
-                        <Users className="h-4 w-4 text-indigo-500" />
-                    </div>
-                    <p className="mt-3 text-3xl font-bold text-slate-900">{totalStudents}</p>
-                    <p className="mt-2 text-xs text-slate-500">Linked class histories</p>
-                </div>
-                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <div className="flex items-center justify-between">
-                        <p className="text-xs uppercase tracking-wide text-slate-500">Avg Class Size</p>
-                        <GraduationCap className="h-4 w-4 text-slate-400" />
-                    </div>
-                    <p className="mt-3 text-3xl font-bold text-slate-900">{avgClassSize.toFixed(1)}</p>
-                    <p className="mt-2 text-xs text-slate-500">Students per class</p>
-                </div>
-                <div className="rounded-2xl border border-slate-200 bg-linear-to-r from-slate-900 to-slate-800 p-5 text-white shadow-sm">
-                    <div className="flex items-center justify-between">
-                        <p className="text-xs uppercase tracking-wide text-white/70">Capacity Utilization</p>
-                        <Sparkles className="h-4 w-4 text-white/70" />
-                    </div>
-                    <p className="mt-3 text-3xl font-bold">{capacityUtil.toFixed(1)}%</p>
-                    <p className="mt-2 text-xs text-white/70">{classesWithoutTeacher} classes without teacher</p>
-                </div>
-            </div>
+            <KpiGrid>
+                <KpiCard
+                    label="Total Classes"
+                    value={totalClasses}
+                    icon={<Layers className="h-4 w-4 text-slate-400" />}
+                    subtext="Across all levels"
+                />
+                <KpiCard
+                    label="Total Students"
+                    value={totalStudents}
+                    icon={<Users className="h-4 w-4 text-indigo-500" />}
+                    subtext="Linked class histories"
+                    tone="soft"
+                />
+                <KpiCard
+                    label="Avg Class Size"
+                    value={avgClassSize.toFixed(1)}
+                    icon={<GraduationCap className="h-4 w-4 text-slate-400" />}
+                    subtext="Students per class"
+                />
+                <KpiCard
+                    label="Capacity Utilization"
+                    value={`${capacityUtil.toFixed(1)}%`}
+                    icon={<Sparkles className="h-4 w-4 text-white/70" />}
+                    subtext={`${classesWithoutTeacher} classes without teacher`}
+                    tone="dark"
+                />
+            </KpiGrid>
             <div className="uppercase tracking-[0.2em] font-bold flex justify-between items-center ">
                 <p className="text-lg text-black/60">All Classes</p>
                  <FormButton type={"class"} action="create" />

@@ -31,18 +31,7 @@ export function normalizePasswordForClerk(value: string) {
     .replace(/^_+|_+$/g, "");
 
   const base = normalizedBase || "schola_user";
-  let result = base;
-
-  if (!/[a-z]/.test(result)) result += "a";
-  if (!/[A-Z]/.test(result)) result += "A";
-  if (!/[0-9]/.test(result)) result += "1";
-  if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(result)) result += "!";
-
-  if (result.length < 8) {
-    result = `${result}Schola1!`.slice(0, 12);
-  }
-
-  return result;
+  return `${base.slice(0, 3).toLowerCase()}${base.slice(3)}`;
 }
 
 export function getCurrentSessionCode(sessionName?: string) {

@@ -1,5 +1,6 @@
 import BackButton from "@/components/BackButton";
 import UserAvatar from "@/components/UserAvatar";
+import LoginCredentialsCard from "@/components/student/LoginCredentialsCard";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 
@@ -53,6 +54,7 @@ export default async function Page({
           phone: true,
           image: true,
           status: true,
+          passwordHash: true,
         },
       },
       class: {
@@ -189,6 +191,13 @@ export default async function Page({
       : teacher.user.status === "SUSPENDED"
         ? "text-rose-700 bg-rose-100"
         : "text-amber-700 bg-amber-100";
+  const loginUsername = teacher.teacherId
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  const loginPassword = teacher.user.passwordHash ?? "N/A";
 
   const assignmentLabel =
     currentSession && currentTerm
@@ -225,6 +234,10 @@ export default async function Page({
               </div>
             </div>
           </div>
+        </div>
+
+        <div className="mb-6">
+          <LoginCredentialsCard username={loginUsername} password={loginPassword} />
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

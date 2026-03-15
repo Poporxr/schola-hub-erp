@@ -1,4 +1,4 @@
-import { CalendarCheck, ChevronRight, Download } from "lucide-react";
+import { Bell, CalendarCheck, ChevronRight, Download, Users } from "lucide-react";
 import UserAvatar from "@/components/UserAvatar";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
@@ -6,6 +6,8 @@ import { auth } from "@clerk/nextjs/server";
 import ParentAnnouncements from "@/components/parent/ParentAnnouncements";
 import ParentAttendanceSummary from "@/components/parent/ParentAttendanceSummary";
 import { greetingForHour } from "@/lib/settings";
+import KpiCard from "@/components/kpi/KpiCard";
+import KpiGrid from "@/components/kpi/KpiGrid";
 
 const Page = async () => {
     const { userId } = await auth();
@@ -70,7 +72,6 @@ const Page = async () => {
         .map((child) => child.classHistories.find((history) => history.sessionId === currentTerm.sessionId && history.termId === currentTerm.id))
         .filter((history): history is NonNullable<typeof history> => Boolean(history));
 
-    const classIds = Array.from(new Set(classHistories.map((history) => history.class.id)));
     const classHistoryIds = classHistories.map((history) => history.id);
 
     const now = new Date();
@@ -190,6 +191,20 @@ const Page = async () => {
         };
     });
 
+    const activeChildren = childCards.filter((child) => child.status === "ACTIVE").length;
+    const avgAttendance =
+        childCards.length > 0
+            ? Number(
+                  (
+                      childCards.reduce(
+                          (sum, child) => sum + (child.attendancePercent ?? 0),
+                          0
+                      ) / childCards.length
+                  ).toFixed(1)
+              )
+            : 0;
+    const uniqueClasses = new Set(childCards.map((child) => child.className).filter(Boolean)).size;
+
     return (
         <div className=" active space-y-6">
       <div className="bg-linear-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
@@ -204,6 +219,34 @@ const Page = async () => {
         <div className="absolute right-4 top-4 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
         <div className="absolute left-0 bottom-0 w-56 h-56 rounded-full bg-indigo-500/20 blur-3xl" />
       </div>
+
+            <KpiGrid>
+                <KpiCard
+                    label="Linked Children"
+                    value={childCards.length}
+                    icon={<Users className="h-3.5 w-3.5 text-slate-400 sm:h-4 sm:w-4" />}
+                    subtext={`${activeChildren} active`}
+                />
+                <KpiCard
+                    label="Average Attendance"
+                    value={`${avgAttendance}%`}
+                    icon={<CalendarCheck className="h-3.5 w-3.5 text-emerald-500 sm:h-4 sm:w-4" />}
+                    subtext="This month"
+                />
+                <KpiCard
+                    label="Classes"
+                    value={uniqueClasses}
+                    icon={<Users className="h-3.5 w-3.5 text-indigo-400 sm:h-4 sm:w-4" />}
+                    subtext="Across children"
+                />
+                <KpiCard
+                    label="Announcements"
+                    value={notices.length}
+                    tone="soft"
+                    icon={<Bell className="h-3.5 w-3.5 text-amber-500 sm:h-4 sm:w-4" />}
+                    subtext="Recent updates"
+                />
+            </KpiGrid>
             <div>
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Your Children</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

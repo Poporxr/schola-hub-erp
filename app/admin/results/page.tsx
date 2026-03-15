@@ -5,9 +5,11 @@ import { ResultsClassFilter, ResultsTermFilter } from "@/components/ResultsFilte
 import ResultsSearchInput from "@/components/ResultsSearchInput";
 import { prisma } from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/utils";
-import { ArrowUp, ArrowUpDown, Award, BarChart3, CheckCircle2, Download, Printer, Send, Sliders, TrendingUp, Trophy, Upload, Users } from "lucide-react";
+import { ArrowUp, BarChart3, CheckCircle2, Download, Printer, Send, Sliders, TrendingUp, Trophy, Upload, Users } from "lucide-react";
 import UserAvatar from "@/components/UserAvatar";
 import Link from "next/link";
+import KpiCard from "@/components/kpi/KpiCard";
+import KpiGrid from "@/components/kpi/KpiGrid";
 
 type SearchParams = {
     classId?: string | string[];
@@ -202,48 +204,40 @@ const Page = async ({
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                        <div className="flex items-center justify-between">
-                            <p className="text-xs uppercase tracking-wide text-slate-500">Class Average</p>
-                            <TrendingUp className="h-4 w-4 text-slate-400" />
-                        </div>
-                        <p className="mt-3 text-3xl font-bold text-slate-900">{classAverage}%</p>
-                        <div className="mt-3 flex items-center text-xs">
-                            <span className="font-semibold flex items-center gap-1 text-emerald-600">
-                                <ArrowUp className="w-3 h-3" /> +2.3%
-                            </span>
-                            <span className="text-slate-400 ml-2">from last term</span>
-                        </div>
-                    </div>
-
-                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                        <div className="flex items-center justify-between">
-                            <p className="text-xs uppercase tracking-wide text-slate-500">Top Performer</p>
-                            <Trophy className="h-4 w-4 text-amber-500" />
-                        </div>
-                        <p className="mt-3 text-3xl font-bold text-slate-900">{topPerformer ? `${topPerformer.total}%` : "-"}</p>
-                        <div className="mt-2 text-xs text-slate-500">{topPerformer?.name ?? "-"}</div>
-                    </div>
-
-                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                        <div className="flex items-center justify-between">
-                            <p className="text-xs uppercase tracking-wide text-slate-500">Pass Rate</p>
-                            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                        </div>
-                        <p className="mt-3 text-3xl font-bold text-slate-900">{passRate}%</p>
-                        <div className="mt-2 text-xs text-slate-500">{passCount} of {totalStudentsEvaluated} students</div>
-                    </div>
-
-                    <div className="rounded-2xl border border-slate-200 bg-linear-to-r from-slate-900 to-slate-800 p-5 text-white shadow-sm">
-                        <div className="flex items-center justify-between">
-                            <p className="text-xs uppercase tracking-wide text-white/70">Students Evaluated</p>
-                            <Users className="h-4 w-4 text-white/70" />
-                        </div>
-                        <p className="mt-3 text-3xl font-bold">{totalStudentsEvaluated}</p>
-                        <p className="mt-2 text-xs text-white/70">Students with results</p>
-                    </div>
-                </div>
+                <KpiGrid>
+                    <KpiCard
+                        label="Class Average"
+                        value={`${classAverage}%`}
+                        icon={<TrendingUp className="h-4 w-4 text-slate-400" />}
+                        footer={
+                            <div className="flex items-center text-xs">
+                                <span className="font-semibold flex items-center gap-1 text-emerald-600">
+                                    <ArrowUp className="w-3 h-3" /> +2.3%
+                                </span>
+                                <span className="text-slate-400 ml-2">from last term</span>
+                            </div>
+                        }
+                    />
+                    <KpiCard
+                        label="Top Performer"
+                        value={topPerformer ? `${topPerformer.total}%` : "-"}
+                        icon={<Trophy className="h-4 w-4 text-amber-500" />}
+                        subtext={topPerformer?.name ?? "-"}
+                    />
+                    <KpiCard
+                        label="Pass Rate"
+                        value={`${passRate}%`}
+                        icon={<CheckCircle2 className="h-4 w-4 text-emerald-500" />}
+                        subtext={`${passCount} of ${totalStudentsEvaluated} students`}
+                    />
+                    <KpiCard
+                        label="Students Evaluated"
+                        value={totalStudentsEvaluated}
+                        icon={<Users className="h-4 w-4 text-white/70" />}
+                        subtext="Students with results"
+                        tone="dark"
+                    />
+                </KpiGrid>
 
                 <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm">
                     <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">

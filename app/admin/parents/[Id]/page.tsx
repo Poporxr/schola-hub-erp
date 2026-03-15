@@ -4,6 +4,7 @@ import { ChevronRight, Mail, MapPin, Phone, PlusCircle } from "lucide-react";
 import UserAvatar from "@/components/UserAvatar";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import LoginCredentialsCard from "@/components/student/LoginCredentialsCard";
 
 const Page = async ({ params }: { params: { Id: string } }) => {
     const { Id } = await params;
@@ -21,6 +22,7 @@ const Page = async ({ params }: { params: { Id: string } }) => {
                     phone: true,
                     image: true,
                     status: true,
+                    passwordHash: true,
                 },
             },
             parentStudents: {
@@ -98,6 +100,8 @@ const Page = async ({ params }: { params: { Id: string } }) => {
     const parentName = `${parent.user.firstName} ${parent.user.lastName}`;
     const parentStatus = parent.user.status ?? "ACTIVE";
     const shortId = parent.id.slice(0, 8).toUpperCase();
+    const loginUsername = parent.user.email ?? parent.id;
+    const loginPassword = parent.user.passwordHash ?? "N/A";
 
     return (
         <div className="space-y-6">
@@ -136,6 +140,11 @@ const Page = async ({ params }: { params: { Id: string } }) => {
                     </button>
                 </div>
             </div>
+
+            <LoginCredentialsCard
+                username={loginUsername}
+                password={loginPassword}
+            />
 
             {/* Contact + Linked Students */}
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

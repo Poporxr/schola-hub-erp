@@ -12,6 +12,8 @@ import {
 import Link from "next/link";
 import { AttendanceStatus } from "@/generated/prisma/client";
 import AttendanceRateCards from "@/components/AttendanceRateCards";
+import KpiCard from "@/components/kpi/KpiCard";
+import KpiGrid from "@/components/kpi/KpiGrid";
 import { greetingForHour, relativeDaysLabel } from "@/lib/settings";
 
 const formatPosition = (position: number | null) => {
@@ -243,43 +245,33 @@ const Page = async () => {
         <div className="absolute left-0 bottom-0 w-56 h-56 rounded-full bg-indigo-500/20 blur-3xl" />
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 lg:grid-cols-4">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Attendance Rate</p>
-            <CalendarCheck className="h-4 w-4 text-blue-500" />
-          </div>
-          <p className="mt-3 text-3xl font-bold text-slate-900">{attendanceRate.toFixed(1)}%</p>
-          <p className="mt-2 text-xs text-slate-500">This term</p>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Average Score</p>
-            <Award className="h-4 w-4 text-emerald-500" />
-          </div>
-          <p className="mt-3 text-3xl font-bold text-slate-900">{averageScore.toFixed(1)}%</p>
-          <p className="mt-2 text-xs text-slate-500">Across results</p>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Class Position</p>
-            <TrendingUp className="h-4 w-4 text-amber-500" />
-          </div>
-          <p className="mt-3 text-3xl font-bold text-slate-900">{formatPosition(classPosition)}</p>
-          <p className="mt-2 text-xs text-slate-500">{classSize ? `Out of ${classSize} students` : "Class not set"}</p>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-linear-to-br from-indigo-50 via-white to-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Total Subjects</p>
-            <BookOpen className="h-4 w-4 text-indigo-400" />
-          </div>
-          <p className="mt-3 text-3xl font-bold text-slate-900">{subjectCount}</p>
-          <p className="mt-2 text-xs text-slate-500">Active subjects</p>
-        </div>
-      </div>
+      <KpiGrid>
+        <KpiCard
+          label="Attendance Rate"
+          value={`${attendanceRate.toFixed(1)}%`}
+          icon={<CalendarCheck className="h-3.5 w-3.5 text-blue-500 sm:h-4 sm:w-4" />}
+          subtext="This term"
+        />
+        <KpiCard
+          label="Average Score"
+          value={`${averageScore.toFixed(1)}%`}
+          icon={<Award className="h-3.5 w-3.5 text-emerald-500 sm:h-4 sm:w-4" />}
+          subtext="Across results"
+        />
+        <KpiCard
+          label="Class Position"
+          value={formatPosition(classPosition)}
+          icon={<TrendingUp className="h-3.5 w-3.5 text-amber-500 sm:h-4 sm:w-4" />}
+          subtext={classSize ? `Out of ${classSize} students` : "Class not set"}
+        />
+        <KpiCard
+          label="Total Subjects"
+          value={subjectCount}
+          tone="soft"
+          icon={<BookOpen className="h-3.5 w-3.5 text-indigo-400 sm:h-4 sm:w-4" />}
+          subtext="Active subjects"
+        />
+      </KpiGrid>
 
 
       <ScheduleAndNotices schedule={schedule} notices={notices} />

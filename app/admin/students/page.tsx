@@ -9,6 +9,8 @@ import { unstable_noStore as noStore } from "next/cache";
 import type { StudentFormClasses, StudentFormData } from "@/components/modals/forms/StudentForm";
 import { ITEM_PER_PAGE } from "@/lib/utils";
 import { Prisma } from "@/generated/prisma/client";
+import KpiCard from "@/components/kpi/KpiCard";
+import KpiGrid from "@/components/kpi/KpiGrid";
 
 type SearchParams = {
   classId?: string | string[];
@@ -173,68 +175,57 @@ export default async function page({
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Total Students</p>
-            <Users className="h-4 w-4 text-slate-400" />
-          </div>
-          <p className="mt-3 text-3xl font-bold text-slate-900">{totalAll}</p>
-          <p className="mt-2 text-xs text-slate-500">All registered students</p>
-        </div>
+      <KpiGrid>
+        <KpiCard
+          label="Total Students"
+          value={totalAll}
+          icon={<Users className="h-4 w-4 text-slate-400" />}
+          subtext="All registered students"
+        />
+        <KpiCard
+          label="Active Students"
+          value={active}
+          icon={<UserCheck className="h-4 w-4 text-emerald-500" />}
+          subtext="Currently active accounts"
+          className="bg-linear-to-br from-emerald-50 via-white to-white"
+        />
+        <KpiCard
+          label="New Admissions"
+          value={recentAdmissions}
+          icon={<Sparkles className="h-4 w-4 text-indigo-500" />}
+          subtext="Last 30 days"
+          tone="soft"
+        />
+        <KpiCard
+          label="Avg Class Size"
+          value={classSizeAvg.toFixed(1)}
+          icon={<GraduationCap className="h-4 w-4 text-slate-400" />}
+          subtext={`Across ${classes.length} classes`}
+        />
+      </KpiGrid>
 
-        <div className="rounded-2xl border border-slate-200 bg-linear-to-br from-emerald-50 via-white to-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Active Students</p>
-            <UserCheck className="h-4 w-4 text-emerald-500" />
-          </div>
-          <p className="mt-3 text-3xl font-bold text-slate-900">{active}</p>
-          <p className="mt-2 text-xs text-slate-500">Currently active accounts</p>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-linear-to-br from-indigo-50 via-white to-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-slate-500">New Admissions</p>
-            <Sparkles className="h-4 w-4 text-indigo-500" />
-          </div>
-          <p className="mt-3 text-3xl font-bold text-slate-900">{recentAdmissions}</p>
-          <p className="mt-2 text-xs text-slate-500">Last 30 days</p>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Avg Class Size</p>
-            <GraduationCap className="h-4 w-4 text-slate-400" />
-          </div>
-          <p className="mt-3 text-3xl font-bold text-slate-900">{classSizeAvg.toFixed(1)}</p>
-          <p className="mt-2 text-xs text-slate-500">Across {classes.length} classes</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Boys</p>
-            <User2 className="h-4 w-4 text-blue-500" />
-          </div>
-          <p className="mt-3 text-2xl font-semibold text-slate-900">{male}</p>
-        </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Girls</p>
-            <User2 className="h-4 w-4 text-pink-500" />
-          </div>
-          <p className="mt-3 text-2xl font-semibold text-slate-900">{female}</p>
-        </div>
-        <div className="rounded-2xl border border-slate-200 bg-linear-to-r from-slate-900 to-slate-800 p-5 text-white shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-white/70">Visible Results</p>
-            <Calendar className="h-4 w-4 text-white/70" />
-          </div>
-          <p className="mt-3 text-2xl font-semibold">{total}</p>
-          <p className="mt-2 text-xs text-white/70">Filtered records</p>
-        </div>
-      </div>
+      <KpiGrid className="lg:grid-cols-3">
+        <KpiCard
+          label="Boys"
+          value={male}
+          icon={<User2 className="h-4 w-4 text-blue-500" />}
+          valueClassName="text-2xl font-semibold sm:text-2xl"
+        />
+        <KpiCard
+          label="Girls"
+          value={female}
+          icon={<User2 className="h-4 w-4 text-pink-500" />}
+          valueClassName="text-2xl font-semibold sm:text-2xl"
+        />
+        <KpiCard
+          label="Visible Results"
+          value={total}
+          icon={<Calendar className="h-4 w-4 text-white/70" />}
+          subtext="Filtered records"
+          tone="dark"
+          valueClassName="text-2xl font-semibold sm:text-2xl"
+        />
+      </KpiGrid>
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
         <div className="p-6 border-b border-slate-100">
