@@ -68,7 +68,7 @@ const FormButton = (props: FormButtonProps) => {
                         setMode("edit");
                         setOpen(true);
                     }}
-                    className="text-muted-foreground hover:text-primary mx-1">
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700">
                     <Edit2 className="w-4 h-4" />
                 </button>
                 : ''}
@@ -80,7 +80,7 @@ const FormButton = (props: FormButtonProps) => {
                         setMode("edit");
                         setOpen(true);
                     }}
-                    className="text-muted-foreground hover:text-primary mx-1">
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700">
                     <Edit2 className="w-4 h-4" />
                 </button>
                 : ''}
@@ -92,7 +92,7 @@ const FormButton = (props: FormButtonProps) => {
                         setMode("edit");
                         setOpen(true);
                     }}
-                    className="text-muted-foreground hover:text-primary mx-1">
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700">
                     <Edit2 className="w-4 h-4" />
                 </button>
                 : ''}

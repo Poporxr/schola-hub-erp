@@ -29,7 +29,7 @@ export function DeleteButton({
         type="button"
         onClick={() => setOpen(true)}
         className={iconOnly
-          ? "text-slate-400 hover:text-rose-600"
+          ? "inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700"
           : "rounded-lg text-red-600 px-3 py-2 cursor-pointer text-xs bg-white hover:text-red-700"}
       >
         {iconOnly ? <Trash2 className="w-4 h-4" /> : "Remove"}
