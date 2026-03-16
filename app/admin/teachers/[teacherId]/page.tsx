@@ -127,17 +127,6 @@ export default async function Page({
     });
   }
 
-  for (const row of teacher.subjectTeachers) {
-    if (!classMap.has(row.class.id)) {
-      classMap.set(row.class.id, {
-        id: row.class.id,
-        name: row.class.name,
-        levelName: row.class.level.name,
-        isPrimary: false,
-      });
-    }
-  }
-
   const classIds = Array.from(classMap.keys());
 
   const classCounts = classIds.length
@@ -171,8 +160,6 @@ export default async function Page({
   const classRows = Array.from(classMap.values()).map((row) => ({
     ...row,
     studentCount: studentCountByClassId.get(row.id) ?? 0,
-    subjectCount: teacher.subjectTeachers.filter((assignment) => assignment.classId === row.id)
-      .length,
   }));
 
   const subjectSummary =
@@ -305,7 +292,7 @@ export default async function Page({
                       <p className="font-semibold text-gray-900">{row.name}</p>
                       <p className="text-xs text-gray-500">
                         {row.levelName ?? "Class"} •{" "}
-                        {row.isPrimary ? "Primary Class" : `${row.subjectCount} Subject Assignment${row.subjectCount === 1 ? "" : "s"}`}
+                        {row.isPrimary ? "Primary Class" : "Class Teacher Assignment"}
                       </p>
                     </div>
                     <span className="text-sm font-medium text-gray-700">
@@ -335,3 +322,4 @@ function Info({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+

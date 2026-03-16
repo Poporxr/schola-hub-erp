@@ -57,6 +57,7 @@ export default async function Page({
         id: true,
         admissionNumber: true,
         gender: true,
+        address: true,
         user: { select: { firstName: true, lastName: true, email: true, phone: true, image: true } },
       },
     }),
@@ -179,7 +180,7 @@ export default async function Page({
   return (
     <>
       <BackButton />
-      <main className="space-y-8">
+      <main className="space-y-8 mt-5">
         <div className="bg-linear-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
           <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div className="flex items-center gap-4">
@@ -187,7 +188,7 @@ export default async function Page({
                 <School className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold">{classInfo.name}</h1>
+                <h1 className="text-2xl font-bold text-white/50">{classInfo.name}</h1>
                 <p className="text-white/70 text-sm">{classInfo.level.name}</p>
                 <p className="text-white/60 text-xs mt-1">Academic Year {currentSession?.name ?? "—"}</p>
               </div>
@@ -220,11 +221,11 @@ export default async function Page({
           </div>
           <div className="rounded-2xl border border-slate-200 bg-linear-to-br from-indigo-50 via-white to-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
-              <p className="text-xs uppercase tracking-wide text-slate-500">Average Score</p>
-              <TrendingUp className="h-4 w-4 text-indigo-500" />
+              <p className="text-xs uppercase tracking-wide text-slate-500">Attendance Rate</p>
+              <UserCheck className="w-4 h-4 text-indigo-500" />
             </div>
-            <p className="mt-3 text-3xl font-bold text-slate-900">{avgScore.toFixed(1)}%</p>
-            <p className="mt-2 text-xs text-slate-500">Based on {results.length} results</p>
+                  <p className="mt-3 text-3xl font-bold">{attendanceRate.toFixed(1)}%</p>
+            <p className="mt-2 text-xs text-slate-500">{attendancePresent}/{attendanceTotals} present</p>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-linear-to-r from-slate-900 to-slate-800 p-5 text-white shadow-sm">
             <div className="flex items-center justify-between">
@@ -233,65 +234,6 @@ export default async function Page({
             </div>
             <p className="mt-3 text-3xl font-bold">{currentTerm?.name ?? "—"}</p>
             <p className="mt-2 text-xs text-white/70">{currentSession?.name ?? "No session"}</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <h3 className="text-sm font-semibold text-slate-900">Average Score</h3>
-              <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
-                <TrendingUp className="w-4 h-4" />
-              </div>
-            </div>
-            <p className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">{avgScore.toFixed(1)}%</p>
-            <p className="text-xs text-slate-500 flex items-center gap-1">
-              <ArrowUp className="w-3 h-3 text-emerald-500" />
-              Updated from {results.length} results
-            </p>
-          </div>
-
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <h3 className="text-sm font-semibold text-slate-900">Top Student</h3>
-              <div className="p-2 bg-yellow-50 text-yellow-600 rounded-lg">
-                <Award className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <UserAvatar
-                src={undefined}
-                alt="Top Student"
-                size={40}
-                className="w-10 h-10 shrink-0"
-              />
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-slate-900 truncate">{topStudentName}</p>
-                <p className="text-xs text-slate-500">{topStudentScore} Average</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <h3 className="text-sm font-semibold text-slate-900">Recent Exams</h3>
-              <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                <ClipboardList className="w-4 h-4" />
-              </div>
-            </div>
-            <p className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">{recentExamCount}</p>
-            <p className="text-xs text-slate-500">Results in last 30 days</p>
-          </div>
-
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <h3 className="text-sm font-semibold text-slate-900">Attendance Rate</h3>
-              <div className="p-2 bg-green-50 text-green-600 rounded-lg">
-                <UserCheck className="w-4 h-4" />
-              </div>
-            </div>
-            <p className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">{attendanceRate.toFixed(1)}%</p>
-            <p className="text-xs text-slate-500">{attendancePresent}/{attendanceTotals} present</p>
           </div>
         </div>
 

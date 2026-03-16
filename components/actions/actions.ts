@@ -5,6 +5,10 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { clerkClient } from "@clerk/nextjs/server";
 import { parentSchema } from "@/components/modals/zod-schemas/parentForm";
+import {
+  createTeacherSchema,
+  updateTeacherSchema,
+} from "@/components/modals/zod-schemas/teacherForm";
 import type { Status } from "@/generated/prisma/client";
 import {
   extractClerkMessage,
@@ -129,16 +133,13 @@ export async function updateClassAction(formData: FormData) {
 }
 
 export async function createTeacherAction(formData: FormData) {
-  const firstName = getString(formData, "firstName");
-  const lastName = getString(formData, "lastName");
-  const email = getString(formData, "email");
-  const phone = getString(formData, "phone");
-  const department = getString(formData, "department");
-  const statusValue = getString(formData, "status");
+  const raw = Object.fromEntries(formData.entries());
+  const parsed = createTeacherSchema.safeParse(raw);
 
-  if (!firstName || !lastName || !email) {
-    throw new Error("First name, last name, and email are required.");
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message ?? "Invalid teacher data");
   }
+  const { firstName, lastName, email, phone, department, status } = parsed.data;
   const normalizedFirstName = normalizeHumanName(firstName);
   const normalizedLastName = normalizeHumanName(lastName);
 
@@ -151,7 +152,12 @@ export async function createTeacherAction(formData: FormData) {
     throw new Error("Email already exists.");
   }
 
-  const teacherId = await generateTeacherId();
+  const currentSession = await prisma.academicSession.findFirst({
+    where: { isCurrent: true },
+    select: { name: true },
+  });
+
+  const teacherId = await generateTeacherId(currentSession?.name);
 
   const { user: clerkUser, tempPassword } = await createClerkUser({
     firstName: normalizedFirstName,
@@ -175,8 +181,8 @@ export async function createTeacherAction(formData: FormData) {
             role: "TEACHER",
             firstName: normalizedFirstName,
             lastName: normalizedLastName,
-            phone: phone || null,
-            status: toStatus(statusValue),
+            phone,
+            status: toStatus(status),
           },
         },
       },
@@ -195,21 +201,13 @@ export async function createTeacherAction(formData: FormData) {
 }
 
 export async function updateTeacherAction(formData: FormData) {
-  const id = getString(formData, "id");
-  const firstName = getString(formData, "firstName");
-  const lastName = getString(formData, "lastName");
-  const email = getString(formData, "email");
-  const phone = getString(formData, "phone");
-  const department = getString(formData, "department");
-  const statusValue = getString(formData, "status");
+  const raw = Object.fromEntries(formData.entries());
+  const parsed = updateTeacherSchema.safeParse(raw);
 
-  if (!id) {
-    throw new Error("Teacher id is required.");
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message ?? "Invalid teacher data");
   }
-
-  if (!firstName || !lastName || !email) {
-    throw new Error("First name, last name, and email are required.");
-  }
+  const { id, firstName, lastName, email, phone, department, status } = parsed.data;
   const normalizedFirstName = normalizeHumanName(firstName);
   const normalizedLastName = normalizeHumanName(lastName);
 
@@ -266,8 +264,8 @@ export async function updateTeacherAction(formData: FormData) {
           firstName: normalizedFirstName,
           lastName: normalizedLastName,
           email,
-          phone: phone || null,
-          status: toStatus(statusValue),
+          phone,
+          status: toStatus(status),
         },
       }),
     ]);
@@ -625,5 +623,103 @@ export async function unlinkTeacherClassAction(
   } catch (error) {
     console.error("unlinkTeacherClassAction failed", error);
     return { ok: false, message: "Failed to unlink class from teacher." };
+  }
+}
+
+export async function linkSubjectClassAction(
+  formData: FormData
+): Promise<ActionState> {
+  const classId = getString(formData, "classId");
+  const subjectId = getString(formData, "subjectId");
+
+  if (!classId || !subjectId) {
+    return { ok: false, message: "Class id and subject id are required." };
+  }
+
+  const [classExists, subjectExists] = await Promise.all([
+    prisma.class.findUnique({ where: { id: classId }, select: { id: true } }),
+    prisma.subject.findUnique({ where: { id: subjectId }, select: { id: true } }),
+  ]);
+
+  if (!classExists) {
+    return { ok: false, message: "Class not found." };
+  }
+
+  if (!subjectExists) {
+    return { ok: false, message: "Subject not found." };
+  }
+
+  const existing = await prisma.classSubject.findUnique({
+    where: {
+      classId_subjectId: {
+        classId,
+        subjectId,
+      },
+    },
+    select: { id: true },
+  });
+
+  if (existing) {
+    return { ok: false, message: "Subject is already linked to this class." };
+  }
+
+  try {
+    await prisma.classSubject.create({
+      data: {
+        classId,
+        subjectId,
+      },
+    });
+
+    revalidatePath("/admin/subjects");
+    revalidatePath("/admin/classes");
+    revalidatePath(`/admin/classes/${classId}/subject-assignments`);
+    revalidatePath(`/admin/classes/${classId}`);
+
+    return { ok: true, message: "Subject linked to class successfully." };
+  } catch (error) {
+    console.error("linkSubjectClassAction failed", error);
+    return { ok: false, message: "Failed to link subject to class." };
+  }
+}
+
+export async function unlinkSubjectClassAction(
+  formData: FormData
+): Promise<ActionState> {
+  const classId = getString(formData, "classId");
+  const subjectId = getString(formData, "subjectId");
+
+  if (!classId || !subjectId) {
+    return { ok: false, message: "Class id and subject id are required." };
+  }
+
+  const existing = await prisma.classSubject.findUnique({
+    where: {
+      classId_subjectId: {
+        classId,
+        subjectId,
+      },
+    },
+    select: { id: true },
+  });
+
+  if (!existing) {
+    return { ok: false, message: "Subject-class link not found." };
+  }
+
+  try {
+    await prisma.classSubject.delete({
+      where: { id: existing.id },
+    });
+
+    revalidatePath("/admin/subjects");
+    revalidatePath("/admin/classes");
+    revalidatePath(`/admin/classes/${classId}/subject-assignments`);
+    revalidatePath(`/admin/classes/${classId}`);
+
+    return { ok: true, message: "Subject unlinked from class successfully." };
+  } catch (error) {
+    console.error("unlinkSubjectClassAction failed", error);
+    return { ok: false, message: "Failed to unlink subject from class." };
   }
 }

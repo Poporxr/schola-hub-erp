@@ -53,8 +53,8 @@ export default function TeacherForm({
             />
           </Field>
 
-          <Field label="Phone Number">
-            <input name="phone" type="tel" defaultValue={data?.phone ?? ""} className={input} />
+          <Field label="Phone Number *">
+            <input name="phone" type="tel" required defaultValue={data?.phone ?? ""} className={input} />
           </Field>
 
           <Field label="Profile Photo">

@@ -66,12 +66,9 @@ export function buildRoleIdentifier(
   sequence: number,
   sessionName?: string
 ) {
-  if (role === "teacher") {
-    return `TCH-${pad(sequence, 4)}`;
-  }
-
   const sessionCode = getCurrentSessionCode(sessionName);
-  const prefix = role === "student" ? "STU" : "PTA";
+  const prefix =
+    role === "student" ? "STU" : role === "parent" ? "PTA" : "TCH";
   return `${prefix}/${sessionCode}/${pad(sequence, 4)}`;
 }
 
@@ -108,10 +105,10 @@ export async function generateStudentAdmissionNumber(sessionName?: string) {
   return `${prefix}${nextNumber}`;
 }
 
-export async function generateTeacherId() {
+export async function generateTeacherId(sessionName?: string) {
   for (let attempt = 0; attempt < 20; attempt += 1) {
     const latest = await prisma.teacher.findFirst({
-      where: { teacherId: { startsWith: "TCH-" } },
+      where: { teacherId: { startsWith: "TCH/" } },
       orderBy: { teacherId: "desc" },
       select: { teacherId: true },
     });
@@ -119,7 +116,7 @@ export async function generateTeacherId() {
     const currentNumber = latest?.teacherId.match(/(\d+)$/)?.[1];
     const nextSequence =
       (currentNumber ? Number.parseInt(currentNumber, 10) : 0) + 1;
-    const candidate = buildRoleIdentifier("teacher", nextSequence);
+    const candidate = buildRoleIdentifier("teacher", nextSequence, sessionName);
 
     const existing = await prisma.teacher.findUnique({
       where: { teacherId: candidate },

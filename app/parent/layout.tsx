@@ -36,7 +36,7 @@ export default async function Layout({
     : null;
 
   return (
-    <main className="flex-1 flex flex-col min-w-0 overflow-hidden h-screen mb-20 bg-slate-50">
+    <main className="flex-1 flex flex-col min-w-0 overflow-hidden h-screen ">
       <ParentShell parentInfo={parentInfo}>
         {children}
       </ParentShell>

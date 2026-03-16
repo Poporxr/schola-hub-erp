@@ -28,7 +28,7 @@ export default function SmartBackButton({
     <button
       type="button"
       onClick={handleBack}
-      className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left shadow-sm transition hover:bg-slate-50 sm:gap-3 sm:px-4 sm:py-2.5"
+      className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left shadow-sm transition hover:bg-slate-50 sm:gap-3 sm:px-4 sm:py-2.5 cursor-pointer"
     >
       <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 text-slate-600 sm:h-8 sm:w-8">
         <ArrowLeft className="h-4 w-4" />

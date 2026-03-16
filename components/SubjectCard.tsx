@@ -1,56 +1,113 @@
 import UserAvatar from "@/components/UserAvatar";
-import { Globe, MoreVertical, } from "lucide-react";
+import { BookOpen } from "lucide-react";
 import { role } from "@/lib/utils";
 import { DeleteButton } from "./buttons/DeleteButton";
 
 export type SubjectCardItem = {
-    id: string;
-    name: string;
-    schedule?: string;
-    teacherNames: string[];
+  id: string;
+  name: string;
+  code?: string;
+  schedule?: string;
+  teacherNames: string[];
 };
 
 const SubjectCard = ({ subjects }: { subjects: SubjectCardItem[] }) => {
+  if (!subjects.length) {
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4 sm:p-6">
-            {subjects.map((subject) => (
-
-                <div className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition" key={subject.id}>
-                    <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-orange-50 text-orange-600 rounded-lg flex items-center justify-center shrink-0">
-                                <Globe className="w-6 h-6" />
-                            </div>
-                            <div>
-                                <h3 className="text-sm font-semibold text-gray-900">{subject.name}</h3>
-                                <p className="text-xs text-gray-500">{subject.schedule ?? "—"}</p>
-                            </div>
-                        </div>
-                        <button className="text-gray-400 hover:text-gray-600">
-                            <MoreVertical className="w-4 h-4" />
-                        </button>
-                    </div>
-                    <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
-                        <UserAvatar
-                            src={undefined}
-                            alt="Teacher"
-                            size={32}
-                            className="w-8 h-8 shrink-0"
-                        />
-                        <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">{subject.teacherNames[0] ?? "—"}</p>
-                            <p className="text-xs text-gray-500 truncate">{subject.teacherNames.slice(1).join(", ")}</p>
-                        </div>
-                        {role === 'admin' && <div className="flex gap-2">
-                            <button className="text-slate-900 hover:text-indigo-900 text-xs font-medium">Edit</button>
-                            <DeleteButton id={subject.id} label={subject.name} type="subject" />
-                        </div>}
-                    </div>
-                </div>
-            ))}
-
+      <div className="px-4 sm:px-6 py-10">
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-slate-400 shadow-sm">
+            <BookOpen className="h-5 w-5" />
+          </div>
+          <h3 className="mt-4 text-sm font-semibold text-slate-900">
+            No subjects added yet
+          </h3>
+          <p className="mt-1 text-sm text-slate-500">
+            This class does not have any subjects listed yet.
+          </p>
         </div>
-    )
-}
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-left">
+        <thead className="bg-slate-50">
+          <tr>
+            <th className="px-4 sm:px-6 py-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Subject
+            </th>
+            <th className="px-4 sm:px-6 py-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Schedule
+            </th>
+            <th className="px-4 sm:px-6 py-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Staff
+            </th>
+          </tr>
+        </thead>
+
+        <tbody className="divide-y divide-slate-100">
+          {subjects.map((subject) => {
+            const primaryTeacher = subject.teacherNames[0] ?? "Not assigned";
+            const extraTeachers = subject.teacherNames.slice(1);
+
+            return (
+              <tr key={subject.id} className="align-top">
+                <td className="px-4 sm:px-6 py-4">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                      <BookOpen className="h-4 w-4" />
+                    </div>
+
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-slate-900">
+                        {subject.name}
+                      </p>
+                      {subject.code ? (
+                        <p className="mt-1 text-xs text-slate-500">{subject.code}</p>
+                      ) : null}
+                    </div>
+                  </div>
+                </td>
+
+                <td className="px-4 sm:px-6 py-4">
+                  <p className="text-sm text-slate-700">{subject.schedule ?? "—"}</p>
+                </td>
+
+                <td className="px-4 sm:px-6 py-4">
+                  <div className="flex items-start gap-3">
+                    <UserAvatar
+                      src={undefined}
+                      alt={primaryTeacher}
+                      size={32}
+                      className="h-8 w-8 shrink-0"
+                    />
+
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-slate-900">
+                        {primaryTeacher}
+                      </p>
+
+                      {extraTeachers.length > 0 ? (
+                        <p className="mt-1 text-xs text-slate-500">
+                          +{extraTeachers.length} more: {extraTeachers.join(", ")}
+                        </p>
+                      ) : subject.teacherNames.length === 0 ? (
+                        <p className="mt-1 text-xs text-amber-600">
+                          No staff assigned yet
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+};
 
 export default SubjectCard;
