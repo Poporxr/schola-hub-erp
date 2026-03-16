@@ -8,6 +8,7 @@ import { ITEM_PER_PAGE } from "@/lib/utils";
 import type { SubjectFormData } from "@/components/modals/forms/SubjectForm";
 import KpiCard from "@/components/kpi/KpiCard";
 import KpiGrid from "@/components/kpi/KpiGrid";
+import Link from "next/link";
 
 type SearchParams = {
   page?: string | string[];
@@ -174,6 +175,12 @@ const Page = async ({
                                         {subject.teachers.length ? subject.teachers.join(", ") : "�"}
                                     </td>
                                     <td className="px-6 py-4 flex items-center gap-2">
+                                        <Link
+                                          href={`/admin/subjects/${subject.id}/teacher-assignment`}
+                                          className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                                        >
+                                          Teachers
+                                        </Link>
                                         <FormButton type="subject" action="edit" data={toSubjectFormData(subject)} />
                                         <DeleteButton id={subject.id} label={subject.name} type="subject" />
                                     </td>
@@ -189,4 +196,3 @@ const Page = async ({
     )
 }
 export default Page;
-

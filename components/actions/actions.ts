@@ -723,3 +723,164 @@ export async function unlinkSubjectClassAction(
     return { ok: false, message: "Failed to unlink subject from class." };
   }
 }
+
+export async function linkSubjectTeacherAction(
+  formData: FormData
+): Promise<ActionState> {
+  const subjectId = getString(formData, "subjectId");
+  const teacherId = getString(formData, "teacherId");
+
+  if (!subjectId || !teacherId) {
+    return { ok: false, message: "Subject id and teacher id are required." };
+  }
+
+  const currentSession = await prisma.academicSession.findFirst({
+    where: { isCurrent: true },
+    select: { id: true },
+  });
+
+  const currentTerm = currentSession
+    ? await prisma.term.findFirst({
+        where: { sessionId: currentSession.id, isCurrent: true },
+        select: { id: true },
+      })
+    : null;
+
+  if (!currentSession || !currentTerm) {
+    return { ok: false, message: "No active session/term found." };
+  }
+
+  const [subject, teacher, classLinks] = await Promise.all([
+    prisma.subject.findUnique({
+      where: { id: subjectId },
+      select: { id: true },
+    }),
+    prisma.teacher.findUnique({
+      where: { id: teacherId },
+      select: { id: true },
+    }),
+    prisma.classSubject.findMany({
+      where: { subjectId },
+      select: { classId: true },
+    }),
+  ]);
+
+  if (!subject) {
+    return { ok: false, message: "Subject not found." };
+  }
+
+  if (!teacher) {
+    return { ok: false, message: "Teacher not found." };
+  }
+
+  if (!classLinks.length) {
+    return { ok: false, message: "Link this subject to at least one class first." };
+  }
+
+  const subjectTeacherRows = await prisma.subjectTeacher.findMany({
+    where: {
+      subjectId,
+      sessionId: currentSession.id,
+      termId: currentTerm.id,
+    },
+    select: { teacherId: true, classId: true },
+  });
+
+  const assignedTeacherIds = new Set(subjectTeacherRows.map((row) => row.teacherId));
+  if (assignedTeacherIds.has(teacherId)) {
+    return { ok: false, message: "Teacher is already assigned to this subject." };
+  }
+
+  if (assignedTeacherIds.size >= 2) {
+    return { ok: false, message: "A subject can have at most 2 teachers." };
+  }
+
+  try {
+    await prisma.subjectTeacher.createMany({
+      data: classLinks.map((row) => ({
+        teacherId,
+        subjectId,
+        classId: row.classId,
+        sessionId: currentSession.id,
+        termId: currentTerm.id,
+      })),
+      skipDuplicates: true,
+    });
+
+    revalidatePath("/admin/subjects");
+    revalidatePath(`/admin/subjects/${subjectId}/teacher-assignment`);
+    revalidatePath("/admin/teachers");
+    revalidatePath("/admin/classes");
+
+    return { ok: true, message: "Teacher assigned to subject successfully." };
+  } catch (error) {
+    console.error("linkSubjectTeacherAction failed", error);
+    return { ok: false, message: "Failed to assign teacher to subject." };
+  }
+}
+
+export async function unlinkSubjectTeacherAction(
+  formData: FormData
+): Promise<ActionState> {
+  const subjectId = getString(formData, "subjectId");
+  const teacherId = getString(formData, "teacherId");
+
+  if (!subjectId || !teacherId) {
+    return { ok: false, message: "Subject id and teacher id are required." };
+  }
+
+  const currentSession = await prisma.academicSession.findFirst({
+    where: { isCurrent: true },
+    select: { id: true },
+  });
+
+  const currentTerm = currentSession
+    ? await prisma.term.findFirst({
+        where: { sessionId: currentSession.id, isCurrent: true },
+        select: { id: true },
+      })
+    : null;
+
+  if (!currentSession || !currentTerm) {
+    return { ok: false, message: "No active session/term found." };
+  }
+
+  const subjectTeacherRows = await prisma.subjectTeacher.findMany({
+    where: {
+      subjectId,
+      sessionId: currentSession.id,
+      termId: currentTerm.id,
+    },
+    select: { teacherId: true },
+  });
+
+  const assignedTeacherIds = new Set(subjectTeacherRows.map((row) => row.teacherId));
+  if (!assignedTeacherIds.has(teacherId)) {
+    return { ok: false, message: "Subject-teacher link not found." };
+  }
+
+  if (assignedTeacherIds.size <= 1) {
+    return { ok: false, message: "Each subject must have at least 1 teacher." };
+  }
+
+  try {
+    await prisma.subjectTeacher.deleteMany({
+      where: {
+        subjectId,
+        teacherId,
+        sessionId: currentSession.id,
+        termId: currentTerm.id,
+      },
+    });
+
+    revalidatePath("/admin/subjects");
+    revalidatePath(`/admin/subjects/${subjectId}/teacher-assignment`);
+    revalidatePath("/admin/teachers");
+    revalidatePath("/admin/classes");
+
+    return { ok: true, message: "Teacher removed from subject successfully." };
+  } catch (error) {
+    console.error("unlinkSubjectTeacherAction failed", error);
+    return { ok: false, message: "Failed to remove teacher from subject." };
+  }
+}
