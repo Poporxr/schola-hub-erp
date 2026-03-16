@@ -25,6 +25,8 @@ export type StudentFormData = {
   admissionNumber?: string;
   admissionDate?: string;
   previousSchool?: string;
+  address: string;
+  phoneNumber?: string;
 
   healthNotes?: string;
   allergies?: string;
@@ -54,12 +56,12 @@ export default function StudentForm({
   const [errors, setErrors] = useState<FieldErrors>({});
 
   const input =
-    "w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20";
+    "w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 sm:px-4 sm:py-3 sm:text-base";
 
   const inputError =
-    "w-full rounded-xl border border-red-500 px-4 py-3 text-gray-900 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20";
+    "w-full rounded-xl border border-red-500 px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 sm:px-4 sm:py-3 sm:text-base";
 
-  const sectionTitle = "text-lg font-bold text-gray-900 flex items-center gap-3";
+  const sectionTitle = "flex items-center gap-2.5 text-base font-bold text-gray-900 sm:gap-3 sm:text-lg";
 
   function getError(name: keyof StudentFormValues) {
     return errors[name];
@@ -103,9 +105,9 @@ export default function StudentForm({
       id={formId}
       action={action}
       onSubmit={handleSubmit}
-      className="space-y-8"
+      className="space-y-5 sm:space-y-8"
     >
-      <fieldset disabled={disabled} className="space-y-8 disabled:opacity-70">
+      <fieldset disabled={disabled} className="space-y-5 disabled:opacity-70 sm:space-y-8">
       {mode === "edit" && data?.id ? (
         <input type="hidden" name="id" value={String(data.id)} />
       ) : null}
@@ -113,13 +115,13 @@ export default function StudentForm({
       {/* 1 Personal */}
       <section>
         <div className={sectionTitle}>
-          <span className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-bold">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700 sm:h-10 sm:w-10 sm:text-sm">
             1
           </span>
           Personal Information
         </div>
 
-        <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:mt-5 sm:gap-5 md:grid-cols-2">
           <Field label="First Name *" error={getError("firstName")}>
             <input
               name="firstName"
@@ -170,11 +172,11 @@ export default function StudentForm({
                 src={undefined}
                 alt="Student"
                 size={48}
-                className="w-12 h-12 border-2 border-gray-200"
+                className="h-10 w-10 border-2 border-gray-200 sm:h-12 sm:w-12"
               />
               <button
                 type="button"
-                className="rounded-xl bg-gray-100 px-5 py-3 text-sm font-semibold text-gray-900 hover:bg-gray-200 transition"
+                className="rounded-xl bg-gray-100 px-3.5 py-2 text-xs font-semibold text-gray-900 transition hover:bg-gray-200 sm:px-5 sm:py-3 sm:text-sm"
               >
                 Change Photo
               </button>
@@ -186,13 +188,13 @@ export default function StudentForm({
       {/* 2 Academic */}
       <section>
         <div className={sectionTitle}>
-          <span className="w-10 h-10 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-sm font-bold">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 text-xs font-bold text-green-700 sm:h-10 sm:w-10 sm:text-sm">
             2
           </span>
           Academic Information
         </div>
 
-        <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:mt-5 sm:gap-5 md:grid-cols-2">
           <Field label="Class *" error={getError("classId")}>
             <select
               name="classId"
@@ -229,10 +231,10 @@ export default function StudentForm({
             </Field>
           ) : (
             <div>
-              <label className="block text-sm font-semibold text-gray-700">
+              <label className="block text-xs font-semibold text-gray-700 sm:text-sm">
                 Admission No.
               </label>
-              <div className="mt-2 rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+              <div className="mt-2 rounded-xl border border-dashed border-gray-300 bg-gray-50 px-3 py-2.5 text-xs text-gray-600 sm:px-4 sm:py-3 sm:text-sm">
                 This will be generated automatically when the student is created.
               </div>
             </div>
@@ -263,20 +265,20 @@ export default function StudentForm({
       {/* 3 Health */}
       <section>
         <div className={sectionTitle}>
-          <span className="w-10 h-10 rounded-full bg-red-100 text-red-700 flex items-center justify-center text-sm font-bold">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-red-100 text-xs font-bold text-red-700 sm:h-10 sm:w-10 sm:text-sm">
             3
           </span>
           Health & Additional Notes
         </div>
 
-        <div className="mt-5 space-y-5">
-          <Field label="Health Notes" error={getError("healthNotes")}>
+        <div className="mt-4 space-y-4 sm:mt-5 sm:space-y-5">
+          <Field label="Address" error={getError("address")}>
             <textarea
-              name="healthNotes"
+              name="address"
               rows={2}
-              placeholder="Any medical conditions or health concerns"
-              defaultValue={data?.healthNotes ?? ""}
-              className={getInputClass("healthNotes")}
+              placeholder="Enter student's address"
+              defaultValue={data?.address ?? ""}
+              className={getInputClass("address")}
             />
           </Field>
 
@@ -302,10 +304,10 @@ export default function StudentForm({
       </section>
 
       {showSubmitButton ? (
-        <div className="flex justify-end gap-3 pt-4">
+        <div className="flex justify-end gap-3 pt-3 sm:pt-4">
           <button
             type="submit"
-            className="rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white hover:bg-indigo-700 transition"
+            className="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 sm:px-6 sm:py-3"
           >
             {mode === "create" ? "Create Student" : "Save Changes"}
           </button>

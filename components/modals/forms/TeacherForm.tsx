@@ -21,21 +21,21 @@ export default function TeacherForm({
   data?: TeacherFormData;
 }) {
   const input =
-    "w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20";
+    "w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 sm:px-4 sm:py-3 sm:text-base";
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5 sm:space-y-8">
       <section>
-        <div className="flex items-center gap-3">
-          <span className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-bold">
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700 sm:h-10 sm:w-10 sm:text-sm">
             1
           </span>
-          <h3 className="text-lg sm:text-xl font-bold text-gray-900">
+          <h3 className="text-base font-bold text-gray-900 sm:text-xl">
             Personal Information
           </h3>
         </div>
 
-        <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:mt-5 sm:gap-5 md:grid-cols-2">
           <Field label="First Name *">
             <input name="firstName" defaultValue={data?.firstName ?? ""} className={input} />
           </Field>
@@ -63,11 +63,11 @@ export default function TeacherForm({
                 src={undefined}
                 alt="Teacher"
                 size={48}
-                className="h-12 w-12 ring-2 ring-gray-200"
+                className="h-10 w-10 ring-2 ring-gray-200 sm:h-12 sm:w-12"
               />
               <button
                 type="button"
-                className="rounded-xl bg-gray-100 px-5 py-3 text-sm font-semibold text-gray-900 hover:bg-gray-200 transition"
+                className="rounded-xl bg-gray-100 px-3.5 py-2 text-xs font-semibold text-gray-900 transition hover:bg-gray-200 sm:px-5 sm:py-3 sm:text-sm"
               >
                 Change Photo
               </button>
@@ -79,16 +79,16 @@ export default function TeacherForm({
       <Divider />
 
       <section>
-        <div className="flex items-center gap-3">
-          <span className="w-10 h-10 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-sm font-bold">
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 text-xs font-bold text-green-700 sm:h-10 sm:w-10 sm:text-sm">
             2
           </span>
-          <h3 className="text-lg sm:text-xl font-bold text-gray-900">
+          <h3 className="text-base font-bold text-gray-900 sm:text-xl">
             Professional Details
           </h3>
         </div>
 
-        <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:mt-5 sm:gap-5 md:grid-cols-2">
           <Field label="Department">
             <input name="department" defaultValue={data?.department ?? ""} className={input} />
           </Field>
@@ -97,7 +97,7 @@ export default function TeacherForm({
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Employment Status
             </label>
-            <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2.5 sm:gap-x-8 sm:gap-y-3">
               <Radio
                 name="status"
                 value="active"

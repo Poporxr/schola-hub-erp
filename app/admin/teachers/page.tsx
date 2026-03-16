@@ -7,6 +7,8 @@ import { prisma } from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/utils";
 import { GraduationCap, Sparkles, UserCheck, Users } from "lucide-react";
 import { unstable_noStore as noStore } from "next/cache";
+import KpiCard from "@/components/kpi/KpiCard";
+import KpiGrid from "@/components/kpi/KpiGrid";
 
 type SearchParams = {
   page?: string | string[];
@@ -139,43 +141,34 @@ export default async function Page({
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Total Teachers</p>
-            <Users className="h-4 w-4 text-slate-400" />
-          </div>
-          <p className="mt-3 text-3xl font-bold text-slate-900">{totalTeachers}</p>
-          <p className="mt-2 text-xs text-slate-500">All teaching staff</p>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-linear-to-br from-emerald-50 via-white to-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Active Teachers</p>
-            <UserCheck className="h-4 w-4 text-emerald-500" />
-          </div>
-          <p className="mt-3 text-3xl font-bold text-slate-900">{activeTeachers}</p>
-          <p className="mt-2 text-xs text-slate-500">Currently active accounts</p>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Departments</p>
-            <GraduationCap className="h-4 w-4 text-slate-400" />
-          </div>
-          <p className="mt-3 text-3xl font-bold text-slate-900">{departments.length}</p>
-          <p className="mt-2 text-xs text-slate-500">Distinct academic groups</p>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-linear-to-r from-slate-900 to-slate-800 p-5 text-white shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-white/70">Assignments</p>
-            <Sparkles className="h-4 w-4 text-white/70" />
-          </div>
-          <p className="mt-3 text-3xl font-bold">{totalAssignments}</p>
-          <p className="mt-2 text-xs text-white/70">Visible subject and class links</p>
-        </div>
-      </div>
+      <KpiGrid>
+        <KpiCard
+          label="Total Teachers"
+          value={totalTeachers}
+          icon={<Users className="h-4 w-4 text-slate-400" />}
+          subtext="All teaching staff"
+        />
+        <KpiCard
+          label="Active Teachers"
+          value={activeTeachers}
+          icon={<UserCheck className="h-4 w-4 text-emerald-500" />}
+          subtext="Currently active accounts"
+          className="bg-linear-to-br from-emerald-50 via-white to-white"
+        />
+        <KpiCard
+          label="Departments"
+          value={departments.length}
+          icon={<GraduationCap className="h-4 w-4 text-slate-400" />}
+          subtext="Distinct academic groups"
+        />
+        <KpiCard
+          label="Assignments"
+          value={totalAssignments}
+          icon={<Sparkles className="h-4 w-4 text-white/70" />}
+          subtext="Visible subject and class links"
+          tone="dark"
+        />
+      </KpiGrid>
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
         <div className="p-6 border-b border-slate-100">

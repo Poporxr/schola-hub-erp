@@ -20,14 +20,14 @@ export default function ClassForm({
   data?: ClassFormData;
 }) {
   const input =
-    "w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20";
+    "w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 sm:px-4 sm:py-3 sm:text-base";
 
   const isEdit = mode === "edit";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
       {/* Grid 1 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
         <Field label="Class Name *">
           <input
             name="name"
@@ -46,7 +46,7 @@ export default function ClassForm({
       </div>
 
       {/* Grid 2 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
         <Field label="Level *">
           <select
             name="level"
@@ -76,7 +76,7 @@ export default function ClassForm({
       </div>
 
       {/* Grid 3 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
         <Field label="Maximum Students">
           <input
             name="maxStudents"

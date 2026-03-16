@@ -149,6 +149,7 @@ export default async function page({
     return {
       id: student.id,
       firstName: student.user.firstName,
+      address: student.address ?? "",
       lastName: student.user.lastName,
       email: student.user.email,
       gender: student.gender,
@@ -180,7 +181,7 @@ export default async function page({
           label="Total Students"
           value={totalAll}
           icon={<Users className="h-4 w-4 text-slate-400" />}
-          subtext="All registered students"
+          subtext= {`${male} Boys -- ${female} Girls`}
         />
         <KpiCard
           label="Active Students"
@@ -204,28 +205,6 @@ export default async function page({
         />
       </KpiGrid>
 
-      <KpiGrid className="lg:grid-cols-3">
-        <KpiCard
-          label="Boys"
-          value={male}
-          icon={<User2 className="h-4 w-4 text-blue-500" />}
-          valueClassName="text-2xl font-semibold sm:text-2xl"
-        />
-        <KpiCard
-          label="Girls"
-          value={female}
-          icon={<User2 className="h-4 w-4 text-pink-500" />}
-          valueClassName="text-2xl font-semibold sm:text-2xl"
-        />
-        <KpiCard
-          label="Visible Results"
-          value={total}
-          icon={<Calendar className="h-4 w-4 text-white/70" />}
-          subtext="Filtered records"
-          tone="dark"
-          valueClassName="text-2xl font-semibold sm:text-2xl"
-        />
-      </KpiGrid>
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
         <div className="p-6 border-b border-slate-100">

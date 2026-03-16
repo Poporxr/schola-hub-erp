@@ -11,6 +11,7 @@ import {
   generateParentIdentifier,
   generateTeacherId,
   isClerkIdentifierExistsError,
+  normalizeHumanName,
   type SchoolRole,
 } from "./handlers/action-functions";
 import {
@@ -54,10 +55,12 @@ async function updateClerkUserNamesAndMetadata({
   identifier: string;
 }) {
   const client = await clerkClient();
+  const normalizedFirstName = normalizeHumanName(firstName);
+  const normalizedLastName = normalizeHumanName(lastName);
 
   await client.users.updateUser(clerkUserId, {
-    firstName,
-    lastName,
+    firstName: normalizedFirstName,
+    lastName: normalizedLastName,
     publicMetadata: {
       role,
       identifier,
@@ -136,6 +139,8 @@ export async function createTeacherAction(formData: FormData) {
   if (!firstName || !lastName || !email) {
     throw new Error("First name, last name, and email are required.");
   }
+  const normalizedFirstName = normalizeHumanName(firstName);
+  const normalizedLastName = normalizeHumanName(lastName);
 
   const existingUser = await prisma.user.findUnique({
     where: { email },
@@ -149,8 +154,8 @@ export async function createTeacherAction(formData: FormData) {
   const teacherId = await generateTeacherId();
 
   const { user: clerkUser, tempPassword } = await createClerkUser({
-    firstName,
-    lastName,
+    firstName: normalizedFirstName,
+    lastName: normalizedLastName,
     identifier: teacherId,
     role: "teacher",
     email,
@@ -168,8 +173,8 @@ export async function createTeacherAction(formData: FormData) {
             email,
             passwordHash: hashPassword(tempPassword),
             role: "TEACHER",
-            firstName,
-            lastName,
+            firstName: normalizedFirstName,
+            lastName: normalizedLastName,
             phone: phone || null,
             status: toStatus(statusValue),
           },
@@ -205,6 +210,8 @@ export async function updateTeacherAction(formData: FormData) {
   if (!firstName || !lastName || !email) {
     throw new Error("First name, last name, and email are required.");
   }
+  const normalizedFirstName = normalizeHumanName(firstName);
+  const normalizedLastName = normalizeHumanName(lastName);
 
   const teacher = await prisma.teacher.findUnique({
     where: { id },
@@ -239,8 +246,8 @@ export async function updateTeacherAction(formData: FormData) {
 
   await updateClerkUserNamesAndMetadata({
     clerkUserId: teacher.userId,
-    firstName,
-    lastName,
+    firstName: normalizedFirstName,
+    lastName: normalizedLastName,
     role: "teacher",
     identifier: teacher.teacherId,
   });
@@ -256,8 +263,8 @@ export async function updateTeacherAction(formData: FormData) {
       prisma.user.update({
         where: { id: teacher.userId },
         data: {
-          firstName,
-          lastName,
+          firstName: normalizedFirstName,
+          lastName: normalizedLastName,
           email,
           phone: phone || null,
           status: toStatus(statusValue),
@@ -301,6 +308,8 @@ export async function createParentAction(formData: FormData) {
   }
 
   const { firstName, lastName, email, phone } = parsed.data;
+  const normalizedFirstName = normalizeHumanName(firstName);
+  const normalizedLastName = normalizeHumanName(lastName);
 
   const existingUser = await prisma.user.findUnique({
     where: { email },
@@ -341,8 +350,8 @@ export async function createParentAction(formData: FormData) {
 
     try {
       clerkUserResult = await createClerkUser({
-        firstName,
-        lastName,
+        firstName: normalizedFirstName,
+        lastName: normalizedLastName,
         role: "parent",
         email,
         identifier: candidateIdentifier,
@@ -378,8 +387,8 @@ export async function createParentAction(formData: FormData) {
             email,
             passwordHash: hashPassword(clerkUserResult.tempPassword),
             role: "PARENT",
-            firstName,
-            lastName,
+            firstName: normalizedFirstName,
+            lastName: normalizedLastName,
             phone: phone || null,
           },
         },
@@ -402,4 +411,219 @@ export async function createParentAction(formData: FormData) {
     ok: true,
     message: `Parent created successfully. Username: ${clerkUserResult.username}, Password: ${clerkUserResult.tempPassword}`,
   };
+}
+
+export async function linkTeacherClassAction(
+  formData: FormData
+): Promise<ActionState> {
+  const teacherId = getString(formData, "teacherId");
+  const classId = getString(formData, "classId");
+
+  if (!teacherId || !classId) {
+    return { ok: false, message: "Teacher id and class id are required." };
+  }
+
+  const currentSession = await prisma.academicSession.findFirst({
+    where: { isCurrent: true },
+    select: { id: true },
+  });
+
+  const currentTerm = currentSession
+    ? await prisma.term.findFirst({
+        where: { sessionId: currentSession.id, isCurrent: true },
+        select: { id: true },
+      })
+    : null;
+
+  if (!currentSession || !currentTerm) {
+    return { ok: false, message: "No active session/term found." };
+  }
+
+  const [teacher, classRecord] = await Promise.all([
+    prisma.teacher.findUnique({
+      where: { id: teacherId },
+      select: { id: true, classId: true },
+    }),
+    prisma.class.findUnique({
+      where: { id: classId },
+      select: { id: true, teacherId: true },
+    }),
+  ]);
+
+  if (!teacher) {
+    return { ok: false, message: "Teacher not found." };
+  }
+
+  if (!classRecord) {
+    return { ok: false, message: "Class not found." };
+  }
+
+  if (classRecord.teacherId && classRecord.teacherId !== teacherId) {
+    return {
+      ok: false,
+      message: "This class is already assigned to another class teacher.",
+    };
+  }
+
+  const existingClassAssignment = await prisma.classTeacher.findFirst({
+    where: {
+      classId,
+      sessionId: currentSession.id,
+      termId: currentTerm.id,
+    },
+    select: { id: true, teacherId: true },
+  });
+
+  if (existingClassAssignment && existingClassAssignment.teacherId !== teacherId) {
+    return {
+      ok: false,
+      message: "This class already has a class teacher for the active term.",
+    };
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      const existingLink = await tx.classTeacher.findUnique({
+        where: {
+          teacherId_classId_sessionId_termId: {
+            teacherId,
+            classId,
+            sessionId: currentSession.id,
+            termId: currentTerm.id,
+          },
+        },
+        select: { id: true },
+      });
+
+      if (!existingLink) {
+        await tx.classTeacher.create({
+          data: {
+            teacherId,
+            classId,
+            sessionId: currentSession.id,
+            termId: currentTerm.id,
+          },
+        });
+      }
+
+      if (!classRecord.teacherId || classRecord.teacherId === teacherId) {
+        await tx.class.update({
+          where: { id: classId },
+          data: { teacherId },
+        });
+      }
+
+      if (!teacher.classId) {
+        await tx.teacher.update({
+          where: { id: teacherId },
+          data: { classId },
+        });
+      }
+    });
+
+    revalidatePath("/admin/teachers");
+    revalidatePath(`/admin/teachers/${teacherId}`);
+    revalidatePath(`/admin/teachers/${teacherId}/assignments`);
+    revalidatePath("/admin/classes");
+
+    return { ok: true, message: "Class linked successfully." };
+  } catch (error) {
+    console.error("linkTeacherClassAction failed", error);
+    return { ok: false, message: "Failed to link class to teacher." };
+  }
+}
+
+export async function unlinkTeacherClassAction(
+  formData: FormData
+): Promise<ActionState> {
+  const teacherId = getString(formData, "teacherId");
+  const classId = getString(formData, "classId");
+
+  if (!teacherId || !classId) {
+    return { ok: false, message: "Teacher id and class id are required." };
+  }
+
+  const currentSession = await prisma.academicSession.findFirst({
+    where: { isCurrent: true },
+    select: { id: true },
+  });
+
+  const currentTerm = currentSession
+    ? await prisma.term.findFirst({
+        where: { sessionId: currentSession.id, isCurrent: true },
+        select: { id: true },
+      })
+    : null;
+
+  if (!currentSession || !currentTerm) {
+    return { ok: false, message: "No active session/term found." };
+  }
+
+  const existingLink = await prisma.classTeacher.findUnique({
+    where: {
+      teacherId_classId_sessionId_termId: {
+        teacherId,
+        classId,
+        sessionId: currentSession.id,
+        termId: currentTerm.id,
+      },
+    },
+    select: { id: true },
+  });
+
+  if (!existingLink) {
+    return { ok: false, message: "Class-teacher link not found." };
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.classTeacher.delete({
+        where: { id: existingLink.id },
+      });
+
+      const classRecord = await tx.class.findUnique({
+        where: { id: classId },
+        select: { teacherId: true },
+      });
+
+      if (classRecord?.teacherId === teacherId) {
+        await tx.class.update({
+          where: { id: classId },
+          data: { teacherId: null },
+        });
+      }
+
+      const teacher = await tx.teacher.findUnique({
+        where: { id: teacherId },
+        select: { classId: true },
+      });
+
+      if (teacher?.classId === classId) {
+        const fallback = await tx.classTeacher.findFirst({
+          where: {
+            teacherId,
+            sessionId: currentSession.id,
+            termId: currentTerm.id,
+          },
+          orderBy: { createdAt: "asc" },
+          select: { classId: true },
+        });
+
+        await tx.teacher.update({
+          where: { id: teacherId },
+          data: { classId: fallback?.classId ?? null },
+        });
+      }
+    });
+
+    revalidatePath("/admin/teachers");
+    revalidatePath(`/admin/teachers/${teacherId}`);
+    revalidatePath(`/admin/teachers/${teacherId}/assignments`);
+    revalidatePath("/admin/classes");
+
+    return { ok: true, message: "Class unlinked successfully." };
+  } catch (error) {
+    console.error("unlinkTeacherClassAction failed", error);
+    return { ok: false, message: "Failed to unlink class from teacher." };
+  }
 }

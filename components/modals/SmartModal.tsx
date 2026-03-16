@@ -140,12 +140,12 @@ export default function SmartModal(props: Props) {
       subtitle={meta.subtitle}
       maxWidth={meta.maxWidth}
       footer={
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:gap-4">
           <button
             type="submit"
             form={formId}
             disabled={pending}
-            className="w-full flex-1 rounded-xl bg-indigo-600 px-6 py-4 text-white font-semibold hover:bg-indigo-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full flex-1 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60 sm:px-6 sm:py-4 sm:text-base"
           >
             <span className="inline-flex items-center justify-center gap-2">
               {pending ? <Spinner className="size-4" /> : null}
@@ -157,7 +157,7 @@ export default function SmartModal(props: Props) {
             type="button"
             onClick={onClose}
             disabled={pending}
-            className="w-full sm:w-auto rounded-xl bg-gray-100 px-8 py-4 font-semibold text-gray-900 hover:bg-gray-200 transition disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full rounded-xl bg-gray-100 px-4 py-3 text-sm font-semibold text-gray-900 transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:px-8 sm:py-4 sm:text-base"
           >
             Cancel
           </button>
@@ -175,8 +175,8 @@ export default function SmartModal(props: Props) {
           showSubmitButton={false}
         />
       ) : (
-        <form id={formId} action={handleAction} className="space-y-8">
-          <fieldset disabled={pending} className="space-y-8 disabled:opacity-70">
+        <form id={formId} action={handleAction} className="space-y-5 sm:space-y-8">
+          <fieldset disabled={pending} className="space-y-5 disabled:opacity-70 sm:space-y-8">
           {type === "teacher" && mode === "edit" && props.data?.id ? (
           <input type="hidden" name="id" value={String(props.data.id)} />
           ) : null}
@@ -196,4 +196,3 @@ export default function SmartModal(props: Props) {
     </ModalShell>
   );
 }
-

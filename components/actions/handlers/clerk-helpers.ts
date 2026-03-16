@@ -4,6 +4,7 @@ import { clerkClient } from "@clerk/nextjs/server";
 import {
   extractClerkMessage,
   isClerkIdentifierExistsError,
+  normalizeHumanName,
   normalizeIdentifierForClerkUsername,
   normalizePasswordForClerk,
   type SchoolRole,
@@ -40,6 +41,8 @@ export async function createClerkUser({
   }
 
   const client = await clerkClient();
+  const normalizedFirstName = normalizeHumanName(firstName);
+  const normalizedLastName = normalizeHumanName(lastName);
   const username = normalizeIdentifierForClerkUsername(identifier);
   const tempPassword = normalizePasswordForClerk(password ?? identifier);
 
@@ -49,16 +52,16 @@ export async function createClerkUser({
 
   const payloadVariants: Array<Record<string, unknown>> = [
     {
-      firstName,
-      lastName,
+      firstName: normalizedFirstName,
+      lastName: normalizedLastName,
       username,
       ...(email ? { emailAddress: [email] } : {}),
       password: tempPassword,
       publicMetadata: { role, identifier },
     },
     {
-      firstName,
-      lastName,
+      firstName: normalizedFirstName,
+      lastName: normalizedLastName,
       username,
       password: tempPassword,
       publicMetadata: { role, identifier },

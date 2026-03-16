@@ -26,6 +26,8 @@ export const studentSchema = z.object({
     .string()
     .trim()
     .min(1, { error: "Admission number is required" }),
+  address: z.string().trim().min(1, { error: "Address is required" }),
+  phoneNumber: z.string().trim().optional(),
 
   admissionDate: z.string().min(1, { error: "Admission date is required" }),
 

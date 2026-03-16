@@ -217,30 +217,6 @@ const Page = async ({
           />
         </KpiGrid>
 
-        <KpiGrid className="lg:grid-cols-3">
-          <KpiCard
-            label="Average Wards"
-            value={avgStudentsPerParent.toFixed(1)}
-            icon={<TrendingUp className="h-4 w-4 text-slate-400" />}
-            subtext="Distribution of parent responsibility"
-            footer={<span className="text-xs text-slate-400">per parent</span>}
-            valueClassName="text-2xl font-semibold sm:text-2xl"
-          />
-          <KpiCard
-            label="Top Class"
-            value={topClassName}
-            icon={<Users className="h-4 w-4 text-slate-400" />}
-            subtext={`${topClassCount} linked students`}
-            valueClassName="text-2xl font-semibold sm:text-2xl"
-          />
-          <KpiCard
-            label="Engagement Pulse"
-            value={parentsWithStudents}
-            subtext="Parents actively linked this term"
-            tone="dark"
-            valueClassName="text-2xl font-semibold sm:text-2xl"
-          />
-        </KpiGrid>
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex-1 flex flex-col">
           <div className="border-b border-slate-200 bg-linear-to-r from-slate-50 via-white to-slate-50 p-4 grid grid-cols-1 gap-4">
             

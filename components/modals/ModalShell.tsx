@@ -38,22 +38,22 @@ export function ModalShell({
     <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
       <DialogContent
         showCloseButton={false}
-        className="w-[calc(100vw-1.5rem)] border-none bg-transparent p-0 shadow-none sm:w-[calc(100vw-3rem)]"
+        className="w-[calc(100vw-1rem)] border-none bg-transparent p-0 shadow-none sm:w-[calc(100vw-3rem)]"
       >
         <div
           className={[
-            "mx-auto w-full rounded-2xl bg-white shadow-2xl ring-1 ring-black/10 overflow-hidden flex flex-col",
+            "mx-auto flex w-full flex-col overflow-hidden rounded-xl bg-white shadow-2xl ring-1 ring-black/10 sm:rounded-2xl",
             widthMap[maxWidth],
-            "max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3rem)]",
+            "max-h-[92dvh] sm:max-h-[calc(100vh-3rem)]",
           ].join(" ")}
         >
-          <div className="px-5 sm:px-8 pt-6 pb-4 border-b border-gray-200 shrink-0 flex items-start justify-between gap-4">
+          <div className="shrink-0 border-b border-gray-200 px-4 pt-4 pb-3 sm:px-8 sm:pt-6 sm:pb-4 flex items-start justify-between gap-4">
             <div>
-              <DialogTitle className="text-xl sm:text-2xl font-bold text-gray-900">
+              <DialogTitle className="text-lg font-bold text-gray-900 sm:text-2xl">
                 {title}
               </DialogTitle>
               {subtitle ? (
-                <DialogDescription className="mt-1 text-sm text-gray-500">
+                <DialogDescription className="mt-1 text-xs text-gray-500 sm:text-sm">
                   {subtitle}
                 </DialogDescription>
               ) : null}
@@ -62,19 +62,19 @@ export function ModalShell({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-full p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition"
+              className="rounded-full p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 sm:p-2"
               aria-label="Close modal"
             >
-              <X className="h-5 w-5" />
+              <X className="h-4 w-4 sm:h-5 sm:w-5" />
             </button>
           </div>
 
-          <div className="px-5 sm:px-8 py-5 overflow-y-auto flex-1">
+          <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-8 sm:py-5">
             {children}
           </div>
 
           {footer ? (
-            <div className="border-t border-gray-200 bg-white px-5 sm:px-8 py-4 shrink-0">
+            <div className="shrink-0 border-t border-gray-200 bg-white px-4 py-3 sm:px-8 sm:py-4">
               {footer}
             </div>
           ) : null}

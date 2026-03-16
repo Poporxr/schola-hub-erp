@@ -26,11 +26,11 @@ export default function SubjectForm({
   data?: SubjectFormData;
 }) {
   const input =
-    "w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20";
+    "w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 sm:px-4 sm:py-3 sm:text-base";
 
   return (
-    <div className="space-y-6 ">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+    <div className="space-y-5 sm:space-y-6">
+      <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
         <Field label="Subject Name *">
           <input
             name="name"
@@ -83,7 +83,7 @@ export default function SubjectForm({
           name="teacherIds"
           multiple
           defaultValue={data?.teacherIds ?? (mode === "edit" ? ["sarah", "david"] : [])}
-          className={`${input} mt-2 h-28`}
+          className={`${input} mt-2 h-24 sm:h-28`}
         >
           <option value="sarah">Mrs. Sarah Johnson</option>
           <option value="david">Mr. David Chen</option>
@@ -96,7 +96,7 @@ export default function SubjectForm({
         <label className="block text-sm font-semibold text-gray-700 mb-2">
           Status
         </label>
-        <div className="flex flex-wrap items-center gap-6">
+        <div className="flex flex-wrap items-center gap-4 sm:gap-6">
           <label className="flex items-center gap-3 cursor-pointer">
             <input
               type="radio"
@@ -122,10 +122,10 @@ export default function SubjectForm({
 
       {/* Assessment */}
       <div className="border-t border-gray-200 pt-6">
-        <h3 className="text-lg font-bold text-gray-900">Assessment Structure</h3>
+        <h3 className="text-base font-bold text-gray-900 sm:text-lg">Assessment Structure</h3>
 
-        <div className="mt-4 rounded-2xl bg-gray-50 p-5 space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div className="mt-4 space-y-4 rounded-2xl bg-gray-50 p-4 sm:p-5">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
             <Field label="Continuous Assessment (%)">
               <input
                 name="ca"
@@ -149,7 +149,7 @@ export default function SubjectForm({
             </Field>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
             <Field label="Project (%)">
               <input
                 name="project"

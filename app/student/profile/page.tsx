@@ -2,6 +2,9 @@ import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/settings";
 import { auth } from "@clerk/nextjs/server";
 import UserAvatar from "@/components/UserAvatar";
+import KpiCard from "@/components/kpi/KpiCard";
+import KpiGrid from "@/components/kpi/KpiGrid";
+import { CalendarDays, GraduationCap, ShieldCheck, UserRound } from "lucide-react";
 
 const Page = async () => {
   const { userId } = await auth();
@@ -55,7 +58,7 @@ const Page = async () => {
     },
   });
 
-  const currentClass = studentData?.classHistories[0].class ?? null;
+  const currentClass = studentData?.classHistories[0]?.class ?? currentClassRow?.class ?? null;
 
   const primaryGuardian =
     studentData?.parentStudents.find((row) => row.isPrimary)?.parent ??
@@ -69,146 +72,103 @@ const Page = async () => {
   const studentName = studentData
     ? `${studentData.user.firstName} ${studentData.user.lastName}`
     : "Student";
+  const guardianCount = studentData?.parentStudents.length ?? 0;
 
   return (
     <div className="space-y-6">
-      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
-        <div className="relative z-10 space-y-3">
-          <p className="text-xs uppercase tracking-[0.2em] text-white/60">
-            Student Profile
-          </p>
-          <h1 className="text-2xl font-bold">{studentName}</h1>
-          <p className="text-sm text-white/70">
-            Academic and guardian overview for the current term.
-          </p>
-        </div>
-        <div className="absolute right-4 top-4 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
-        <div className="absolute left-0 bottom-0 w-56 h-56 rounded-full bg-indigo-500/20 blur-3xl" />
-      </div>
-
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="px-6 pt-10 pb-6">
-          <div className="relative flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 -mt-6 mb-6">
-            <div className="flex items-center gap-4">
-              <UserAvatar
-                src={studentData?.user.image ?? undefined}
-                alt={studentName}
-                size={96}
-                className="w-24 h-24 border-4 border-white bg-white shadow-sm"
-              />
-              <div>
-                <p className="text-xs uppercase tracking-wide text-slate-500">
-                  Admission Number
-                </p>
-                <h2 className="text-xl font-semibold text-slate-900">
-                  {studentData?.admissionNumber ?? "-"}
-                </h2>
-                <p className="text-sm text-slate-500">
-                  {currentClass?.name ?? "Class not assigned"}
-                </p>
-              </div>
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <UserAvatar
+              src={studentData?.user.image ?? undefined}
+              alt={studentName}
+              size={80}
+              className="h-16 w-16 border border-slate-200 bg-white shadow-sm sm:h-20 sm:w-20"
+            />
+            <div>
+              <p className="text-[11px] uppercase tracking-wide text-slate-500">Student Profile</p>
+              <h1 className="text-lg font-semibold text-slate-900 sm:text-2xl">{studentName}</h1>
+              <p className="text-xs text-slate-500 sm:text-sm">
+                Admission No: {studentData?.admissionNumber ?? "-"}
+              </p>
             </div>
           </div>
+          <span className="inline-flex w-fit items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">
+            {currentClass?.name ?? "Class not assigned"}
+          </span>
+        </div>
+      </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="text-xs uppercase tracking-wide text-slate-500">
-                Class
-              </p>
-              <p className="mt-3 text-xl font-semibold text-slate-900">
-                {currentClass?.name ?? "-"}
+      <KpiGrid>
+        <KpiCard
+          label="Class"
+          value={currentClass?.name ?? "-"}
+          icon={<GraduationCap className="h-4 w-4 text-slate-400" />}
+          subtext="Current class"
+        />
+        <KpiCard
+          label="Guardian"
+          value={guardianName}
+          icon={<UserRound className="h-4 w-4 text-indigo-500" />}
+          subtext={guardianContact}
+          tone="soft"
+        />
+        <KpiCard
+          label="Linked Guardians"
+          value={guardianCount}
+          icon={<ShieldCheck className="h-4 w-4 text-emerald-500" />}
+          subtext="Parent records"
+        />
+        <KpiCard
+          label="Enrollment Date"
+          value={studentData?.createdAt ? formatDate(studentData.createdAt) : "-"}
+          icon={<CalendarDays className="h-4 w-4 text-white/70" />}
+          subtext="Account start"
+          tone="dark"
+        />
+      </KpiGrid>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+          <h3 className="text-base font-semibold text-slate-900 sm:text-lg">Personal Details</h3>
+          <div className="mt-4 space-y-4 text-sm">
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Full Name</p>
+              <p className="mt-1 font-medium text-slate-900">{studentName}</p>
+            </div>
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Date of Birth</p>
+              <p className="mt-1 font-medium text-slate-900">
+                {studentData?.dateOfBirth ? formatDate(studentData.dateOfBirth) : "-"}
               </p>
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="text-xs uppercase tracking-wide text-slate-500">
-                Guardian
-              </p>
-              <p className="mt-3 text-xl font-semibold text-slate-900">
-                {guardianName}
-              </p>
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Email</p>
+              <p className="mt-1 font-medium text-slate-900 break-all">{studentData?.user.email ?? "-"}</p>
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="text-xs uppercase tracking-wide text-slate-500">
-                Guardian Contact
-              </p>
-              <p className="mt-3 text-base font-semibold text-slate-900">
-                {guardianContact}
-              </p>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+          <h3 className="text-base font-semibold text-slate-900 sm:text-lg">School Details</h3>
+          <div className="mt-4 space-y-4 text-sm">
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Class / Grade</p>
+              <p className="mt-1 font-medium text-slate-900">{currentClass?.name ?? "-"}</p>
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-gradient-to-r from-slate-900 to-slate-800 p-5 text-white shadow-sm">
-              <p className="text-xs uppercase tracking-wide text-white/70">
-                Enrollment Date
-              </p>
-              <p className="mt-3 text-xl font-semibold">
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Enrollment Date</p>
+              <p className="mt-1 font-medium text-slate-900">
                 {studentData?.createdAt ? formatDate(studentData.createdAt) : "-"}
               </p>
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
-              <h3 className="text-lg font-semibold text-slate-900 mb-4">
-                Personal Details
-              </h3>
-              <div className="space-y-4 text-sm">
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 uppercase">
-                    Full Name
-                  </label>
-                  <p className="text-slate-900 font-medium">{studentName}</p>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 uppercase">
-                    Date of Birth
-                  </label>
-                  <p className="text-slate-900 font-medium">
-                    {studentData?.dateOfBirth ? formatDate(studentData.dateOfBirth) : "-"}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 uppercase">
-                    Email
-                  </label>
-                  <p className="text-slate-900 font-medium">
-                    {studentData?.user.email ?? "-"}
-                  </p>
-                </div>
-              </div>
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Primary Guardian</p>
+              <p className="mt-1 font-medium text-slate-900">{guardianName}</p>
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-slate-900 mb-4">
-                Academic Details
-              </h3>
-              <div className="space-y-4 text-sm">
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 uppercase">
-                    Class / Grade
-                  </label>
-                  <p className="text-slate-900 font-medium">
-                    {currentClass?.name ?? "-"}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 uppercase">
-                    Enrollment Date
-                  </label>
-                  <p className="text-slate-900 font-medium">
-                    {studentData?.createdAt ? formatDate(studentData.createdAt) : "-"}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 uppercase">
-                    Guardian Name
-                  </label>
-                  <p className="text-slate-900 font-medium">{guardianName}</p>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 uppercase">
-                    Guardian Contact
-                  </label>
-                  <p className="text-slate-900 font-medium">{guardianContact}</p>
-                </div>
-              </div>
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Guardian Contact</p>
+              <p className="mt-1 font-medium text-slate-900 break-all">{guardianContact}</p>
             </div>
           </div>
         </div>

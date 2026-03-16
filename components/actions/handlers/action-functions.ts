@@ -34,6 +34,24 @@ export function normalizePasswordForClerk(value: string) {
   return `${base.slice(0, 3).toLowerCase()}${base.slice(3)}`;
 }
 
+export function normalizeHumanName(value: string) {
+  return value
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) =>
+      word
+        .split(/([-'])/)
+        .map((part) => {
+          if (part === "-" || part === "'") return part;
+          const lower = part.toLowerCase();
+          return lower ? `${lower[0].toUpperCase()}${lower.slice(1)}` : lower;
+        })
+        .join("")
+    )
+    .join(" ");
+}
+
 export function getCurrentSessionCode(sessionName?: string) {
   if (sessionName?.trim()) {
     return sessionName.replace(/\s+/g, "");

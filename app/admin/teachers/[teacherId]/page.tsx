@@ -3,6 +3,8 @@ import UserAvatar from "@/components/UserAvatar";
 import LoginCredentialsCard from "@/components/student/LoginCredentialsCard";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
+import Link from "next/link";
+import { ChevronRight, Link2, Sparkles } from "lucide-react";
 
 type PageParams = {
   teacherId?: string;
@@ -204,9 +206,34 @@ export default async function Page({
       ? `${currentTerm.name} • ${currentSession.name}`
       : "All recorded assignments";
 
+  const assignmentCount = classRows.length + subjectRows.length;
+
   return (
     <div>
-      <BackButton />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <BackButton />
+        <Link
+          href={`/admin/teachers/${teacherId}/assignments`}
+          className="group inline-flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-linear-to-r from-white to-slate-50 px-3 py-2.5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md sm:w-auto sm:px-3.5"
+        >
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-white shadow-sm">
+            <Link2 size={15} />
+          </span>
+          <span className="mr-auto leading-tight">
+            <span className="block text-sm font-semibold text-slate-900 sm:hidden">Assignments</span>
+            <span className="hidden text-sm font-semibold text-slate-900 sm:block">Manage Assignments</span>
+            <span className="hidden text-xs text-slate-500 md:block">Link classes and subjects</span>
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-700">
+            <Sparkles size={12} />
+            {assignmentCount}
+          </span>
+          <ChevronRight
+            size={16}
+            className="text-slate-400 transition-transform group-hover:translate-x-0.5 group-hover:text-slate-600"
+          />
+        </Link>
+      </div>
       <div className="pb-8 pt-5">
         <div className="mb-6 rounded-xl border border-gray-200 bg-white p-8">
           <div className="gap-6 md:flex md:items-start">

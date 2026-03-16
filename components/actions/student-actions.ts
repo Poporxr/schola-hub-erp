@@ -12,6 +12,7 @@ import {
   isPrismaUniqueError,
   toBoolean,
   isClerkIdentifierExistsError,
+  normalizeHumanName,
 } from "./handlers/action-functions";
 import { createClerkUser, deleteClerkUserIfExists } from "./handlers/clerk-helpers";
 
@@ -127,6 +128,8 @@ export async function createStudentAction(formData: FormData) {
     }
 
     const values = parsed.data;
+    const normalizedFirstName = normalizeHumanName(values.firstName);
+    const normalizedLastName = normalizeHumanName(values.lastName);
 
     if (values.email) {
       const existingStudentUser = await prisma.user.findUnique({
@@ -161,8 +164,8 @@ export async function createStudentAction(formData: FormData) {
 
         const { user: clerkUser, tempPassword, username } =
           await createClerkUser({
-            firstName: values.firstName,
-            lastName: values.lastName,
+            firstName: normalizedFirstName,
+            lastName: normalizedLastName,
             identifier: admissionNumber,
             email: values.email,
             role: "student",
@@ -177,16 +180,16 @@ export async function createStudentAction(formData: FormData) {
               admissionNumber,
               dateOfBirth: new Date(values.dateOfBirth),
               gender: values.gender,
-              address: null,
+              address: values.address,
               user: {
                 create: {
                   id: clerkUser.id,
                   email: values.email,
                   passwordHash: tempPassword,
+                  phone: values.phoneNumber ?? null,
                   role: "STUDENT",
-                  firstName: values.firstName,
-                  lastName: values.lastName,
-                  phone: null,
+                  firstName: normalizedFirstName,
+                  lastName: normalizedLastName,
                 },
               },
             },

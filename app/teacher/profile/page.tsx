@@ -2,6 +2,9 @@ import { prisma } from "@/lib/prisma";
 import { formatDate, yearsSince } from "@/lib/settings";
 import { auth } from "@clerk/nextjs/server";
 import UserAvatar from "@/components/UserAvatar";
+import KpiCard from "@/components/kpi/KpiCard";
+import KpiGrid from "@/components/kpi/KpiGrid";
+import { BookOpenCheck, BriefcaseBusiness, CalendarDays, School } from "lucide-react";
 
 const Page = async () => {
   const { userId } = await auth();
@@ -90,162 +93,105 @@ const Page = async () => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
-        <div className="relative z-10 space-y-3">
-          <p className="text-xs uppercase tracking-[0.2em] text-white/60">
-            Teacher Profile
-          </p>
-          <h1 className="text-2xl font-bold">{fullName}</h1>
-          <p className="text-sm text-white/70">
-            Staff profile and teaching assignments overview.
-          </p>
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <UserAvatar
+              src={teacher.user.image ?? undefined}
+              alt={fullName}
+              size={80}
+              className="h-16 w-16 border border-slate-200 bg-white shadow-sm sm:h-20 sm:w-20"
+            />
+            <div>
+              <p className="text-[11px] uppercase tracking-wide text-slate-500">Teacher Profile</p>
+              <h1 className="text-lg font-semibold text-slate-900 sm:text-2xl">{fullName}</h1>
+              <p className="text-xs text-slate-500 sm:text-sm">Staff ID: {teacher.teacherId ?? "-"}</p>
+            </div>
+          </div>
+          <span className="inline-flex w-fit items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">
+            {statusLabel}
+          </span>
         </div>
-        <div className="absolute right-4 top-4 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
-        <div className="absolute left-0 bottom-0 w-56 h-56 rounded-full bg-indigo-500/20 blur-3xl" />
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="px-6 pt-10 pb-6">
-          <div className="relative flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 -mt-6 mb-6">
-            <div className="flex items-center gap-4">
-              <UserAvatar
-                src={teacher.user.image ?? undefined}
-                alt={fullName}
-                size={96}
-                className="w-24 h-24 border-4 border-white bg-white shadow-sm"
-              />
-              <div>
-                <p className="text-xs uppercase tracking-wide text-slate-500">
-                  Staff ID
-                </p>
-                <h2 className="text-xl font-semibold text-slate-900">
-                  {teacher.teacherId ?? "-"}
-                </h2>
-                <p className="text-sm text-slate-500">{statusLabel}</p>
-              </div>
-            </div>
-            <span className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-full">
-              {statusLabel}
-            </span>
-          </div>
+      <KpiGrid>
+        <KpiCard
+          label="Department"
+          value={teacher.department ?? "-"}
+          icon={<BriefcaseBusiness className="h-4 w-4 text-slate-400" />}
+          subtext="Assigned unit"
+        />
+        <KpiCard
+          label="Subjects"
+          value={subjectNames.length}
+          icon={<BookOpenCheck className="h-4 w-4 text-indigo-500" />}
+          subtext="Current term"
+          tone="soft"
+        />
+        <KpiCard
+          label="Class Teacher"
+          value={classTeacherName}
+          icon={<School className="h-4 w-4 text-emerald-500" />}
+          subtext="Homeroom allocation"
+        />
+        <KpiCard
+          label="Years of Service"
+          value={serviceYears}
+          icon={<CalendarDays className="h-4 w-4 text-white/70" />}
+          subtext={`Employed ${employmentDate}`}
+          tone="dark"
+        />
+      </KpiGrid>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="text-xs uppercase tracking-wide text-slate-500">
-                Department
-              </p>
-              <p className="mt-3 text-xl font-semibold text-slate-900">
-                {teacher.department ?? "-"}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="text-xs uppercase tracking-wide text-slate-500">
-                Subjects
-              </p>
-              <p className="mt-3 text-xl font-semibold text-slate-900">
-                {subjectNames.length}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="text-xs uppercase tracking-wide text-slate-500">
-                Class Teacher
-              </p>
-              <p className="mt-3 text-xl font-semibold text-slate-900">
-                {classTeacherName}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-gradient-to-r from-slate-900 to-slate-800 p-5 text-white shadow-sm">
-              <p className="text-xs uppercase tracking-wide text-white/70">
-                Years of Service
-              </p>
-              <p className="mt-3 text-xl font-semibold">{serviceYears}</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+          <h3 className="text-base font-semibold text-slate-900 sm:text-lg">Personal Information</h3>
+          <div className="mt-4 space-y-4 text-sm">
             <div>
-              <h3 className="text-lg font-semibold text-slate-900 mb-4">
-                Personal Information
-              </h3>
-              <div className="space-y-4 text-sm">
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 uppercase">
-                    Full Name
-                  </label>
-                  <p className="text-slate-900 font-medium">{fullName}</p>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 uppercase">
-                    Email Address
-                  </label>
-                  <p className="text-slate-900 font-medium">{teacher.user.email}</p>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 uppercase">
-                    Phone Number
-                  </label>
-                  <p className="text-slate-900 font-medium">
-                    {teacher.user.phone ?? "-"}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 uppercase">
-                    Address
-                  </label>
-                  <p className="text-slate-900 font-medium">-</p>
-                </div>
-              </div>
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Full Name</p>
+              <p className="mt-1 font-medium text-slate-900">{fullName}</p>
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-slate-900 mb-4">
-                Employment Details
-              </h3>
-              <div className="space-y-4 text-sm">
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 uppercase">
-                    Position
-                  </label>
-                  <p className="text-slate-900 font-medium">Teacher</p>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 uppercase">
-                    Employment Date
-                  </label>
-                  <p className="text-slate-900 font-medium">{employmentDate}</p>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 uppercase">
-                    Qualification
-                  </label>
-                  <p className="text-slate-900 font-medium">-</p>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 uppercase">
-                    Subjects Taught
-                  </label>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {subjectNames.length ? (
-                      subjectNames.map((name) => (
-                        <span
-                          key={name}
-                          className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-medium rounded-full"
-                        >
-                          {name}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="text-sm text-slate-500">
-                        No subjects assigned
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 uppercase">
-                    Class Teacher
-                  </label>
-                  <p className="text-slate-900 font-medium">{classTeacherName}</p>
-                </div>
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Email Address</p>
+              <p className="mt-1 font-medium text-slate-900 break-all">{teacher.user.email}</p>
+            </div>
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Phone Number</p>
+              <p className="mt-1 font-medium text-slate-900">{teacher.user.phone ?? "-"}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+          <h3 className="text-base font-semibold text-slate-900 sm:text-lg">Teaching Details</h3>
+          <div className="mt-4 space-y-4 text-sm">
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Position</p>
+              <p className="mt-1 font-medium text-slate-900">Teacher</p>
+            </div>
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Employment Date</p>
+              <p className="mt-1 font-medium text-slate-900">{employmentDate}</p>
+            </div>
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Class Teacher</p>
+              <p className="mt-1 font-medium text-slate-900">{classTeacherName}</p>
+            </div>
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Subjects Taught</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {subjectNames.length ? (
+                  subjectNames.map((name) => (
+                    <span
+                      key={name}
+                      className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700"
+                    >
+                      {name}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-sm text-slate-500">No subjects assigned</span>
+                )}
               </div>
             </div>
           </div>

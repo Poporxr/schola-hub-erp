@@ -47,12 +47,12 @@ const AddParentModal = () => {
         subtitle="Create a parent or guardian profile"
         maxWidth="lg"
         footer={
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+          <div className="flex flex-col gap-2.5 sm:flex-row sm:gap-4">
             <button
               form="parent-create-form"
               type="submit"
               disabled={pending}
-              className="w-full rounded-xl bg-slate-900 px-6 py-4 text-white font-semibold hover:bg-slate-800 transition"
+              className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 sm:px-6 sm:py-4 sm:text-base"
             >
               <span className="inline-flex items-center justify-center gap-2">
                 {pending ? <Spinner className="size-4" /> : null}
@@ -63,14 +63,14 @@ const AddParentModal = () => {
               type="button"
               onClick={() => setOpen(false)}
               disabled={pending}
-              className="w-full sm:w-auto rounded-xl bg-gray-100 px-8 py-4 font-semibold text-gray-900 hover:bg-gray-200 transition"
+              className="w-full rounded-xl bg-gray-100 px-4 py-3 text-sm font-semibold text-gray-900 transition hover:bg-gray-200 sm:w-auto sm:px-8 sm:py-4 sm:text-base"
             >
               Cancel
             </button>
           </div>
         }
       >
-        <form id="parent-create-form" action={handleCreateParent} className="space-y-5">
+        <form id="parent-create-form" action={handleCreateParent} className="space-y-4 sm:space-y-5">
           <ParentForm mode="create" disabled={pending} />
         </form>
       </ModalShell>

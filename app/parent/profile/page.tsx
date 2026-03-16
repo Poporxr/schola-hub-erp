@@ -1,6 +1,9 @@
-﻿import UserAvatar from "@/components/UserAvatar";
+import UserAvatar from "@/components/UserAvatar";
+import KpiCard from "@/components/kpi/KpiCard";
+import KpiGrid from "@/components/kpi/KpiGrid";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
+import { BookUser, GraduationCap, Phone, Users } from "lucide-react";
 
 const Page = async () => {
   const { userId } = await auth();
@@ -76,8 +79,8 @@ const Page = async () => {
     const student = link.student;
     const classHistory = currentTerm
       ? student.classHistories.find(
-        (history) => history.sessionId === currentTerm.sessionId && history.termId === currentTerm.id
-      )
+          (history) => history.sessionId === currentTerm.sessionId && history.termId === currentTerm.id
+        )
       : student.classHistories[0];
 
     return {
@@ -91,151 +94,126 @@ const Page = async () => {
     };
   });
 
+  const activeStudents = studentCards.filter((student) => student.status === "ACTIVE").length;
+
   return (
     <div className="space-y-6">
-      <div className="bg-linear-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
-        <div className="relative z-10 space-y-2">
-          <p className="text-xs uppercase tracking-[0.2em] text-white/60">
-            Parent Profile
-          </p>
-          <h1 className="text-2xl font-bold text-white/80">Account Overview</h1>
-          <p className="text-sm text-white/70">
-            Parent and guardian information linked to active students.
-          </p>
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <UserAvatar
+              src={parent.user.image ?? undefined}
+              alt="Parent"
+              size={80}
+              className="h-16 w-16 border border-slate-200 bg-white shadow-sm sm:h-20 sm:w-20"
+            />
+            <div>
+              <p className="text-[11px] uppercase tracking-wide text-slate-500">Parent Profile</p>
+              <h1 className="text-lg font-semibold text-slate-900 sm:text-2xl">{parentName}</h1>
+              <p className="text-xs text-slate-500 sm:text-sm">{relationship}</p>
+            </div>
+          </div>
+          <span className="inline-flex w-fit items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">
+            {currentTerm?.name ?? "No active term"}
+          </span>
         </div>
-        <div className="absolute right-4 top-4 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
-        <div className="absolute left-0 bottom-0 w-56 h-56 rounded-full bg-indigo-500/20 blur-3xl" />
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="px-6 pt-10 pb-6">
-          <div className="relative flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 -mt-6 mb-6">
-            <div className="flex items-center gap-4">
-              <UserAvatar
-                src={parent.user.image ?? undefined}
-                alt="Parent"
-                size={96}
-                className="w-24 h-24 border-4 border-white bg-white shadow-sm"
-              />
-              <div>
-                <p className="text-xs uppercase tracking-wide text-slate-500">
-                  Parent Account
-                </p>
-                <h2 className="text-xl font-semibold text-slate-900">
-                  {parentName}
-                </h2>
-                <p className="text-sm text-slate-500">{relationship}</p>
-              </div>
-            </div>
-          </div>
+      <KpiGrid>
+        <KpiCard
+          label="Linked Students"
+          value={studentCards.length}
+          icon={<Users className="h-4 w-4 text-slate-400" />}
+          subtext="Total wards"
+        />
+        <KpiCard
+          label="Active Students"
+          value={activeStudents}
+          icon={<GraduationCap className="h-4 w-4 text-indigo-500" />}
+          subtext="Current status"
+          tone="soft"
+        />
+        <KpiCard
+          label="Relationship"
+          value={relationship}
+          icon={<BookUser className="h-4 w-4 text-emerald-500" />}
+          subtext="Primary link"
+        />
+        <KpiCard
+          label="Contact"
+          value={parent.user.phone ?? "-"}
+          icon={<Phone className="h-4 w-4 text-white/70" />}
+          subtext={parent.user.email ?? "-"}
+          tone="dark"
+        />
+      </KpiGrid>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-5">
-              <div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-4">
-                  Personal Information
-                </h3>
-                <div className="space-y-4 text-sm">
-                  <div>
-                    <label className="block text-xs font-medium text-slate-500 uppercase">
-                      Full Name
-                    </label>
-                    <p className="text-slate-900 font-medium">
-                      {parentName}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-500 uppercase">
-                      Relationship
-                    </label>
-                    <p className="text-slate-900 font-medium">{relationship}</p>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-500 uppercase">
-                      Email Address
-                    </label>
-                    <p className="text-slate-900 font-medium">
-                      {parent.user.email ?? "-"}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-500 uppercase">
-                      Phone Number
-                    </label>
-                    <p className="text-slate-900 font-medium">{parent.user.phone ?? "-"}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-4">
-                  Current Term
-                </h3>
-                <div className="space-y-4 text-sm">
-                  <div>
-                    <label className="block text-xs font-medium text-slate-500 uppercase">
-                      Term
-                    </label>
-                    <p className="text-slate-900 font-medium">{currentTerm?.name ?? "N/A"}</p>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-500 uppercase">
-                      Session
-                    </label>
-                    <p className="text-slate-900 font-medium">{currentTerm?.session?.name ?? "N/A"}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+          <h3 className="text-base font-semibold text-slate-900 sm:text-lg">Personal Information</h3>
+          <div className="mt-4 space-y-4 text-sm">
             <div>
-              <h3 className="text-lg font-semibold text-slate-900 mb-4">
-                Linked Students
-              </h3>
-              <div className="space-y-4">
-                {studentCards.length ? (
-                  studentCards.map((student) => (
-                    <div key={student.id} className="border border-slate-200 rounded-xl p-4 bg-slate-50">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white bg-white">
-                          <UserAvatar
-                            src={student.image ?? undefined}
-                            alt="Student"
-                            size={48}
-                            className="w-full h-full"
-                          />
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-slate-900">
-                            {student.name}
-                          </h4>
-                          <p className="text-xs text-slate-500">
-                            Admission No: {student.admissionNumber}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div>
-                          <span className="text-slate-500">Class:</span>
-                          <span className="font-medium text-slate-900"> {student.className}</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-500">Status:</span>
-                          <span className="font-medium text-emerald-600"> {student.status ?? "Active"}</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-500">Relation:</span>
-                          <span className="font-medium text-slate-900"> {student.relation}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-sm text-slate-500">No linked students found.</div>
-                )}
-              </div>
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Full Name</p>
+              <p className="mt-1 font-medium text-slate-900">{parentName}</p>
+            </div>
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Relationship</p>
+              <p className="mt-1 font-medium text-slate-900">{relationship}</p>
+            </div>
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Email Address</p>
+              <p className="mt-1 font-medium text-slate-900 break-all">{parent.user.email ?? "-"}</p>
+            </div>
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Phone Number</p>
+              <p className="mt-1 font-medium text-slate-900">{parent.user.phone ?? "-"}</p>
             </div>
           </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+          <h3 className="text-base font-semibold text-slate-900 sm:text-lg">Current Term</h3>
+          <div className="mt-4 space-y-4 text-sm">
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Term</p>
+              <p className="mt-1 font-medium text-slate-900">{currentTerm?.name ?? "N/A"}</p>
+            </div>
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Session</p>
+              <p className="mt-1 font-medium text-slate-900">{currentTerm?.session?.name ?? "N/A"}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+        <h3 className="text-base font-semibold text-slate-900 sm:text-lg">Linked Students</h3>
+        <div className="mt-4 space-y-3">
+          {studentCards.length ? (
+            studentCards.map((student) => (
+              <div key={student.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
+                <div className="flex items-center gap-3">
+                  <UserAvatar
+                    src={student.image ?? undefined}
+                    alt="Student"
+                    size={44}
+                    className="h-11 w-11 border border-white bg-white"
+                  />
+                  <div className="min-w-0">
+                    <h4 className="truncate text-sm font-semibold text-slate-900">{student.name}</h4>
+                    <p className="text-xs text-slate-500">Admission No: {student.admissionNumber}</p>
+                  </div>
+                </div>
+                <div className="mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-3">
+                  <p className="text-slate-600">Class: <span className="font-medium text-slate-900">{student.className}</span></p>
+                  <p className="text-slate-600">Status: <span className="font-medium text-emerald-600">{student.status ?? "Active"}</span></p>
+                  <p className="text-slate-600">Relation: <span className="font-medium text-slate-900">{student.relation}</span></p>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-sm text-slate-500">No linked students found.</div>
+          )}
         </div>
       </div>
     </div>

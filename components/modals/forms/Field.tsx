@@ -9,9 +9,9 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-sm font-semibold text-gray-700">{label}</label>
+      <label className="block text-xs font-semibold text-gray-700 sm:text-sm">{label}</label>
       <div className="mt-2">{children}</div>
-      {error ? <p className="mt-1 text-sm text-red-600">{error}</p> : null}
+      {error ? <p className="mt-1 text-xs text-red-600 sm:text-sm">{error}</p> : null}
     </div>
   );
 }
