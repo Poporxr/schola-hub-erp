@@ -20,10 +20,20 @@ const Page = async () => {
         _count: { select: { classHistories: true } },
     } as const;
 
-    const classes = await prisma.class.findMany({
-        orderBy: [{ createdAt: "asc" }],
-        select: classSelect,
-    });
+    const [classes, levels] = await Promise.all([
+        prisma.class.findMany({
+            orderBy: [{ createdAt: "asc" }],
+            select: classSelect,
+        }),
+        prisma.level.findMany({
+            orderBy: [{ name: "asc" }],
+            select: { id: true, name: true, type: true },
+        }),
+    ]);
+
+    const classMeta = {
+        levels,
+    };
 
     const totalClasses = classes.length;
     const totalStudents = classes.reduce((sum, item) => sum + item._count.classHistories, 0);
@@ -38,7 +48,7 @@ const Page = async () => {
                 <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
                     <div>
                         <p className="text-xs uppercase tracking-[0.2em] text-white/60">Classes</p>
-                        <h1 className="text-2xl font-bold mt-2">Class Directory</h1>
+                        <h1 className="text-2xl font-bold mt-2 text-white/90">Class Directory</h1>
                         <p className="text-white/70 mt-2">Track class composition, homeroom coverage, and capacity.</p>
                     </div>
                    
@@ -77,7 +87,7 @@ const Page = async () => {
             </KpiGrid>
             <div className="uppercase tracking-[0.2em] font-bold flex justify-between items-center ">
                 <p className="text-lg text-black/60">All Classes</p>
-                 <FormButton type={"class"} action="create" />
+                 <FormButton type={"class"} action="create" meta={classMeta} />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {classes.map((classItem) => (

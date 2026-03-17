@@ -34,10 +34,12 @@ const AddParentModal = () => {
       <button
         onClick={() => setOpen(true)}
         disabled={pending}
-        className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium hover:bg-slate-800 flex items-center gap-2 shadow-sm"
+        className="group inline-flex items-center justify-center gap-2 rounded-full border border-slate-300/80 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 shadow-[0_10px_24px_-18px_rgba(15,23,42,0.45)] transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-300 hover:bg-indigo-50/60 hover:text-indigo-700 hover:shadow-[0_16px_30px_-18px_rgba(79,70,229,0.4)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        <Plus className="w-4 h-4" />
-        Add Parent
+        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-900 text-white transition-colors group-hover:bg-indigo-600">
+          <Plus className="h-3.5 w-3.5" />
+        </span>
+        Create Parent
       </button>
 
       <ModalShell

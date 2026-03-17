@@ -3,7 +3,8 @@
 import { Trash2 } from "lucide-react";
 import { useState } from "react";
 import ConfirmDeleteModal from "@/components/modals/ConfirmDeleteModal";
-import { deleteTeacherAction } from "@/components/actions/actions";
+import { deleteSubjectAction, deleteTeacherAction } from "@/components/actions/actions";
+import { deleteStudentAction } from "@/components/actions/student-actions";
 import { ModalType } from "../modals/SmartModal";
 
 type DeleteButtonProps = {
@@ -14,14 +15,35 @@ type DeleteButtonProps = {
   iconOnly?: boolean;
 };
 
+async function unsupportedDeleteAction(
+  prevState: { ok: boolean; message?: string; fieldErrors?: Record<string, string> },
+  formData: FormData
+) {
+  void prevState;
+  void formData;
+  return {
+    ok: false,
+    message: "Delete action is not configured for this record type.",
+  };
+}
+
 export function DeleteButton({
   id,
   label,
   type,
-  action = deleteTeacherAction,
+  action,
   iconOnly = false,
 }: DeleteButtonProps) {
   const [open, setOpen] = useState(false);
+  const resolvedAction =
+    action ??
+    (type === "teacher"
+      ? deleteTeacherAction
+      : type === "subject"
+        ? deleteSubjectAction
+        : type === "student"
+          ? deleteStudentAction
+          : unsupportedDeleteAction);
 
   return (
     <>
@@ -41,7 +63,7 @@ export function DeleteButton({
         type={type}
         id={id}
         label={label}
-        action={action}
+        action={resolvedAction}
         requireText
       />
     </>

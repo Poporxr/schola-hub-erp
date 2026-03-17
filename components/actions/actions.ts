@@ -5,11 +5,16 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { clerkClient } from "@clerk/nextjs/server";
 import { parentSchema } from "@/components/modals/zod-schemas/parentForm";
+import { subjectSchema } from "@/components/modals/zod-schemas/subjectForm";
+import {
+  createClassSchema,
+  updateClassSchema,
+} from "@/components/modals/zod-schemas/classForm";
 import {
   createTeacherSchema,
   updateTeacherSchema,
 } from "@/components/modals/zod-schemas/teacherForm";
-import type { Status } from "@/generated/prisma/client";
+import type { PromotionTrack, Status } from "@/generated/prisma/client";
 import {
   extractClerkMessage,
   generateParentIdentifier,
@@ -43,7 +48,13 @@ function toStatus(value: string): Status {
   if (value === "on_leave") return "INACTIVE";
   return "ACTIVE";
 }
-
+function capitalizeWords(value: string) {
+  return value
+    .toLowerCase()
+    .split(" ")
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
 
 async function updateClerkUserNamesAndMetadata({
   clerkUserId,
@@ -125,11 +136,125 @@ export async function deleteTeacherAction(
 }
 
 export async function createClassAction(formData: FormData) {
-  console.log("created", formData);
+  const raw = Object.fromEntries(formData.entries());
+  const parsed = createClassSchema.safeParse(raw);
+
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message ?? "Invalid class data");
+  }
+
+  const {
+    name,
+    levelId,
+    maxStudents,
+    promotionTrack,
+    promotionRank,
+    isTerminal,
+  } = parsed.data;
+
+  const className = name.trim();
+
+  const [level, duplicate] = await Promise.all([
+    prisma.level.findUnique({
+      where: { id: levelId },
+      select: { id: true },
+    }),
+    prisma.class.findFirst({
+      where: {
+        levelId,
+        name: className,
+      },
+      select: { id: true },
+    }),
+  ]);
+
+  if (!level) {
+    throw new Error("Selected level was not found.");
+  }
+
+  if (duplicate) {
+    throw new Error("A class with this name already exists in the selected level.");
+  }
+
+  await prisma.class.create({
+    data: {
+      name: className,
+      levelId,
+      capacity: maxStudents ?? null,
+      promotionTrack: promotionTrack as PromotionTrack,
+      promotionRank,
+      isTerminal,
+    },
+  });
+
+  revalidatePath("/admin/classes");
 }
 
 export async function updateClassAction(formData: FormData) {
-  console.log("updated", formData);
+  const raw = Object.fromEntries(formData.entries());
+  const parsed = updateClassSchema.safeParse(raw);
+
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message ?? "Invalid class data");
+  }
+
+  const {
+    id,
+    name,
+    levelId,
+    maxStudents,
+    promotionTrack,
+    promotionRank,
+    isTerminal,
+  } = parsed.data;
+
+  const className = name.trim();
+
+  const [classRecord, level, duplicate] = await Promise.all([
+    prisma.class.findUnique({
+      where: { id },
+      select: { id: true },
+    }),
+    prisma.level.findUnique({
+      where: { id: levelId },
+      select: { id: true },
+    }),
+    prisma.class.findFirst({
+      where: {
+        NOT: { id },
+        levelId,
+        name: className,
+      },
+      select: { id: true },
+    }),
+  ]);
+
+  if (!classRecord) {
+    throw new Error("Class not found.");
+  }
+
+  if (!level) {
+    throw new Error("Selected level was not found.");
+  }
+
+  if (duplicate) {
+    throw new Error("A class with this name already exists in the selected level.");
+  }
+
+  await prisma.class.update({
+    where: { id },
+    data: {
+      name: className,
+      levelId,
+      capacity: maxStudents ?? null,
+      promotionTrack: promotionTrack as PromotionTrack,
+      promotionRank,
+      isTerminal,
+    },
+  });
+
+  revalidatePath("/admin/classes");
+  revalidatePath(`/admin/classes/${id}`);
 }
 
 export async function createTeacherAction(formData: FormData) {
@@ -290,13 +415,132 @@ export async function updateTeacherAction(formData: FormData) {
 }
 
 export async function createSubjectAction(formData: FormData) {
-  console.log("created", formData);
+  const raw = Object.fromEntries(formData.entries());
+  const parsed = subjectSchema.safeParse(raw);
+
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message ?? "Invalid subject data");
+  }
+
+  const { name, code, description, exam, ca, project } = parsed.data;
+
+  const subjectName = capitalizeWords(name);
+  const subjectCode = code.toUpperCase();
+  const existingSubject = await prisma.subject.findFirst({
+    where: {
+      OR: [{ name: subjectName }, { code: subjectCode }],
+    },
+    select: { id: true },
+  });
+
+  if (existingSubject) {
+    throw new Error("Subject with this name or code already exists.");
+  }
+
+  try{
+    await prisma.subject.create({
+      data: {
+        name: subjectName,
+        code: subjectCode,
+        description: description || null,
+        assessmentMax: Number(ca),
+        examMax: Number(exam),
+        projectMax: Number(project),
+      },
+    });
+
+  } catch (error) {
+    throw new Error("Failed to create subject.", { cause: error });
+  }
+
+  revalidatePath("/admin/subjects");
 }
 
 export async function updateSubjectAction(formData: FormData) {
-  console.log("updated", formData);
-}
+  const raw = Object.fromEntries(formData.entries());
+  const parsed = subjectSchema.safeParse(raw);
 
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message ?? "Invalid subject data");
+  }
+
+  const { id, name, code, description, exam, ca, project } = parsed.data;
+  if (!id) {
+    throw new Error("Subject id is required.");
+  }
+
+  const subjectName = capitalizeWords(name);
+  const subjectCode = code.toUpperCase();
+
+  const existingSubject = await prisma.subject.findFirst({
+    where: {
+      NOT: { id },
+      OR: [{ name: subjectName }, { code: subjectCode }],
+    },
+    select: { id: true },
+  });
+
+  if (existingSubject) {
+    throw new Error("Subject with this name or code already exists.");
+  }
+
+  try {
+    await prisma.subject.update({
+      where: { id },
+      data: {
+        name: subjectName,
+        code: subjectCode,
+        description: description || null,
+        assessmentMax: Number(ca),
+        examMax: Number(exam),
+        projectMax: Number(project),
+      },
+    });
+  } catch (error) {
+    console.error("updateSubjectAction failed", error);
+    throw new Error("Failed to update subject.");
+  }
+
+  revalidatePath("/admin/subjects");
+}
+export async function deleteSubjectAction(
+  prevState: ActionState,
+  formData: FormData
+) {
+  void prevState;
+
+  const id = String(formData.get("id") ?? "");
+  if (!id) {
+    return { ok: false, message: "Subject id is required." };
+  }
+
+  try {
+    await prisma.subject.delete({
+      where: { id },
+    });
+  } catch (error) {
+    console.error("deleteSubjectAction failed", error);
+    const code =
+      typeof error === "object" && error && "code" in error
+        ? String((error as { code?: unknown }).code ?? "")
+        : "";
+
+    if (code === "P2003") {
+      return {
+        ok: false,
+        message:
+          "Cannot delete subject because it is linked to other records. Unlink teachers/classes and remove dependent results first.",
+      };
+    }
+
+    return { ok: false, message: "Failed to delete subject." };
+  }
+
+  revalidatePath("/admin/subjects");
+  revalidatePath("/admin/classes");
+
+  return { ok: true, message: "Deleted successfully." };
+}
 export async function createParentAction(formData: FormData) {
   const raw = Object.fromEntries(formData.entries());
   const parsed = parentSchema.safeParse(raw);

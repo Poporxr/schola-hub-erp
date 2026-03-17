@@ -1,185 +1,120 @@
 "use client";
 
+import type { FormEvent } from "react";
+
 type ModalMode = "create" | "edit";
 
 export type SubjectFormData = {
   id?: string;
   name?: string;
   code?: string;
-  level?: string;
   description?: string;
-  teacherIds?: string[];
-  status?: "active" | "inactive";
   classId?: string;
 
   ca?: number | string;
   exam?: number | string;
   project?: number | string;
-  assignment?: number | string;
 };
 
 export default function SubjectForm({
+  formId,
+  onSubmit,
   mode,
   data,
+  disabled = false,
 }: {
+  formId: string;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   mode: ModalMode;
   data?: SubjectFormData;
+  disabled?: boolean;
 }) {
   const input =
     "w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 sm:px-4 sm:py-3 sm:text-base";
 
   return (
-    <div className="space-y-5 sm:space-y-6">
-      <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
-        <Field label="Subject Name *">
-          <input
-            name="name"
-            defaultValue={data?.name ?? (mode === "edit" ? "Mathematics" : "")}
+    <form id={formId} onSubmit={onSubmit} className="space-y-5 sm:space-y-6">
+      <fieldset disabled={disabled} className="space-y-5 disabled:opacity-70 sm:space-y-6">
+        {mode === "edit" && data?.id ? <input type="hidden" name="id" value={data.id} /> : null}
+        {data?.classId ? <input type="hidden" name="classId" value={data.classId} /> : null}
+
+        <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
+          <Field label="Subject Name *">
+            <input
+              name="name"
+              defaultValue={data?.name ?? ""}
+              className={input}
+            />
+          </Field>
+
+          <Field label="Subject Code *">
+            <input
+              name="code"
+              defaultValue={data?.code ?? ""}
+              className={input}
+            />
+          </Field>
+        </div>
+
+        <Field label="Description">
+          <textarea
+            name="description"
+            rows={3}
+            placeholder="Brief description of the subject"
+            defaultValue={data?.description ?? ""}
             className={input}
           />
         </Field>
 
-        <Field label="Subject Code *">
-          <input
-            name="code"
-            defaultValue={data?.code ?? (mode === "edit" ? "MTH101" : "")}
-            className={input}
-          />
-        </Field>
-      </div>
+        <div className="border-t border-gray-200 pt-6">
+          <h3 className="text-base font-bold text-gray-900 sm:text-lg">Assessment Structure</h3>
 
-      <Field label="Level *">
-        <select
-          name="level"
-          defaultValue={data?.level ?? (mode === "edit" ? "Senior Secondary (SS)" : "Primary")}
-          className={input}
-        >
-          <option value="Primary">Primary</option>
-          <option value="Junior Secondary (JSS)">Junior Secondary (JSS)</option>
-          <option value="Senior Secondary (SS)">Senior Secondary (SS)</option>
-        </select>
-      </Field>
+          <div className="mt-4 space-y-4 rounded-2xl bg-gray-50 p-4 sm:p-5">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
+              <Field label="Continuous Assessment (%)">
+                <input
+                  name="ca"
+                  type="number"
+                  min={0}
+                  max={100}
+                  defaultValue={data?.ca ?? 10}
+                  className={`${input} bg-white`}
+                />
+              </Field>
 
-      <Field label="Description">
-        <textarea
-          name="description"
-          rows={3}
-          placeholder="Brief description of the subject"
-          defaultValue={
-            data?.description ??
-            (mode === "edit"
-              ? "Core mathematics covering algebra, geometry, trigonometry, and calculus fundamentals."
-              : "")
-          }
-          className={input}
-        />
-      </Field>
+              <Field label="Exam (%)">
+                <input
+                  name="exam"
+                  type="number"
+                  min={0}
+                  max={100}
+                  defaultValue={data?.exam ?? 60}
+                  className={`${input} bg-white`}
+                />
+              </Field>
+            </div>
 
-      <div>
-        <label className="block text-sm font-semibold text-gray-700">
-          Assign Teachers
-        </label>
-        <select
-          name="teacherIds"
-          multiple
-          defaultValue={data?.teacherIds ?? (mode === "edit" ? ["sarah", "david"] : [])}
-          className={`${input} mt-2 h-24 sm:h-28`}
-        >
-          <option value="sarah">Mrs. Sarah Johnson</option>
-          <option value="david">Mr. David Chen</option>
-          <option value="amara">Ms. Amara Obi</option>
-        </select>
-        <p className="mt-2 text-xs text-gray-500">Teachers who can teach this subject</p>
-      </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
+              <Field label="Project (%)">
+                <input
+                  name="project"
+                  type="number"
+                  min={0}
+                  max={100}
+                  defaultValue={data?.project ?? 30}
+                  className={`${input} bg-white`}
+                />
+              </Field>
+            </div>
 
-      <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-2">
-          Status
-        </label>
-        <div className="flex flex-wrap items-center gap-4 sm:gap-6">
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="radio"
-              name="status"
-              value="active"
-              defaultChecked={(data?.status ?? "active") === "active"}
-              className="h-5 w-5 accent-indigo-600"
-            />
-            <span className="text-sm text-gray-800">Active</span>
-          </label>
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="radio"
-              name="status"
-              value="inactive"
-              defaultChecked={(data?.status ?? "active") === "inactive"}
-              className="h-5 w-5 accent-indigo-600"
-            />
-            <span className="text-sm text-gray-800">Inactive</span>
-          </label>
-        </div>
-      </div>
-
-      {/* Assessment */}
-      <div className="border-t border-gray-200 pt-6">
-        <h3 className="text-base font-bold text-gray-900 sm:text-lg">Assessment Structure</h3>
-
-        <div className="mt-4 space-y-4 rounded-2xl bg-gray-50 p-4 sm:p-5">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
-            <Field label="Continuous Assessment (%)">
-              <input
-                name="ca"
-                type="number"
-                min={0}
-                max={100}
-                defaultValue={data?.ca ?? (mode === "edit" ? 40 : 0)}
-                className={`${input} bg-white`}
-              />
-            </Field>
-
-            <Field label="Exam (%)">
-              <input
-                name="exam"
-                type="number"
-                min={0}
-                max={100}
-                defaultValue={data?.exam ?? (mode === "edit" ? 60 : 0)}
-                className={`${input} bg-white`}
-              />
-            </Field>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
-            <Field label="Project (%)">
-              <input
-                name="project"
-                type="number"
-                min={0}
-                max={100}
-                defaultValue={data?.project ?? 0}
-                className={`${input} bg-white`}
-              />
-            </Field>
-
-            <Field label="Assignment (%)">
-              <input
-                name="assignment"
-                type="number"
-                min={0}
-                max={100}
-                defaultValue={data?.assignment ?? 0}
-                className={`${input} bg-white`}
-              />
-            </Field>
-          </div>
-
-          <div className="flex items-center justify-between pt-3 border-t border-gray-200">
-            <span className="text-sm font-semibold text-gray-700">Total:</span>
-            <span className="text-lg font-bold text-gray-900">100%</span>
+            <div className="flex items-center justify-between border-t border-gray-200 pt-3">
+              <span className="text-sm font-semibold text-gray-700">Total:</span>
+              <span className="text-lg font-bold text-gray-900">100%</span>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+      </fieldset>
+    </form>
   );
 }
 

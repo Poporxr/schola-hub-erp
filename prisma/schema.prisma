@@ -141,6 +141,14 @@ enum LevelType {
   SECONDARY
 }
 
+enum PromotionTrack {
+  NURSERY
+  PRIMARY
+  JSS
+  SSS
+  OTHER
+}
+
 enum TermType {
   FIRST
   SECOND
@@ -218,6 +226,9 @@ model Class {
   id        String   @id @default(cuid())
   levelId   String
   name      String   // e.g., "JSS 1A", "Grade 3-A"
+  promotionTrack PromotionTrack @default(OTHER)
+  promotionRank  Int            @default(0)
+  isTerminal     Boolean        @default(false)
   capacity  Int?
   teacherId String?
   createdAt DateTime @default(now())
@@ -240,6 +251,8 @@ model Class {
   @@index([levelId])
   @@index([name])
   @@index([teacherId])
+  @@index([promotionTrack, promotionRank])
+  @@index([isTerminal])
 }
 
 model Subject {
@@ -247,6 +260,9 @@ model Subject {
   name        String   @unique // e.g., "Mathematics", "English Language"
   code        String?  @unique // e.g., "MATH", "ENG"
   description String?
+  assessmentMax Int    @default(10)
+  examMax       Int    @default(60)
+  projectMax    Int    @default(30)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

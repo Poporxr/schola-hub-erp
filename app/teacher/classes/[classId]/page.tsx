@@ -47,6 +47,11 @@ export default async function Page({
     select: {
       id: true,
       name: true,
+      levelId: true,
+      capacity: true,
+      promotionTrack: true,
+      promotionRank: true,
+      isTerminal: true,
       teacher: { select: { user: { select: { firstName: true, lastName: true } } } },
     },
   });
@@ -55,6 +60,25 @@ export default async function Page({
   }
 
   const classOptions = [{ id: classInfo.id, name: classInfo.name }];
+
+  const levels = await prisma.level.findMany({
+    orderBy: [{ name: "asc" }],
+    select: { id: true, name: true, type: true },
+  });
+
+  const classMeta = {
+    levels,
+  };
+
+  const classFormData = {
+    id: classInfo.id,
+    name: classInfo.name,
+    levelId: classInfo.levelId,
+    maxStudents: classInfo.capacity,
+    promotionTrack: classInfo.promotionTrack,
+    promotionRank: classInfo.promotionRank,
+    isTerminal: classInfo.isTerminal,
+  };
 
   const currentSession = await prisma.academicSession.findFirst({
     where: { isCurrent: true },
@@ -238,7 +262,7 @@ export default async function Page({
             </div>
             <div className="flex flex-col sm:flex-row gap-2">
               <ClassDetailActions classId={classId} classOptions={classOptions} />
-              <FormButton action="edit" type="class" />
+              <FormButton action="edit" type="class" data={classFormData} meta={classMeta} />
             </div>
           </div>
         </div>

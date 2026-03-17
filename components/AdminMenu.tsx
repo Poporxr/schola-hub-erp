@@ -12,6 +12,7 @@ import {
   FileBarChart,
   UserPlus,
   PanelRightOpen,
+  ShieldAlert,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 
@@ -151,6 +152,15 @@ const AdminMenu = ({ open, onClose }: AdminMenuProps) => {
         >
           <UserPlus className="w-5 h-5" />
           <span>Parents</span>
+        </Link>
+
+        <Link
+          href="/admin/academic-rollover"
+          onClick={closeOnMobile}
+          className={linkClass("/admin/academic-rollover")}
+        >
+          <ShieldAlert className="w-5 h-5" />
+          <span>Academic Rollover</span>
         </Link>
       </nav>
 
