@@ -100,8 +100,9 @@ const Page = async ({ params }: { params: { Id: string } }) => {
     const parentName = `${parent.user.firstName} ${parent.user.lastName}`;
     const parentStatus = parent.user.status ?? "ACTIVE";
     const shortId = parent.id.slice(0, 8).toUpperCase();
-    const loginUsername = parent.user.email ?? parent.id;
-    const loginPassword = parent.user.passwordHash ?? "N/A";
+    const loginCredential = (parent.user.passwordHash ?? "").trim();
+    const loginUsername = loginCredential || "N/A";
+    const loginPassword = loginCredential || "N/A";
 
     return (
         <div className="space-y-6">

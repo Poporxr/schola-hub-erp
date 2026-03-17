@@ -20,7 +20,7 @@ const Page = async () => {
         _count: { select: { classHistories: true } },
     } as const;
 
-    const [classes, levels] = await Promise.all([
+    const [classes, levels, currentSession] = await Promise.all([
         prisma.class.findMany({
             orderBy: [{ createdAt: "asc" }],
             select: classSelect,
@@ -29,14 +29,40 @@ const Page = async () => {
             orderBy: [{ name: "asc" }],
             select: { id: true, name: true, type: true },
         }),
+        prisma.academicSession.findFirst({
+            where: { isCurrent: true },
+            select: { id: true },
+        }),
     ]);
+
+    const currentTerm = currentSession
+        ? await prisma.term.findFirst({
+            where: { sessionId: currentSession.id, isCurrent: true },
+            select: { id: true },
+        })
+        : null;
+
+    const currentCounts = currentSession && currentTerm
+        ? await prisma.studentClassHistory.groupBy({
+            by: ["classId"],
+            where: { sessionId: currentSession.id, termId: currentTerm.id },
+            _count: { _all: true },
+        })
+        : [];
+
+    const countByClassId = new Map(currentCounts.map((row) => [row.classId, row._count._all]));
+
+    const classesWithCounts = classes.map((classItem) => ({
+        ...classItem,
+        studentCount: countByClassId.get(classItem.id) ?? 0,
+    }));
 
     const classMeta = {
         levels,
     };
 
     const totalClasses = classes.length;
-    const totalStudents = classes.reduce((sum, item) => sum + item._count.classHistories, 0);
+    const totalStudents = classesWithCounts.reduce((sum, item) => sum + item.studentCount, 0);
     const avgClassSize = totalClasses ? totalStudents / totalClasses : 0;
     const classesWithoutTeacher = classes.filter((item) => !item.teacher).length;
     const capacityTotal = classes.reduce((sum, item) => sum + (item.capacity ?? 0), 0);
@@ -90,7 +116,7 @@ const Page = async () => {
                  <FormButton type={"class"} action="create" meta={classMeta} />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {classes.map((classItem) => (
+                {classesWithCounts.map((classItem) => (
                     <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow" key={classItem.id}>
                         <div className="flex justify-between items-start mb-4">
                             <div>
@@ -112,7 +138,7 @@ const Page = async () => {
                             </div>
                             <div className="flex justify-between text-sm">
                                 <span className="text-slate-500">Total Students</span>
-                                <span className="font-medium text-slate-900">{classItem._count.classHistories}</span>
+                                <span className="font-medium text-slate-900">{classItem.studentCount}</span>
                             </div>
                             <div className="flex justify-between text-sm">
                                 <span className="text-slate-500">Capacity</span>

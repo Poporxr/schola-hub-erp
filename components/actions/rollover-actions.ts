@@ -7,8 +7,8 @@ import type { TermType } from "@/generated/prisma/client";
 
 const mappingSchema = z.object({
   id: z.string().min(1),
-  fromClassId: z.string().min(1),
-  toClassId: z.string().min(1),
+  fromClassId: z.string().optional().default(""),
+  toClassId: z.string().optional().default(""),
 });
 
 const rolloverPayloadSchema = z
@@ -409,27 +409,37 @@ export async function executeAcademicRolloverAction(payload: unknown): Promise<R
       ]);
 
       if (sourceClassTeachers.length) {
+        const classTeacherPayload = sourceClassTeachers.map((row) => ({
+          teacherId: row.teacherId,
+          classId:
+            data.promoteStudents && mappingMap.size > 0
+              ? mappingMap.get(row.classId) ?? row.classId
+              : row.classId,
+          sessionId: targetSessionId,
+          termId: targetTerm.id,
+        }));
+
         const classResult = await tx.classTeacher.createMany({
-          data: sourceClassTeachers.map((row) => ({
-            teacherId: row.teacherId,
-            classId: row.classId,
-            sessionId: targetSessionId,
-            termId: targetTerm.id,
-          })),
+          data: classTeacherPayload,
           skipDuplicates: true,
         });
         classTeacherRowsCreated = classResult.count;
       }
 
       if (sourceSubjectTeachers.length) {
+        const subjectTeacherPayload = sourceSubjectTeachers.map((row) => ({
+          teacherId: row.teacherId,
+          subjectId: row.subjectId,
+          classId:
+            data.promoteStudents && mappingMap.size > 0
+              ? mappingMap.get(row.classId) ?? row.classId
+              : row.classId,
+          sessionId: targetSessionId,
+          termId: targetTerm.id,
+        }));
+
         const subjectResult = await tx.subjectTeacher.createMany({
-          data: sourceSubjectTeachers.map((row) => ({
-            teacherId: row.teacherId,
-            subjectId: row.subjectId,
-            classId: row.classId,
-            sessionId: targetSessionId,
-            termId: targetTerm.id,
-          })),
+          data: subjectTeacherPayload,
           skipDuplicates: true,
         });
         subjectTeacherRowsCreated = subjectResult.count;

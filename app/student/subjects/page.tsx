@@ -2,7 +2,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { BookOpen, Clock, Layers, Users } from "lucide-react";
 import UserAvatar from "@/components/UserAvatar";
-import { greetingForHour } from "@/lib/settings";
 
 const Page = async () => {
   const { userId } = await auth();
@@ -36,7 +35,15 @@ const Page = async () => {
     return <div className="p-6 text-sm text-slate-600">No class is assigned for the current term.</div>;
   }
 
-  const [subjectRows, classSize, timetableRows] = await Promise.all([
+  const [classSubjectRows, currentTermTeacherRows, fallbackTeacherRows, classSize, timetableRows] = await Promise.all([
+    prisma.classSubject.findMany({
+      where: { classId },
+      select: {
+        subjectId: true,
+        subject: { select: { id: true, name: true, code: true } },
+      },
+      orderBy: [{ subject: { name: "asc" } }],
+    }),
     prisma.subjectTeacher.findMany({
       where: {
         classId,
@@ -45,7 +52,6 @@ const Page = async () => {
       },
       select: {
         subjectId: true,
-        subject: { select: { id: true, name: true, code: true } },
         teacher: {
           select: {
             user: {
@@ -54,7 +60,20 @@ const Page = async () => {
           },
         },
       },
-      orderBy: [{ subject: { name: "asc" } }],
+    }),
+    prisma.subjectTeacher.findMany({
+      where: { classId },
+      select: {
+        subjectId: true,
+        teacher: {
+          select: {
+            user: {
+              select: { firstName: true, lastName: true, image: true },
+            },
+          },
+        },
+      },
+      orderBy: [{ createdAt: "desc" }],
     }),
     prisma.studentClassHistory.count({
       where: {
@@ -88,14 +107,31 @@ const Page = async () => {
     weeklyHoursBySubject.set(row.subjectId, (weeklyHoursBySubject.get(row.subjectId) ?? 0) + hours);
   }
 
-  const subjects = subjectRows.map((row) => {
+  const teacherBySubjectId = new Map<string, { name: string; avatar?: string }>();
+  for (const row of currentTermTeacherRows) {
+    if (teacherBySubjectId.has(row.subjectId)) continue;
+    teacherBySubjectId.set(row.subjectId, {
+      name: `${row.teacher.user.firstName} ${row.teacher.user.lastName}`,
+      avatar: row.teacher.user.image ?? undefined,
+    });
+  }
+  for (const row of fallbackTeacherRows) {
+    if (teacherBySubjectId.has(row.subjectId)) continue;
+    teacherBySubjectId.set(row.subjectId, {
+      name: `${row.teacher.user.firstName} ${row.teacher.user.lastName}`,
+      avatar: row.teacher.user.image ?? undefined,
+    });
+  }
+
+  const subjects = classSubjectRows.map((row) => {
     const weeklyHours = weeklyHoursBySubject.get(row.subjectId) ?? 0;
+    const assignedTeacher = teacherBySubjectId.get(row.subjectId);
     return {
       id: row.subject.id,
       code: row.subject.code ?? row.subject.id,
       name: row.subject.name,
-      teacherName: `${row.teacher.user.firstName} ${row.teacher.user.lastName}`,
-      teacherAvatar: row.teacher.user.image ?? undefined,
+      teacherName: assignedTeacher?.name ?? "Teacher not assigned",
+      teacherAvatar: assignedTeacher?.avatar,
       weeklyHoursValue: weeklyHours,
       weeklyHours: weeklyHours % 1 === 0 ? `${weeklyHours}h / week` : `${weeklyHours.toFixed(1)}h / week`,
     };

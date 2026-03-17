@@ -1,6 +1,5 @@
 "use server";
 
-import { createHash } from "crypto";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { clerkClient } from "@clerk/nextjs/server";
@@ -33,10 +32,6 @@ type ActionState = {
   message?: string;
   fieldErrors?: Record<string, string>;
 };
-
-function hashPassword(value: string) {
-  return createHash("sha256").update(value).digest("hex");
-}
 
 function getString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -131,6 +126,57 @@ export async function deleteTeacherAction(
   revalidatePath("/admin/teachers");
   revalidatePath("/admin/classes");
   revalidatePath("/admin/subjects");
+
+  return { ok: true, message: "Deleted successfully." };
+}
+
+export async function deleteParentAction(
+  prevState: ActionState,
+  formData: FormData
+) {
+  void prevState;
+
+  const id = String(formData.get("id") ?? "");
+  if (!id) {
+    return { ok: false, message: "Parent id is required." };
+  }
+
+  const parent = await prisma.parent.findUnique({
+    where: { id },
+    select: { id: true, userId: true },
+  });
+
+  if (!parent) {
+    return { ok: false, message: "Parent not found." };
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.parent.delete({
+        where: { id: parent.id },
+      });
+
+      await tx.user.delete({
+        where: { id: parent.userId },
+      });
+    });
+
+    try {
+      await deleteClerkUserIfExists(parent.userId);
+    } catch {
+      return {
+        ok: false,
+        message:
+          "Parent was deleted from the database, but Clerk cleanup failed. Please remove the Clerk user manually.",
+      };
+    }
+  } catch (error) {
+    console.error("deleteParentAction failed", error);
+    return { ok: false, message: "Failed to delete parent." };
+  }
+
+  revalidatePath("/admin/parents");
+  revalidatePath("/admin/students");
 
   return { ok: true, message: "Deleted successfully." };
 }
@@ -302,7 +348,7 @@ export async function createTeacherAction(formData: FormData) {
           create: {
             id: clerkUser.id,
             email,
-            passwordHash: hashPassword(tempPassword),
+            passwordHash: tempPassword,
             role: "TEACHER",
             firstName: normalizedFirstName,
             lastName: normalizedLastName,
@@ -627,7 +673,7 @@ export async function createParentAction(formData: FormData) {
           create: {
             id: clerkUserResult.user.id,
             email,
-            passwordHash: hashPassword(clerkUserResult.tempPassword),
+            passwordHash: clerkUserResult.tempPassword,
             role: "PARENT",
             firstName: normalizedFirstName,
             lastName: normalizedLastName,

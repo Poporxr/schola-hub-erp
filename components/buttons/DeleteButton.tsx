@@ -3,14 +3,20 @@
 import { Trash2 } from "lucide-react";
 import { useState } from "react";
 import ConfirmDeleteModal from "@/components/modals/ConfirmDeleteModal";
-import { deleteSubjectAction, deleteTeacherAction } from "@/components/actions/actions";
+import {
+  deleteParentAction,
+  deleteSubjectAction,
+  deleteTeacherAction,
+} from "@/components/actions/actions";
 import { deleteStudentAction } from "@/components/actions/student-actions";
 import { ModalType } from "../modals/SmartModal";
+
+type DeleteRecordType = ModalType | "parent";
 
 type DeleteButtonProps = {
   id: string;
   label: string;
-  type: ModalType;
+  type: DeleteRecordType;
   action?: (prevState: { ok: boolean; message?: string; fieldErrors?: Record<string, string> }, formData: FormData) => Promise<{ ok: boolean; message?: string; fieldErrors?: Record<string, string> }>;
   iconOnly?: boolean;
 };
@@ -39,6 +45,8 @@ export function DeleteButton({
     action ??
     (type === "teacher"
       ? deleteTeacherAction
+      : type === "parent"
+        ? deleteParentAction
       : type === "subject"
         ? deleteSubjectAction
         : type === "student"

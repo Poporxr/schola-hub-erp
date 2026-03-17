@@ -169,7 +169,7 @@ const Page = async ({
                 <div className="bg-linear-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
                     <div className="relative z-10">
                         <p className="text-xs uppercase tracking-[0.2em] text-white/60">Results Overview</p>
-                        <h1 className="text-2xl font-bold mt-2">Academic Results Management</h1>
+                        <h1 className="text-2xl font-bold mt-2 text-white/90">Academic Results Management</h1>
                         <p className="text-white/70 max-w-2xl mt-2">
                             {currentTerm?.name ?? "N/A"} — {classes.find((c) => c.id === classId)?.name ?? "Class"}
                         </p>

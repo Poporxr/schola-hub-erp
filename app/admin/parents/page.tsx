@@ -18,6 +18,7 @@ import AddParentModal from "@/components/modals/AddParentModal";
 import { FunctionButttons } from "@/components/FunctionButtons";
 import KpiCard from "@/components/kpi/KpiCard";
 import KpiGrid from "@/components/kpi/KpiGrid";
+import { DeleteButton } from "@/components/buttons/DeleteButton";
 
 type SearchParams = {
   search?: string | string[];
@@ -311,7 +312,13 @@ const Page = async ({
                     </td>
 
                     <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end">
+                      <div className="flex items-center justify-end gap-2">
+                        <DeleteButton
+                          id={parent.id}
+                          label={parent.name}
+                          type="parent"
+                          iconOnly
+                        />
                         <Link
                           href={`/admin/parents/${parent.id}`}
                           className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-900 bg-indigo-50 hover:bg-indigo-100 transition-colors"
