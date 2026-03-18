@@ -7,7 +7,7 @@ type Payload = {
   subjectId: string;
   sessionId: string;
   termId: string;
-  students: Array<{ id: string; test: number; exam: number }>;
+  students: Array<{ id: string; test: number; project: number; exam: number }>;
 };
 
 export async function POST(req: Request) {
@@ -32,16 +32,51 @@ export async function POST(req: Request) {
     return Response.json({ error: "Invalid payload" }, { status: 400 });
   }
 
-  const isAssigned = await prisma.subjectTeacher.count({
-    where: {
-      teacherId: teacher.id,
-      classId,
-      subjectId,
-      sessionId,
-      termId,
-    },
+  const teacherSubjectCatalog = await prisma.subjectTeacher.findMany({
+    where: { teacherId: teacher.id },
+    select: { subjectId: true },
+    distinct: ["subjectId"],
   });
-  if (!isAssigned) return Response.json({ error: "Not assigned to this subject/class" }, { status: 403 });
+  const teacherSubjectIds = teacherSubjectCatalog.map((row) => row.subjectId);
+  const isTeacherSubject = teacherSubjectIds.includes(subjectId);
+
+  const [isSubjectTeacherAssigned, isClassTeacherAssigned, isSubjectLinkedToClass] =
+    await Promise.all([
+      prisma.subjectTeacher.count({
+        where: {
+          teacherId: teacher.id,
+          classId,
+          subjectId,
+          sessionId,
+          termId,
+        },
+      }),
+      prisma.classTeacher.count({
+        where: {
+          teacherId: teacher.id,
+          classId,
+          sessionId,
+          termId,
+        },
+      }),
+      prisma.classSubject.count({
+        where: {
+          classId,
+          subjectId,
+        },
+      }),
+    ]);
+
+  const canEnterResults =
+    isSubjectTeacherAssigned > 0 ||
+    (isClassTeacherAssigned > 0 && isTeacherSubject && isSubjectLinkedToClass > 0);
+
+  if (!canEnterResults) {
+    return Response.json(
+      { error: "Not assigned to this subject/class for the selected term." },
+      { status: 403 }
+    );
+  }
 
   const histories = await prisma.studentClassHistory.findMany({
     where: {
@@ -61,8 +96,9 @@ export async function POST(req: Request) {
         const classHistoryId = historyByStudent.get(row.id);
         if (!classHistoryId) return null;
         const ca1 = Number.isFinite(row.test) ? row.test : 0;
+        const project = Number.isFinite(row.project) ? row.project : 0;
         const exam = Number.isFinite(row.exam) ? row.exam : 0;
-        const totalScore = ca1 + exam;
+        const totalScore = ca1 + project + exam;
         return prisma.result.upsert({
           where: {
             studentId_subjectId_classHistoryId: {
@@ -74,7 +110,7 @@ export async function POST(req: Request) {
           update: {
             ca1,
             ca2: 0,
-            project: 0,
+            project,
             exam,
             totalScore,
             status,
@@ -85,7 +121,7 @@ export async function POST(req: Request) {
             classHistoryId,
             ca1,
             ca2: 0,
-            project: 0,
+            project,
             exam,
             totalScore,
             status,

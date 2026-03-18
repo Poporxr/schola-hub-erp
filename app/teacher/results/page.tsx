@@ -52,8 +52,9 @@ async function getResultsEntryData({
         subjectName: "-",
         termLabel: "-",
         totalStudentsLabel: "0 students",
-        maxTest: 20,
-        maxExam: 80,
+        maxTest: 10,
+        maxProject: 30,
+        maxExam: 60,
       },
       students: [],
       filters: {
@@ -87,8 +88,9 @@ async function getResultsEntryData({
         subjectName: "-",
         termLabel: currentTerm?.name ?? "-",
         totalStudentsLabel: "0 students",
-        maxTest: 20,
-        maxExam: 80,
+        maxTest: 10,
+        maxProject: 30,
+        maxExam: 60,
       },
       students: [],
       filters: {
@@ -100,29 +102,47 @@ async function getResultsEntryData({
     };
   }
 
-  const assignments = await prisma.subjectTeacher.findMany({
-    where: {
-      teacherId: teacher.id,
-    },
-    select: {
-      classId: true,
-      subjectId: true,
-      sessionId: true,
-      termId: true,
-      session: { select: { id: true, name: true, startDate: true } },
-      term: { select: { id: true, name: true, startDate: true } },
-      class: { select: { name: true } },
-      subject: { select: { name: true } },
-    },
-    orderBy: [
-      { session: { startDate: "desc" } },
-      { term: { startDate: "asc" } },
-      { class: { name: "asc" } },
-      { subject: { name: "asc" } },
-    ],
-  });
+  const [subjectAssignments, classAssignments] = await Promise.all([
+    prisma.subjectTeacher.findMany({
+      where: { teacherId: teacher.id },
+      select: {
+        classId: true,
+        subjectId: true,
+        sessionId: true,
+        termId: true,
+        session: { select: { id: true, name: true, startDate: true } },
+        term: { select: { id: true, name: true, startDate: true } },
+        class: { select: { name: true } },
+      },
+      orderBy: [
+        { session: { startDate: "desc" } },
+        { term: { startDate: "asc" } },
+        { class: { name: "asc" } },
+      ],
+    }),
+    prisma.classTeacher.findMany({
+      where: { teacherId: teacher.id },
+      select: {
+        classId: true,
+        sessionId: true,
+        termId: true,
+        session: { select: { id: true, name: true, startDate: true } },
+        term: { select: { id: true, name: true, startDate: true } },
+        class: { select: { name: true } },
+      },
+      orderBy: [
+        { session: { startDate: "desc" } },
+        { term: { startDate: "asc" } },
+        { class: { name: "asc" } },
+      ],
+    }),
+  ]);
 
-  if (!assignments.length) {
+  const teacherSubjectCatalogIds = Array.from(
+    new Set(subjectAssignments.map((row) => row.subjectId))
+  );
+
+  if (!subjectAssignments.length && !classAssignments.length) {
     return {
       ctx: {
         classId: "",
@@ -133,8 +153,9 @@ async function getResultsEntryData({
         subjectName: "-",
         termLabel: currentTerm.name,
         totalStudentsLabel: "0 students",
-        maxTest: 20,
-        maxExam: 80,
+        maxTest: 10,
+        maxProject: 30,
+        maxExam: 60,
       },
       students: [],
       filters: {
@@ -146,9 +167,11 @@ async function getResultsEntryData({
     };
   }
 
+  const allSessionTermRows = [...subjectAssignments, ...classAssignments];
+
   const sessions = Array.from(
     new Map(
-      assignments.map((a) => [
+      allSessionTermRows.map((a) => [
         a.sessionId,
         { id: a.session.id, name: a.session.name, startDate: a.session.startDate },
       ])
@@ -166,7 +189,7 @@ async function getResultsEntryData({
 
   const terms = Array.from(
     new Map(
-      assignments
+      allSessionTermRows
         .filter((a) => a.sessionId === selectedSessionId)
         .map((a) => [
           a.termId,
@@ -182,14 +205,41 @@ async function getResultsEntryData({
     (terms.some((t) => t.id === currentTerm.id) ? currentTerm.id : undefined) ??
     terms[0]?.id;
 
+  const subjectAssignedClassRowsForTerm = subjectAssignments
+    .filter((a) => a.sessionId === selectedSessionId && a.termId === selectedTermId)
+    .map((a) => ({ classId: a.classId, className: a.class.name }));
+
+  const classTeacherRowsForTerm = classAssignments.filter(
+    (a) => a.sessionId === selectedSessionId && a.termId === selectedTermId
+  );
+
+  const classTeacherClassIds = classTeacherRowsForTerm.map((row) => row.classId);
+  const classTeacherClassSubjects =
+    classTeacherClassIds.length && teacherSubjectCatalogIds.length
+      ? await prisma.classSubject.findMany({
+          where: {
+            classId: { in: classTeacherClassIds },
+            subjectId: { in: teacherSubjectCatalogIds },
+          },
+          select: { classId: true },
+        })
+      : [];
+
+  const classTeacherClassIdsWithTeacherSubjects = new Set(
+    classTeacherClassSubjects.map((row) => row.classId)
+  );
+
+  const eligibleClassTeacherRows = classTeacherRowsForTerm
+    .filter((row) => classTeacherClassIdsWithTeacherSubjects.has(row.classId))
+    .map((row) => ({ classId: row.classId, className: row.class.name }));
+
+  const classRowsForTerm = [
+    ...subjectAssignedClassRowsForTerm,
+    ...eligibleClassTeacherRows,
+  ];
+
   const classes = Array.from(
-    new Map(
-      assignments
-        .filter(
-          (a) => a.sessionId === selectedSessionId && a.termId === selectedTermId
-        )
-        .map((a) => [a.classId, { id: a.classId, name: a.class.name }])
-    ).values()
+    new Map(classRowsForTerm.map((a) => [a.classId, { id: a.classId, name: a.className }])).values()
   ).sort((a, b) => a.name.localeCompare(b.name));
 
   const selectedClassId =
@@ -198,34 +248,46 @@ async function getResultsEntryData({
       : undefined) ??
     classes[0]?.id;
 
-  const subjects = Array.from(
-    new Map(
-      assignments
-        .filter(
-          (a) =>
-            a.sessionId === selectedSessionId &&
-            a.termId === selectedTermId &&
-            a.classId === selectedClassId
-        )
-        .map((a) => [a.subjectId, { id: a.subjectId, name: a.subject.name }])
-    ).values()
-  ).sort((a, b) => a.name.localeCompare(b.name));
+  const classSubjects = selectedClassId
+    ? await prisma.classSubject.findMany({
+        where: { classId: selectedClassId },
+        select: {
+          subject: {
+            select: {
+              id: true,
+              name: true,
+              assessmentMax: true,
+              projectMax: true,
+              examMax: true,
+            },
+          },
+        },
+        orderBy: [{ subject: { name: "asc" } }],
+      })
+    : [];
+
+  const subjects = classSubjects
+    .filter((row) =>
+      teacherSubjectCatalogIds.length
+        ? teacherSubjectCatalogIds.includes(row.subject.id)
+        : false
+    )
+    .map((row) => ({
+      id: row.subject.id,
+      name: row.subject.name,
+      assessmentMax: row.subject.assessmentMax,
+      projectMax: row.subject.projectMax,
+      examMax: row.subject.examMax,
+    }));
 
   const selectedSubjectId =
     (subjectIdParam && subjects.some((s) => s.id === subjectIdParam)
       ? subjectIdParam
       : undefined) ??
     subjects[0]?.id;
+  const selectedSubject = subjects.find((s) => s.id === selectedSubjectId);
 
-  const assignment = assignments.find(
-    (a) =>
-      a.sessionId === selectedSessionId &&
-      a.termId === selectedTermId &&
-      a.classId === selectedClassId &&
-      a.subjectId === selectedSubjectId
-  );
-
-  if (!assignment) {
+  if (!selectedSessionId || !selectedTermId || !selectedClassId || !selectedSubjectId) {
     return {
       ctx: {
         classId: selectedClassId ?? "",
@@ -236,8 +298,9 @@ async function getResultsEntryData({
         subjectName: subjects.find((s) => s.id === selectedSubjectId)?.name ?? "-",
         termLabel: terms.find((t) => t.id === selectedTermId)?.name ?? "-",
         totalStudentsLabel: "0 students",
-        maxTest: 20,
-        maxExam: 80,
+        maxTest: selectedSubject?.assessmentMax ?? 10,
+        maxProject: selectedSubject?.projectMax ?? 30,
+        maxExam: selectedSubject?.examMax ?? 60,
       },
       students: [],
       filters: {
@@ -253,11 +316,30 @@ async function getResultsEntryData({
     };
   }
 
+  const fallbackHistoryTerm = await prisma.studentClassHistory.findFirst({
+    where: {
+      classId: selectedClassId,
+      sessionId: selectedSessionId,
+    },
+    orderBy: [{ createdAt: "desc" }],
+    select: { termId: true },
+  });
+
+  const fallbackTermId =
+    fallbackHistoryTerm && terms.some((term) => term.id === fallbackHistoryTerm.termId)
+      ? fallbackHistoryTerm.termId
+      : undefined;
+
+  const effectiveTermId =
+    termIdParam && selectedTermId
+      ? selectedTermId
+      : fallbackTermId ?? selectedTermId;
+
   const classHistories = await prisma.studentClassHistory.findMany({
     where: {
-      classId: assignment.classId,
-      sessionId: assignment.sessionId,
-      termId: assignment.termId,
+      classId: selectedClassId,
+      sessionId: selectedSessionId,
+      termId: effectiveTermId,
     },
     select: {
       id: true,
@@ -277,11 +359,12 @@ async function getResultsEntryData({
     ? await prisma.result.findMany({
         where: {
           classHistoryId: { in: historyIds },
-          subjectId: assignment.subjectId,
+          subjectId: selectedSubjectId,
         },
         select: {
           studentId: true,
           ca1: true,
+          project: true,
           exam: true,
           status: true,
           updatedAt: true,
@@ -307,6 +390,7 @@ async function getResultsEntryData({
       name: `${row.student.user.lastName.toUpperCase()}, ${row.student.user.firstName}`,
       admNo: row.student.admissionNumber,
       test: r?.ca1 ?? 0,
+      project: r?.project ?? 0,
       exam: r?.exam ?? 0,
       status,
     };
@@ -317,13 +401,13 @@ async function getResultsEntryData({
     .sort((a, b) => b.getTime() - a.getTime())[0];
 
   const ctx: ResultContext = {
-    classId: assignment.classId,
-    subjectId: assignment.subjectId,
-    sessionId: assignment.sessionId,
-    termId: assignment.termId,
-    className: assignment.class.name,
-    subjectName: assignment.subject.name,
-    termLabel: assignment.term.name,
+    classId: selectedClassId,
+    subjectId: selectedSubjectId,
+    sessionId: selectedSessionId,
+    termId: effectiveTermId,
+    className: classes.find((c) => c.id === selectedClassId)?.name ?? "-",
+    subjectName: subjects.find((s) => s.id === selectedSubjectId)?.name ?? "-",
+    termLabel: terms.find((t) => t.id === effectiveTermId)?.name ?? "-",
     totalStudentsLabel: `${students.length} students`,
     lastSavedLabel: lastSaved
       ? lastSaved.toLocaleTimeString("en-US", {
@@ -331,8 +415,9 @@ async function getResultsEntryData({
           minute: "2-digit",
         })
       : "--",
-    maxTest: 20,
-    maxExam: 80,
+    maxTest: selectedSubject?.assessmentMax ?? 10,
+    maxProject: selectedSubject?.projectMax ?? 30,
+    maxExam: selectedSubject?.examMax ?? 60,
   };
 
   return {
@@ -344,7 +429,7 @@ async function getResultsEntryData({
       classes,
       subjects,
       selectedSessionId,
-      selectedTermId,
+      selectedTermId: effectiveTermId,
       selectedClassId,
       selectedSubjectId,
     },
@@ -365,7 +450,7 @@ export default async function Page({
           <p className="text-xs uppercase tracking-[0.2em] text-white/60">
             Results
           </p>
-          <h1 className="text-2xl font-bold">Enter Student Results</h1>
+          <h1 className="text-2xl font-bold text-white/90 ">Enter Student Results</h1>
           <p className="text-sm text-white/70">
             Capture assessments for your assigned classes with real-time status tracking.
           </p>

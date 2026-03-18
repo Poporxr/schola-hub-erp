@@ -9,66 +9,106 @@ const Page = async () => {
   ) : null;
 
   const userIdValue = userId!;
-
-  const teacherFilter = {
-    OR: [{ teacherId: userIdValue }, { teacher: { userId: userIdValue } }],
-  };
-
-  const [
-    subjects,
-    classHistories,
-    timetableEntries,
-    currentTerm,
-  ] = userId
+  const [teacher, currentTerm] = userId
     ? await Promise.all([
-        prisma.subjectTeacher.findMany({
-          where: {
-            ...teacherFilter,
-            session: { isCurrent: true },
-            term: { isCurrent: true },
-          },
-          include: {
-            subject: { select: { id: true, name: true, description: true } },
-            class: { select: { id: true, name: true } },
-          },
-        }),
-        prisma.studentClassHistory.findMany({
-          where: {
-            session: { isCurrent: true },
-            term: { isCurrent: true },
-            class: {
-              subjectTeachers: {
-                some: {
-                  ...teacherFilter,
-                  session: { isCurrent: true },
-                  term: { isCurrent: true },
-                },
-              },
-            },
-          },
-          select: {
-            classId: true,
-            studentId: true,
-          },
-        }),
-        prisma.timetableEntry.findMany({
-          where: {
-            ...teacherFilter,
-            session: { isCurrent: true },
-            term: { isCurrent: true },
-            status: "ACTIVE",
-          },
-          select: {
-            id: true,
-            subjectId: true,
-          },
+        prisma.teacher.findFirst({
+          where: { OR: [{ id: userIdValue }, { userId: userIdValue }] },
+          select: { id: true },
         }),
         prisma.term.findFirst({
           where: { isCurrent: true, session: { isCurrent: true } },
-          select: { name: true },
+          select: { id: true, sessionId: true, name: true },
         }),
       ])
-    : [[], [], [], null];
+    : [null, null];
+
+  if (!teacher || !currentTerm) {
+    return authGate ?? (
+      <div className="space-y-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <h3 className="font-bold text-gray-900 text-lg">My Teaching Subjects</h3>
+          <p className="text-sm text-slate-500 mt-2">No subjects assigned to this teacher for the current term.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const [teacherSubjectCatalog, classTeacherRows, subjectTeacherRows] = await Promise.all([
+    prisma.subjectTeacher.findMany({
+      where: { teacherId: teacher.id },
+      select: {
+        subjectId: true,
+        subject: { select: { id: true, name: true, description: true } },
+      },
+      distinct: ["subjectId"],
+    }),
+    prisma.classTeacher.findMany({
+      where: {
+        teacherId: teacher.id,
+        sessionId: currentTerm.sessionId,
+        termId: currentTerm.id,
+      },
+      select: { classId: true },
+    }),
+    prisma.subjectTeacher.findMany({
+      where: {
+        teacherId: teacher.id,
+        sessionId: currentTerm.sessionId,
+        termId: currentTerm.id,
+      },
+      select: { classId: true },
+    }),
+  ]);
+
+  const teacherSubjectIds = teacherSubjectCatalog.map((row) => row.subjectId);
+  const classIds = Array.from(
+    new Set([
+      ...classTeacherRows.map((row) => row.classId),
+      ...subjectTeacherRows.map((row) => row.classId),
+    ])
+  );
+
+  const [classSubjectLinks, classHistories, timetableEntries] =
+    classIds.length && teacherSubjectIds.length
+      ? await Promise.all([
+          prisma.classSubject.findMany({
+            where: {
+              classId: { in: classIds },
+              subjectId: { in: teacherSubjectIds },
+            },
+            select: {
+              classId: true,
+              subjectId: true,
+              class: { select: { id: true, name: true } },
+              subject: { select: { id: true, name: true, description: true } },
+            },
+          }),
+          prisma.studentClassHistory.findMany({
+            where: {
+              sessionId: currentTerm.sessionId,
+              termId: currentTerm.id,
+              classId: { in: classIds },
+            },
+            select: {
+              classId: true,
+              studentId: true,
+            },
+          }),
+          prisma.timetableEntry.findMany({
+            where: {
+              classId: { in: classIds },
+              subjectId: { in: teacherSubjectIds },
+              sessionId: currentTerm.sessionId,
+              termId: currentTerm.id,
+              status: "ACTIVE",
+            },
+            select: {
+              id: true,
+              subjectId: true,
+            },
+          }),
+        ])
+      : [[], [], []];
 
   const classStudents = classHistories.reduce((map, row) => {
     const studentIds = map.get(row.classId) ?? new Set<string>();
@@ -89,7 +129,7 @@ const Page = async () => {
     classes: { id: string; name: string }[];
   };
 
-  const subjectMap = subjects.reduce((map, row) => {
+  const subjectMap = classSubjectLinks.reduce((map, row) => {
     const existing = map.get(row.subjectId) ?? {
       id: row.subject.id,
       name: row.subject.name,
@@ -97,7 +137,9 @@ const Page = async () => {
       classes: [] as { id: string; name: string }[],
     };
     const classAlreadyAdded = existing.classes.some((item) => item.id === row.classId);
-    const classes = classAlreadyAdded ? existing.classes : [...existing.classes, { id: row.class.id, name: row.class.name }];
+    const classes = classAlreadyAdded
+      ? existing.classes
+      : [...existing.classes, { id: row.class.id, name: row.class.name }];
     map.set(row.subjectId, { ...existing, classes });
     return map;
   }, new Map<string, SubjectCard>());

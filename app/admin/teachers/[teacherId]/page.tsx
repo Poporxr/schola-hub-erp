@@ -12,6 +12,15 @@ type PageParams = {
 
 const cardTones = ["bg-blue-50", "bg-green-50", "bg-purple-50", "bg-amber-50"];
 
+function normalizeClerkCredential(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
 export default async function Page({
   params,
 }: {
@@ -180,13 +189,9 @@ export default async function Page({
       : teacher.user.status === "SUSPENDED"
         ? "text-rose-700 bg-rose-100"
         : "text-amber-700 bg-amber-100";
-  const loginUsername = teacher.teacherId
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9_-]/g, "_")
-    .replace(/_+/g, "_")
-    .replace(/^_+|_+$/g, "");
-  const loginPassword = teacher.user.passwordHash ?? "N/A";
+  const loginCredential = normalizeClerkCredential(teacher.teacherId);
+  const loginUsername = loginCredential || "N/A";
+  const loginPassword = loginCredential || "N/A";
 
   const assignmentLabel =
     currentSession && currentTerm

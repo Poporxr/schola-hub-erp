@@ -11,6 +11,7 @@ export type ResultStudent = {
   name: string;
   admNo: string;
   test: number;
+  project: number;
   exam: number;
   status: ResultStatus;
 };
@@ -26,6 +27,7 @@ export type ResultContext = {
   totalStudentsLabel: string;
   lastSavedLabel?: string;
   maxTest: number;
+  maxProject: number;
   maxExam: number;
 };
 
@@ -79,6 +81,7 @@ export default function ResultsEntryClient({
   ctx: ResultContext;
   initialStudents: ResultStudent[];
 }) {
+  const maxTotal = ctx.maxTest + ctx.maxProject + ctx.maxExam;
   const [students, setStudents] = useState<ResultStudent[]>(() =>
     initialStudents.map((s) => {
       const testOk = validateInput(s.test, ctx.maxTest);
@@ -104,7 +107,7 @@ export default function ResultsEntryClient({
     return { total, changed, errors, rowsToSubmit };
   }, [students]);
 
-  function updateScore(studentId: string, field: "test" | "exam", value: number) {
+  function updateScore(studentId: string, field: "test" | "project" | "exam", value: number) {
     setStudents((prev) =>
       prev.map((s) => {
         if (s.id !== studentId) return s;
@@ -112,15 +115,16 @@ export default function ResultsEntryClient({
 
         const next = { ...s, [field]: value } as ResultStudent;
         const testOk = validateInput(next.test, ctx.maxTest);
+        const projectOk = validateInput(next.project, ctx.maxProject);
         const examOk = validateInput(next.exam, ctx.maxExam);
 
-        next.status = !testOk || !examOk ? "error" : "draft";
+        next.status = !testOk || !projectOk || !examOk ? "error" : "draft";
         return next;
       })
     );
   }
 
-  function focusNeighbor(rowIndex: number, field: "test" | "exam") {
+  function focusNeighbor(rowIndex: number, field: "test" | "project" | "exam") {
     const row = students[rowIndex];
     if (!row) return;
     const key = `${row.id}:${field}`;
@@ -134,9 +138,11 @@ export default function ResultsEntryClient({
   function handleKeyNav(
     e: React.KeyboardEvent<HTMLInputElement>,
     rowIndex: number,
-    field: "test" | "exam"
+    field: "test" | "project" | "exam"
   ) {
     const isTest = field === "test";
+    const isProject = field === "project";
+    const isExam = field === "exam";
 
     if (e.key === "Enter" || e.key === "ArrowDown") {
       e.preventDefault();
@@ -150,10 +156,20 @@ export default function ResultsEntryClient({
     }
     if (e.key === "ArrowRight" && isTest) {
       e.preventDefault();
+      focusNeighbor(rowIndex, "project");
+      return;
+    }
+    if (e.key === "ArrowRight" && isProject) {
+      e.preventDefault();
       focusNeighbor(rowIndex, "exam");
       return;
     }
-    if (e.key === "ArrowLeft" && !isTest) {
+    if (e.key === "ArrowLeft" && isExam) {
+      e.preventDefault();
+      focusNeighbor(rowIndex, "project");
+      return;
+    }
+    if (e.key === "ArrowLeft" && isProject) {
       e.preventDefault();
       focusNeighbor(rowIndex, "test");
       return;
@@ -186,7 +202,12 @@ export default function ResultsEntryClient({
         subjectId: ctx.subjectId,
         sessionId: ctx.sessionId,
         termId: ctx.termId,
-        students: students.map((s) => ({ id: s.id, test: s.test, exam: s.exam })),
+        students: students.map((s) => ({
+          id: s.id,
+          test: s.test,
+          project: s.project,
+          exam: s.exam,
+        })),
       };
       fetch("/api/teacher/results", {
         method: "POST",
@@ -221,7 +242,12 @@ export default function ResultsEntryClient({
       subjectId: ctx.subjectId,
       sessionId: ctx.sessionId,
       termId: ctx.termId,
-      students: students.map((s) => ({ id: s.id, test: s.test, exam: s.exam })),
+      students: students.map((s) => ({
+        id: s.id,
+        test: s.test,
+        project: s.project,
+        exam: s.exam,
+      })),
     };
     fetch("/api/teacher/results", {
       method: "POST",
@@ -347,6 +373,13 @@ export default function ResultsEntryClient({
                 </th>
 
                 <th className="px-4 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider border-r border-slate-200 w-28">
+                  <div>Project</div>
+                  <div className="text-[10px] text-slate-500 font-normal mt-0.5">
+                    (Max: {ctx.maxProject})
+                  </div>
+                </th>
+
+                <th className="px-4 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider border-r border-slate-200 w-28">
                   <div>Exam</div>
                   <div className="text-[10px] text-slate-500 font-normal mt-0.5">
                     (Max: {ctx.maxExam})
@@ -356,7 +389,7 @@ export default function ResultsEntryClient({
                 <th className="px-4 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider border-r border-slate-200 w-28 bg-slate-100">
                   <div>Total</div>
                   <div className="text-[10px] text-slate-500 font-normal mt-0.5">
-                    (100)
+                    (Max: {maxTotal})
                   </div>
                 </th>
 
@@ -376,10 +409,11 @@ export default function ResultsEntryClient({
 
             <tbody className="divide-y divide-slate-100">
               {students.map((s, index) => {
-                const total = (s.test || 0) + (s.exam || 0);
+                const total = (s.test || 0) + (s.project || 0) + (s.exam || 0);
                 const gradeInfo = calculateGrade(total);
 
                 const testOk = validateInput(s.test, ctx.maxTest);
+                const projectOk = validateInput(s.project, ctx.maxProject);
                 const examOk = validateInput(s.exam, ctx.maxExam);
 
                 const rowDisabled = s.status === "submitted";
@@ -449,6 +483,41 @@ export default function ResultsEntryClient({
                           {!testOk && (
                             <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] text-rose-600 font-medium whitespace-nowrap">
                               Max: {ctx.maxTest}
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </td>
+
+                    <td className="px-4 py-4 border-r border-slate-200 relative">
+                      {rowDisabled ? (
+                        <div className="text-center text-sm tabular-nums text-slate-600">
+                          {s.project}
+                        </div>
+                      ) : (
+                        <>
+                          <input
+                            ref={(el) => {
+                              inputRefs.current[`${s.id}:project`] = el;
+                            }}
+                            type="number"
+                            value={String(s.project ?? 0)}
+                            onChange={(e) =>
+                              updateScore(s.id, "project", clampToNumber(e.target.value))
+                            }
+                            onKeyDown={(e) => handleKeyNav(e, index, "project")}
+                            className={[
+                              "w-full px-2 py-2 text-center text-sm bg-transparent border rounded",
+                              "focus:outline-none focus:ring-2 focus:ring-slate-900/20 focus:border-slate-900/30 tabular-nums",
+                              projectOk ? "border-slate-200" : "border-rose-500 bg-rose-50",
+                            ].join(" ")}
+                            min={0}
+                            max={ctx.maxProject}
+                            step={0.5}
+                          />
+                          {!projectOk && (
+                            <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] text-rose-600 font-medium whitespace-nowrap">
+                              Max: {ctx.maxProject}
                             </div>
                           )}
                         </>
