@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { clerkClient } from "@clerk/nextjs/server";
+import { z } from "zod";
 import { parentSchema } from "@/components/modals/zod-schemas/parentForm";
 import { subjectSchema } from "@/components/modals/zod-schemas/subjectForm";
 import {
@@ -32,6 +33,40 @@ type ActionState = {
   message?: string;
   fieldErrors?: Record<string, string>;
 };
+
+function isDatabaseUnavailableError(error: unknown) {
+  const code =
+    typeof error === "object" && error && "code" in error
+      ? String((error as { code?: unknown }).code ?? "")
+      : "";
+  const message =
+    typeof error === "object" && error && "message" in error
+      ? String((error as { message?: unknown }).message ?? "")
+      : "";
+  return code === "P1001" || /can't reach database server/i.test(message);
+}
+
+const timetableEntrySchema = z
+  .object({
+    sessionId: z.string().min(1, "Session is required."),
+    termId: z.string().min(1, "Term is required."),
+    classId: z.string().min(1, "Class is required."),
+    subjectId: z.string().min(1, "Subject is required."),
+    teacherId: z.string().min(1, "Teacher is required."),
+    weekday: z.enum(["MON", "TUE", "WED", "THU", "FRI"]),
+    startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Start time must be HH:MM."),
+    endTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "End time must be HH:MM."),
+    notes: z.string().max(200).optional().default(""),
+  })
+  .superRefine((value, ctx) => {
+    if (value.startTime >= value.endTime) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["endTime"],
+        message: "End time must be later than start time.",
+      });
+    }
+  });
 
 function getString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -500,6 +535,111 @@ export async function createSubjectAction(formData: FormData) {
   }
 
   revalidatePath("/admin/subjects");
+}
+
+export async function createTimetableEntryAction(formData: FormData): Promise<ActionState> {
+  const raw = Object.fromEntries(formData.entries());
+  const parsed = timetableEntrySchema.safeParse(raw);
+
+  if (!parsed.success) {
+    return { ok: false, message: parsed.error.issues[0]?.message ?? "Invalid timetable data." };
+  }
+
+  const { sessionId, termId, classId, subjectId, teacherId, weekday, startTime, endTime, notes } = parsed.data;
+  try {
+    const [session, term, classRecord, subject, teacher, assignment] = await Promise.all([
+      prisma.academicSession.findUnique({
+        where: { id: sessionId },
+        select: { id: true },
+      }),
+      prisma.term.findUnique({
+        where: { id: termId },
+        select: { id: true, sessionId: true },
+      }),
+      prisma.class.findUnique({
+        where: { id: classId },
+        select: { id: true },
+      }),
+      prisma.subject.findUnique({
+        where: { id: subjectId },
+        select: { id: true },
+      }),
+      prisma.teacher.findUnique({
+        where: { id: teacherId },
+        select: { id: true },
+      }),
+      prisma.subjectTeacher.findFirst({
+        where: { teacherId, classId, subjectId, sessionId, termId },
+        select: { id: true },
+      }),
+    ]);
+
+    if (!session) return { ok: false, message: "Session not found." };
+    if (!term) return { ok: false, message: "Term not found." };
+    if (term.sessionId !== sessionId) {
+      return { ok: false, message: "Selected term does not belong to selected session." };
+    }
+    if (!classRecord) return { ok: false, message: "Class not found." };
+    if (!subject) return { ok: false, message: "Subject not found." };
+    if (!teacher) return { ok: false, message: "Teacher not found." };
+    if (!assignment) {
+      return {
+        ok: false,
+        message: "Teacher is not assigned to this class and subject for the selected session/term.",
+      };
+    }
+
+    const exactDuplicate = await prisma.timetableEntry.findFirst({
+      where: {
+        classId,
+        subjectId,
+        teacherId,
+        sessionId,
+        termId,
+        weekday,
+        startTime,
+        endTime,
+      },
+      select: { id: true },
+    });
+
+    if (exactDuplicate) {
+      return { ok: false, message: "This timetable entry already exists." };
+    }
+
+    await prisma.timetableEntry.create({
+      data: {
+        classId,
+        subjectId,
+        teacherId,
+        sessionId,
+        termId,
+        weekday,
+        startTime,
+        endTime,
+        status: "ACTIVE",
+        notes: notes || null,
+      },
+    });
+  } catch (error) {
+    console.error("createTimetableEntryAction failed", error);
+    if (isDatabaseUnavailableError(error)) {
+      return {
+        ok: false,
+        message: "Database is temporarily unavailable. Please try again shortly.",
+      };
+    }
+    return { ok: false, message: "Failed to create timetable entry." };
+  }
+
+  revalidatePath("/admin/timetable");
+  revalidatePath("/admin/timetable/create-entry");
+  revalidatePath("/teacher/timetable");
+  revalidatePath("/teacher/dashboard");
+  revalidatePath("/student/dashboard");
+  revalidatePath("/teacher/subjects");
+
+  return { ok: true, message: "Timetable entry created successfully." };
 }
 
 export async function updateSubjectAction(formData: FormData) {

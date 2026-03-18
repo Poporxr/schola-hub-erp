@@ -1,4 +1,4 @@
-﻿import {
+import {
   AlertTriangle,
   BookOpen,
   CalendarDays,
@@ -131,7 +131,6 @@ const Page = async () => {
           include: {
             class: { select: { id: true, name: true } },
             subject: { select: { id: true, name: true } },
-            venue: { select: { id: true, name: true } },
           },
           orderBy: [{ startTime: "asc" }],
         })
@@ -206,7 +205,7 @@ const Page = async () => {
     label: "Attendance",
     tone: "orange",
     title: `Mark attendance for ${entry.class.name}`,
-    meta: `${entry.subject.name} - ${entry.venue.name}`,
+    meta: `${entry.subject.name}`,
     href: "/teacher/attendance",
   }));
 
@@ -350,7 +349,7 @@ const Page = async () => {
                         {entry.subject.name}
                       </h4>
                       <p className={`text-sm mt-1 ${styles.meta}`}>
-                        {entry.class.name} · {entry.venue.name}
+                        {entry.class.name}
                       </p>
                       <Link
                         href="/teacher/attendance"
@@ -468,3 +467,4 @@ const Page = async () => {
 };
 
 export default Page;
+

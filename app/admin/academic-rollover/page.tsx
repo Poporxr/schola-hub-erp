@@ -3,7 +3,7 @@ import type { ClassOption, SessionOption } from "@/components/academic-rollover/
 import { prisma } from "@/lib/prisma";
 
 const AcademicRolloverPage = async () => {
-  const [sessions, classes] = await Promise.all([
+  const [sessions, classes, currentSession] = await Promise.all([
     prisma.academicSession.findMany({
       select: { id: true, name: true },
       orderBy: [{ startDate: "desc" }, { name: "desc" }],
@@ -22,6 +22,10 @@ const AcademicRolloverPage = async () => {
         { name: "asc" },
       ],
     }),
+    prisma.academicSession.findFirst({
+      where: { isCurrent: true },
+      select: { id: true, name: true, startDate: true, endDate: true },
+    }),
   ]);
 
   const initialSessions: SessionOption[] = sessions.map((item) => ({
@@ -37,8 +41,21 @@ const AcademicRolloverPage = async () => {
     isTerminal: item.isTerminal,
   }));
 
+  const currentSessionView = currentSession
+    ? {
+        id: currentSession.id,
+        name: currentSession.name,
+        startDate: currentSession.startDate.toISOString().split("T")[0],
+        endDate: currentSession.endDate.toISOString().split("T")[0],
+      }
+    : null;
+
   return (
-    <AcademicRolloverClient initialSessions={initialSessions} initialClasses={initialClasses} />
+    <AcademicRolloverClient
+      initialSessions={initialSessions}
+      initialClasses={initialClasses}
+      currentSession={currentSessionView}
+    />
   );
 };
 

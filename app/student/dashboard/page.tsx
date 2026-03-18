@@ -1,20 +1,14 @@
-﻿import ScheduleAndNotices from "@/components/student/ScheduleAndNotices";
+import ScheduleAndNotices from "@/components/student/ScheduleAndNotices";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import {
-  Award,
-  Bell,
-  BookOpen,
-  CalendarCheck,
-  FileText,
-  TrendingUp,
+  Award,  BookOpen,
+  CalendarCheck,  TrendingUp,
 } from "lucide-react";
-import Link from "next/link";
 import { AttendanceStatus } from "@/generated/prisma/client";
-import AttendanceRateCards from "@/components/AttendanceRateCards";
 import KpiCard from "@/components/kpi/KpiCard";
 import KpiGrid from "@/components/kpi/KpiGrid";
-import { greetingForHour, relativeDaysLabel } from "@/lib/settings";
+import { greetingForHour } from "@/lib/settings";
 
 const formatPosition = (position: number | null) => {
   if (!position) return "-";
@@ -83,7 +77,6 @@ const Page = async () => {
                   endTime: true,
                   subject: { select: { id: true, name: true } },
                   teacher: { select: { id: true, user: { select: { firstName: true, lastName: true } } } },
-                  venue: { select: { id: true, name: true } },
                 },
               },
             },
@@ -200,34 +193,6 @@ const Page = async () => {
     .map(([studentId]) => studentId);
   const classPosition = sortedTotals.length ? sortedTotals.indexOf(studentData.id) + 1 : null;
   const classSize = classHistories.length || null;
-
-  const weekdayByIndex = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] as const;
-  const todayWeekday = weekdayByIndex[new Date().getDay()];
-  const todaySchedule = schedule.filter((item) => item.weekday === todayWeekday);
-
-  const activityItems = [
-    ...notices.map((notice) => ({
-      id: notice.id,
-      icon: Bell,
-      color: "amber" as const,
-      title: notice.from ?? "School notice",
-      detail: notice.message,
-      time: relativeDaysLabel(notice.publishedAt ?? notice.createdAt),
-      createdAt: notice.publishedAt ?? notice.createdAt,
-    })),
-    ...results.slice(0, 4).map((result) => ({
-      id: result.id,
-      icon: Award,
-      color: "indigo" as const,
-      title: "Result updated",
-      detail: `${result.subject.name} · ${Math.round(result.totalScore ?? 0)}%`,
-      time: relativeDaysLabel(result.createdAt),
-      createdAt: result.createdAt,
-    })),
-  ]
-    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-    .slice(0, 6);
-
   const now = new Date();
 
   return (
@@ -279,3 +244,8 @@ const Page = async () => {
   );
 };
 export default Page;
+
+
+
+
+

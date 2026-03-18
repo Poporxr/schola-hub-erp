@@ -45,7 +45,7 @@ export default async function Page() {
     .sort((a, b) => a.name.localeCompare(b.name));
 
   if (!classOptions.length) {
-    return <div className="p-6 text-sm text-slate-600">No class teacher assignment found.</div>;
+    return <div className="p-6 text-sm text-slate-600">You are not assigned to any classes. Please contact the administrator.</div>;
   }
 
   const selectedClassId = classOptions[0].id;

@@ -59,7 +59,6 @@ const TeacherWeeklyTimetable = async () => {
     include: {
       class: { select: { id: true, name: true } },
       subject: { select: { id: true, name: true } },
-      venue: { select: { id: true, name: true } },
     },
   });
 
@@ -126,7 +125,7 @@ const TeacherWeeklyTimetable = async () => {
                   }
 
                   const className = entry.class?.name ?? "-";
-                  const meta = `${className} - ${entry.venue?.name ?? "-"}`;
+                  const meta = `${className}`;
                   const colorKey = subjectColorMap.get(entry.subjectId) ?? "TEAL";
                   const ui = subjectColorUI[colorKey];
 
@@ -152,3 +151,4 @@ const TeacherWeeklyTimetable = async () => {
 };
 
 export default TeacherWeeklyTimetable;
+

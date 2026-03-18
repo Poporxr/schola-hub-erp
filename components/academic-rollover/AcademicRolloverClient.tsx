@@ -27,6 +27,12 @@ const termTypeOptions = ["FIRST", "SECOND", "THIRD"] as const;
 type Props = {
   initialSessions: SessionOption[];
   initialClasses: ClassOption[];
+  currentSession: {
+    id: string;
+    name: string;
+    startDate: string;
+    endDate: string;
+  } | null;
 };
 
 type PreviewSummary = NonNullable<RolloverPreviewResult["summary"]>;
@@ -72,8 +78,15 @@ function buildInitialMappings(classes: ClassOption[]): PromotionMapping[] {
   });
 }
 
-export default function AcademicRolloverClient({ initialSessions, initialClasses }: Props) {
+export default function AcademicRolloverClient({
+  initialSessions,
+  initialClasses,
+  currentSession,
+}: Props) {
   const router = useRouter();
+  const [rolloverMode, setRolloverMode] = useState<"session_term" | "term_only">(
+    currentSession ? "term_only" : "session_term"
+  );
 
   const [targetSessionId, setTargetSessionId] = useState("new");
   const [sessionName, setSessionName] = useState("");
@@ -96,6 +109,16 @@ export default function AcademicRolloverClient({ initialSessions, initialClasses
   const [confirmationText, setConfirmationText] = useState("");
   const [executing, setExecuting] = useState(false);
 
+  function setMode(mode: "session_term" | "term_only") {
+    setRolloverMode(mode);
+    if (mode === "term_only" && currentSession) {
+      setTargetSessionId(currentSession.id);
+      setSessionCurrent(true);
+    }
+    setPreview(null);
+    setConfirmationText("");
+  }
+
   function handleMappingChange(id: string, field: "fromClassId" | "toClassId", value: string) {
     setMappings((prev) =>
       prev.map((mapping) => (mapping.id === id ? { ...mapping, [field]: value } : mapping))
@@ -103,8 +126,11 @@ export default function AcademicRolloverClient({ initialSessions, initialClasses
   }
 
   function buildPayload() {
+    const effectiveTargetSessionId =
+      rolloverMode === "term_only" && currentSession ? currentSession.id : targetSessionId;
+
     return {
-      targetSessionId,
+      targetSessionId: effectiveTargetSessionId,
       sessionName,
       sessionStartDate,
       sessionEndDate,
@@ -121,6 +147,10 @@ export default function AcademicRolloverClient({ initialSessions, initialClasses
   }
 
   async function runPreview() {
+    if (rolloverMode === "term_only" && !currentSession) {
+      toast.error("No current session found. Use Session + Term mode instead.");
+      return;
+    }
     setPreviewLoading(true);
     const result = await previewAcademicRolloverAction(buildPayload());
     setPreviewLoading(false);
@@ -185,7 +215,11 @@ export default function AcademicRolloverClient({ initialSessions, initialClasses
           </div>
 
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-            <TopSignal icon={<CalendarClock className="h-4 w-4" />} title="Configure" value="Session + Term" />
+            <TopSignal
+              icon={<CalendarClock className="h-4 w-4" />}
+              title="Configure"
+              value={rolloverMode === "term_only" ? "Term-Only Rollover" : "Session + Term"}
+            />
             <TopSignal icon={<Layers3 className="h-4 w-4" />} title="Map" value="Class Promotion Paths" />
             <TopSignal icon={<Sparkles className="h-4 w-4" />} title="Validate & Execute" value="Preview Gate" />
           </div>
@@ -221,8 +255,68 @@ export default function AcademicRolloverClient({ initialSessions, initialClasses
         </aside>
 
         <div className="space-y-6">
+          <StageCard
+            stage="0"
+            title="Rollover Mode"
+            description="Select the workflow type before configuring rollover details."
+          >
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setMode("session_term")}
+                className={[
+                  "rounded-2xl border px-4 py-4 text-left transition",
+                  rolloverMode === "session_term"
+                    ? "border-indigo-300 bg-indigo-50 ring-2 ring-indigo-100"
+                    : "border-slate-200 bg-white hover:border-slate-300",
+                ].join(" ")}
+              >
+                <p className="text-sm font-semibold text-slate-900">Session + Term Rollover</p>
+                <p className="mt-1 text-xs text-slate-600">
+                  Create/select a session, then create/update its term and apply rollover.
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setMode("term_only")}
+                disabled={!currentSession}
+                className={[
+                  "rounded-2xl border px-4 py-4 text-left transition disabled:cursor-not-allowed disabled:opacity-60",
+                  rolloverMode === "term_only"
+                    ? "border-indigo-300 bg-indigo-50 ring-2 ring-indigo-100"
+                    : "border-slate-200 bg-white hover:border-slate-300",
+                ].join(" ")}
+              >
+                <p className="text-sm font-semibold text-slate-900">Term-Only Rollover</p>
+                <p className="mt-1 text-xs text-slate-600">
+                  Keep current session fixed and create/update only the target term.
+                </p>
+              </button>
+            </div>
+          </StageCard>
+
           <StageCard stage="1" title="Session Setup" description="Create a new session or target an existing one.">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {rolloverMode === "term_only" ? (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-slate-900">Current Session (Locked)</p>
+                  <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
+                    Term-Only Mode
+                  </span>
+                </div>
+                {currentSession ? (
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <ReadOnlyField label="Session Name" value={currentSession.name} />
+                    <ReadOnlyField label="Start Date" value={currentSession.startDate} />
+                    <ReadOnlyField label="End Date" value={currentSession.endDate} />
+                  </div>
+                ) : (
+                  <p className="text-sm text-rose-600">No current session found.</p>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <Field label="Session Target">
                 <select
                   value={targetSessionId}
@@ -263,7 +357,13 @@ export default function AcademicRolloverClient({ initialSessions, initialClasses
                 />
               </Field>
             </div>
-            <CheckboxRow label="Set this session as current" checked={sessionCurrent} onChange={setSessionCurrent} />
+            )}
+            <CheckboxRow
+              label="Set this session as current"
+              checked={sessionCurrent}
+              onChange={setSessionCurrent}
+              disabled={rolloverMode === "term_only"}
+            />
           </StageCard>
 
           <StageCard stage="2" title="Term Setup" description="Define the academic term and date boundaries.">
@@ -382,6 +482,9 @@ export default function AcademicRolloverClient({ initialSessions, initialClasses
             accent="rose"
           >
             <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-rose-700">
+                Mode: {rolloverMode === "term_only" ? "Term-Only Rollover" : "Session + Term Rollover"}
+              </p>
               <p className="text-sm text-rose-700">
                 Type <span className="font-semibold">{expectedConfirmationText}</span> to execute rollover.
               </p>
@@ -464,27 +567,40 @@ function CheckboxRow({
   checked,
   onChange,
   compact = false,
+  disabled = false,
 }: {
   label: string;
   checked: boolean;
   onChange: (value: boolean) => void;
   compact?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <label
       className={[
         "mt-4 flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700",
+        disabled ? "cursor-not-allowed opacity-70" : "",
         compact ? "mt-0" : "",
       ].join(" ")}
     >
       <input
         type="checkbox"
         checked={checked}
+        disabled={disabled}
         onChange={(event) => onChange(event.target.checked)}
         className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
       />
       {label}
     </label>
+  );
+}
+
+function ReadOnlyField({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white px-3 py-2.5">
+      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</p>
+      <p className="mt-1 text-sm font-semibold text-slate-900">{value}</p>
+    </div>
   );
 }
 

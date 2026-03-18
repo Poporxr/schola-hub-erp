@@ -18,9 +18,7 @@ type ScheduleItem = {
   startTime: string;
   endTime: string;
   subject: { id: string; name: string };
-  teacher: { id: string; user: { firstName: string; lastName: string } };
-  venue: { id: string; name: string };
-};
+  teacher: { id: string; user: { firstName: string; lastName: string } };};
 
 const ScheduleAndNotices = ({ schedule, notices }: { schedule: ScheduleItem[]; notices: NoticeItem[] }) => {
   const weekdayByIndex = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] as const;
@@ -60,7 +58,7 @@ const ScheduleAndNotices = ({ schedule, notices }: { schedule: ScheduleItem[]; n
                       {item.subject.name}
                     </h4>
                     <p className="mt-2 text-sm font-medium text-indigo-700">
-                      {teacherName} - {item.venue.name}
+                      {teacherName}
                     </p>
                   </div>
                 </div>
@@ -105,3 +103,4 @@ const ScheduleAndNotices = ({ schedule, notices }: { schedule: ScheduleItem[]; n
   );
 }
 export default ScheduleAndNotices;
+

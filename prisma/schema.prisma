@@ -276,21 +276,6 @@ model Subject {
   @@index([code])
 }
 
-model Venue {
-  id          String   @id @default(cuid())
-  name        String   // e.g., "Room 204", "Lab 2"
-  capacity    Int?
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  timetableEntries TimetableEntry[]
-
-  @@unique([name])
-  @@index([name])
-}
-
 // ============================================
 // STUDENT CLASS MANAGEMENT (Flexible)
 // ============================================
@@ -684,7 +669,6 @@ model TimetableEntry {
   classId   String
   subjectId String
   teacherId String
-  venueId   String
   sessionId String?
   termId    String?
   weekday   Weekday
@@ -698,14 +682,12 @@ model TimetableEntry {
   class   Class           @relation(fields: [classId], references: [id], onDelete: Cascade)
   subject Subject         @relation(fields: [subjectId], references: [id], onDelete: Cascade)
   teacher Teacher         @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-  venue   Venue           @relation(fields: [venueId], references: [id], onDelete: Cascade)
   session AcademicSession? @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   term    Term?           @relation(fields: [termId], references: [id], onDelete: Cascade)
 
   @@index([classId])
   @@index([subjectId])
   @@index([teacherId])
-  @@index([venueId])
   @@index([weekday])
   @@index([sessionId, termId])
   @@index([status])

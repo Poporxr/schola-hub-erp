@@ -143,7 +143,7 @@ async function buildPreviewSummary(data: RolloverPayload) {
     }),
     prisma.term.findFirst({
       where: { isCurrent: true },
-      select: { id: true, sessionId: true, type: true },
+      select: { id: true, sessionId: true, type: true, startDate: true },
     }),
     prisma.class.findMany({
       where: { isTerminal: false },
@@ -156,10 +156,17 @@ async function buildPreviewSummary(data: RolloverPayload) {
   }
 
   const validMappings = data.mappings.filter((item) => item.fromClassId && item.toClassId);
+  const isSameSessionTarget =
+    Boolean(currentSession) &&
+    data.targetSessionId !== "new" &&
+    data.targetSessionId === currentSession?.id;
+
   if (data.promoteStudents) {
-    const incompleteRows = data.mappings.filter((item) => !item.fromClassId || !item.toClassId);
-    if (incompleteRows.length) {
-      blockers.push(`${incompleteRows.length} mapping row(s) are incomplete.`);
+    if (!isSameSessionTarget) {
+      const incompleteRows = data.mappings.filter((item) => !item.fromClassId || !item.toClassId);
+      if (incompleteRows.length) {
+        blockers.push(`${incompleteRows.length} mapping row(s) are incomplete.`);
+      }
     }
 
     const fromSet = new Set<string>();
@@ -173,15 +180,17 @@ async function buildPreviewSummary(data: RolloverPayload) {
     }
 
     const sameClassRows = validMappings.filter((item) => item.fromClassId === item.toClassId);
-    if (sameClassRows.length) {
+    if (sameClassRows.length && !isSameSessionTarget) {
       blockers.push("A source class cannot map to itself.");
     }
 
-    const promotableIds = promotableClasses.map((item) => item.id);
-    const mappedFromIds = new Set(validMappings.map((item) => item.fromClassId));
-    const uncovered = promotableIds.filter((id) => !mappedFromIds.has(id));
-    if (uncovered.length) {
-      warnings.push(`${uncovered.length} promotable class(es) are unmapped and will be skipped.`);
+    if (!isSameSessionTarget) {
+      const promotableIds = promotableClasses.map((item) => item.id);
+      const mappedFromIds = new Set(validMappings.map((item) => item.fromClassId));
+      const uncovered = promotableIds.filter((id) => !mappedFromIds.has(id));
+      if (uncovered.length) {
+        warnings.push(`${uncovered.length} promotable class(es) are unmapped and will be skipped.`);
+      }
     }
   }
 
@@ -198,7 +207,9 @@ async function buildPreviewSummary(data: RolloverPayload) {
     data.targetSessionId === currentSession.id &&
     data.termType === currentTerm.type
   ) {
-    blockers.push("Selected target term is already the current active term.");
+    warnings.push(
+      "Selected target term is already current. Execution will backfill missing rollover records only."
+    );
   }
 
   let termsToCreate = 1;
@@ -215,16 +226,45 @@ async function buildPreviewSummary(data: RolloverPayload) {
     if (existingTerm) termsToCreate = 0;
   }
 
-  let studentsToPromote = 0;
-  if (data.promoteStudents && currentSession && currentTerm && validMappings.length) {
-    const fromIds = [...new Set(validMappings.map((item) => item.fromClassId))];
-    studentsToPromote = await prisma.studentClassHistory.count({
+  let sourceTermForPreview = currentTerm;
+  if (
+    currentSession &&
+    currentTerm &&
+    data.targetSessionId !== "new" &&
+    data.targetSessionId === currentSession.id &&
+    data.termType === currentTerm.type
+  ) {
+    const previousTerm = await prisma.term.findFirst({
       where: {
         sessionId: currentSession.id,
-        termId: currentTerm.id,
-        classId: { in: fromIds },
+        id: { not: currentTerm.id },
+        startDate: { lt: currentTerm.startDate },
       },
+      orderBy: { startDate: "desc" },
+      select: { id: true, sessionId: true, type: true, startDate: true },
     });
+    if (previousTerm) sourceTermForPreview = previousTerm;
+  }
+
+  let studentsToPromote = 0;
+  if (currentSession && sourceTermForPreview) {
+    let fromIds: string[] | null = null;
+    if (isSameSessionTarget) {
+      fromIds = validMappings.length
+        ? [...new Set(validMappings.map((item) => item.fromClassId))]
+        : null;
+    } else if (data.promoteStudents && validMappings.length) {
+      fromIds = [...new Set(validMappings.map((item) => item.fromClassId))];
+    }
+    if (fromIds !== null || isSameSessionTarget) {
+      studentsToPromote = await prisma.studentClassHistory.count({
+        where: {
+          sessionId: currentSession.id,
+          termId: sourceTermForPreview.id,
+          ...(fromIds ? { classId: { in: fromIds } } : {}),
+        },
+      });
+    }
   }
 
   return {
@@ -350,17 +390,52 @@ export async function executeAcademicRolloverAction(payload: unknown): Promise<R
       });
     }
 
+    const sourceSessionForCopy = sourceSession;
+    let sourceTermForCopy = sourceTerm;
+
+    if (
+      sourceSession &&
+      sourceTerm &&
+      sourceSession.id === targetSessionId &&
+      sourceTerm.id === targetTerm.id
+    ) {
+      const previousTerm = await tx.term.findFirst({
+        where: {
+          sessionId: targetSessionId,
+          id: { not: targetTerm.id },
+          startDate: { lt: new Date(data.termStartDate) },
+        },
+        orderBy: { startDate: "desc" },
+        select: { id: true, sessionId: true },
+      });
+      if (previousTerm) {
+        sourceTermForCopy = previousTerm;
+      }
+    }
+
     let studentHistoryRowsCreated = 0;
     let classTeacherRowsCreated = 0;
     let subjectTeacherRowsCreated = 0;
 
-    if (data.promoteStudents && sourceSession && sourceTerm && mappingMap.size > 0) {
+    const isSameSessionTermRollover =
+      Boolean(sourceSessionForCopy) &&
+      Boolean(sourceTermForCopy) &&
+      sourceSessionForCopy?.id === targetSessionId &&
+      sourceTermForCopy?.id !== targetTerm.id;
+
+    const shouldCopyStudentHistory =
+      Boolean(sourceSessionForCopy && sourceTermForCopy) &&
+      (isSameSessionTermRollover || (data.promoteStudents && mappingMap.size > 0));
+
+    if (shouldCopyStudentHistory && sourceSessionForCopy && sourceTermForCopy) {
       const fromClassIds = [...mappingMap.keys()];
       const sourceClassHistoryRows = await tx.studentClassHistory.findMany({
         where: {
-          sessionId: sourceSession.id,
-          termId: sourceTerm.id,
-          classId: { in: fromClassIds },
+          sessionId: sourceSessionForCopy.id,
+          termId: sourceTermForCopy.id,
+          ...(isSameSessionTermRollover && fromClassIds.length === 0
+            ? {}
+            : { classId: { in: fromClassIds } }),
         },
         select: {
           studentId: true,
@@ -370,7 +445,10 @@ export async function executeAcademicRolloverAction(payload: unknown): Promise<R
 
       const nextHistoryData = sourceClassHistoryRows
         .map((row) => {
-          const targetClassId = mappingMap.get(row.classId);
+          const mappedClassId = mappingMap.get(row.classId);
+          const targetClassId =
+            mappedClassId ??
+            (isSameSessionTermRollover ? row.classId : null);
           if (!targetClassId) return null;
           return {
             studentId: row.studentId,
@@ -390,19 +468,19 @@ export async function executeAcademicRolloverAction(payload: unknown): Promise<R
       }
     }
 
-    if (data.carryTeacherAssignments && sourceSession && sourceTerm) {
+    if (data.carryTeacherAssignments && sourceSessionForCopy && sourceTermForCopy) {
       const [sourceClassTeachers, sourceSubjectTeachers] = await Promise.all([
         tx.classTeacher.findMany({
           where: {
-            sessionId: sourceSession.id,
-            termId: sourceTerm.id,
+            sessionId: sourceSessionForCopy.id,
+            termId: sourceTermForCopy.id,
           },
           select: { teacherId: true, classId: true },
         }),
         tx.subjectTeacher.findMany({
           where: {
-            sessionId: sourceSession.id,
-            termId: sourceTerm.id,
+            sessionId: sourceSessionForCopy.id,
+            termId: sourceTermForCopy.id,
           },
           select: { teacherId: true, classId: true, subjectId: true },
         }),
@@ -460,6 +538,7 @@ export async function executeAcademicRolloverAction(payload: unknown): Promise<R
     revalidatePath("/admin/students");
     revalidatePath("/admin/classes");
     revalidatePath("/admin/teachers");
+    revalidatePath("/teacher/classes");
 
     return {
       ok: true,

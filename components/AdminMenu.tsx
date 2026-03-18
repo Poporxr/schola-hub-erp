@@ -13,6 +13,7 @@ import {
   UserPlus,
   PanelRightOpen,
   ShieldAlert,
+  CalendarDays,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 
@@ -139,6 +140,15 @@ const AdminMenu = ({ open, onClose }: AdminMenuProps) => {
         >
           <FileBarChart className="w-5 h-5" />
           <span>Results</span>
+        </Link>
+
+        <Link
+          href="/admin/timetable"
+          onClick={closeOnMobile}
+          className={linkClass("/admin/timetable")}
+        >
+          <CalendarDays className="w-5 h-5" />
+          <span>Timetable</span>
         </Link>
 
         <div className="pt-4 pb-1 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
