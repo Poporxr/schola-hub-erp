@@ -30,7 +30,7 @@ export default function SignInPage() {
 
   if (isLoaded && isSignedIn) {
     return (
-      <main className="relative min-h-screen overflow-hidden bg-[linear-gradient(135deg,#f8f6f1_0%,#f8fafc_45%,#eef4ff_100%)]">
+      <main className="relative min-h-screen overflow-hidden bg-[linear-gradient(135deg,#f8f6f1_0%,#f8fafc_45%,#eef4ff_100%)] w-full">
         <div className="absolute inset-0 bg-slate-900/5 backdrop-blur-[2px]" />
         <div className="relative flex min-h-screen items-center justify-center px-4">
           <div className="flex w-full max-w-md flex-col items-center gap-4 rounded-3xl border border-white/70 bg-white/90 p-8 text-center shadow-[0_30px_70px_-30px_rgba(15,23,42,0.28)] backdrop-blur-xl">
