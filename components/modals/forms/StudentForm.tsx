@@ -40,6 +40,7 @@ export default function StudentForm({
   data,
   classes,
   action,
+  onValidSubmit,
   disabled = false,
   formId,
   showSubmitButton = true,
@@ -48,6 +49,7 @@ export default function StudentForm({
   data?: StudentFormData;
   classes?: StudentFormClasses;
   action?: (formData: FormData) => void | Promise<void>;
+  onValidSubmit?: (formData: FormData) => void | Promise<void>;
   disabled?: boolean;
   formId?: string;
   showSubmitButton?: boolean;
@@ -98,6 +100,11 @@ export default function StudentForm({
     }
 
     setErrors({});
+
+    if (onValidSubmit) {
+      e.preventDefault();
+      void onValidSubmit(formData);
+    }
   }
 
   return (
@@ -224,9 +231,15 @@ export default function StudentForm({
           {mode === "edit" ? (
             <Field label="Admission No. *" error={getError("admissionNumber")}>
               <input
+                type="hidden"
                 name="admissionNumber"
+                value={data?.admissionNumber ?? ""}
+                readOnly
+              />
+              <input
                 defaultValue={data?.admissionNumber ?? ""}
                 className={getInputClass("admissionNumber")}
+                disabled
               />
             </Field>
           ) : (

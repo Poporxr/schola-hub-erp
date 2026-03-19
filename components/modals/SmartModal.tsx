@@ -182,6 +182,11 @@ export default function SmartModal(props: Props) {
     void handleAction(new FormData(event.currentTarget));
   }
 
+  function handleTeacherSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void handleAction(new FormData(event.currentTarget));
+  }
+
   return (
     <ModalShell
       open={open}
@@ -217,7 +222,8 @@ export default function SmartModal(props: Props) {
       {type === "student" ? (
         <StudentForm
           formId={formId}
-          action={handleAction}
+          action={undefined}
+          onValidSubmit={handleAction}
           classes={studentClasses}
           mode={mode}
           data={studentData}
@@ -242,7 +248,7 @@ export default function SmartModal(props: Props) {
           disabled={pending}
         />
       ) : (
-        <form id={formId} action={handleAction} className="space-y-5 sm:space-y-8">
+        <form id={formId} onSubmit={handleTeacherSubmit} className="space-y-5 sm:space-y-8">
           <fieldset disabled={pending} className="space-y-5 disabled:opacity-70 sm:space-y-8">
           {type === "teacher" && mode === "edit" && props.data?.id ? (
           <input type="hidden" name="id" value={String(props.data.id)} />

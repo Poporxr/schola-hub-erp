@@ -400,14 +400,112 @@ export async function unlinkParentStudentAction(
 }
 
 export async function updateStudentAction(formData: FormData) {
+  const id = String(formData.get("id") ?? "").trim();
+  if (!id) {
+    return { ok: false, message: "Student id is required." };
+  }
+
   const raw = Object.fromEntries(formData.entries());
   const parsed = studentSchema.safeParse(raw);
 
   if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? "Invalid student data");
+    return {
+      ok: false,
+      message: parsed.error.issues[0]?.message ?? "Invalid student data",
+    };
   }
 
-  console.log("updated", parsed.data);
+  const values = parsed.data;
+  const normalizedFirstName = normalizeHumanName(values.firstName);
+  const normalizedLastName = normalizeHumanName(values.lastName);
+
+  const existingStudent = await prisma.student.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      userId: true,
+      admissionNumber: true,
+    },
+  });
+
+  if (!existingStudent) {
+    return { ok: false, message: "Student not found." };
+  }
+
+  if (values.admissionNumber !== existingStudent.admissionNumber) {
+    return { ok: false, message: "Admission number cannot be changed." };
+  }
+
+  const existingEmailUser = await prisma.user.findUnique({
+    where: { email: values.email },
+    select: { id: true },
+  });
+
+  if (existingEmailUser && existingEmailUser.id !== existingStudent.userId) {
+    return { ok: false, message: "Student email already exists." };
+  }
+
+  const currentSession = await prisma.academicSession.findFirst({
+    where: { isCurrent: true },
+    select: { id: true },
+  });
+
+  const currentTerm = currentSession
+    ? await prisma.term.findFirst({
+        where: { sessionId: currentSession.id, isCurrent: true },
+        select: { id: true },
+      })
+    : null;
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.student.update({
+        where: { id: existingStudent.id },
+        data: {
+          dateOfBirth: new Date(values.dateOfBirth),
+          gender: values.gender,
+          address: values.address,
+        },
+      });
+
+      await tx.user.update({
+        where: { id: existingStudent.userId },
+        data: {
+          firstName: normalizedFirstName,
+          lastName: normalizedLastName,
+          email: values.email,
+          phone: values.phoneNumber?.trim() ? values.phoneNumber.trim() : null,
+        },
+      });
+
+      if (currentSession && currentTerm) {
+        await tx.studentClassHistory.upsert({
+          where: {
+            studentId_sessionId_termId: {
+              studentId: existingStudent.id,
+              sessionId: currentSession.id,
+              termId: currentTerm.id,
+            },
+          },
+          update: {
+            classId: values.classId,
+          },
+          create: {
+            studentId: existingStudent.id,
+            classId: values.classId,
+            sessionId: currentSession.id,
+            termId: currentTerm.id,
+          },
+        });
+      }
+    });
+  } catch (error) {
+    console.error("updateStudentAction failed", error);
+    return { ok: false, message: "Failed to update student." };
+  }
+
+  revalidateStudentPaths(existingStudent.id);
+  return { ok: true, message: "Student updated successfully." };
 }
 
 export async function getUserDetails(studentId: string) {

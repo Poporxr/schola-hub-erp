@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 import { Plus } from "lucide-react";
 import { ModalShell } from "@/components/modals/ModalShell";
 import ParentForm from "@/components/modals/forms/ParentForm";
@@ -18,6 +18,9 @@ const AddParentModal = () => {
 
     try {
       const result = await createParentAction(formData);
+      if (!result?.ok) {
+        throw new Error(result?.message ?? "Failed to create parent");
+      }
       toast.success(result?.message ?? "Parent created");
       setOpen(false);
     } catch (error) {
@@ -27,6 +30,11 @@ const AddParentModal = () => {
     } finally {
       setPending(false);
     }
+  }
+
+  function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void handleCreateParent(new FormData(event.currentTarget));
   }
 
   return (
@@ -58,7 +66,7 @@ const AddParentModal = () => {
             >
               <span className="inline-flex items-center justify-center gap-2">
                 {pending ? <Spinner className="size-4" /> : null}
-                Save Parent
+                {pending ? "Saving..." : "Save Parent"}
               </span>
             </button>
             <button
@@ -72,7 +80,7 @@ const AddParentModal = () => {
           </div>
         }
       >
-        <form id="parent-create-form" action={handleCreateParent} className="space-y-4 sm:space-y-5">
+        <form id="parent-create-form" onSubmit={onSubmit} className="space-y-4 sm:space-y-5">
           <ParentForm mode="create" disabled={pending} />
         </form>
       </ModalShell>
