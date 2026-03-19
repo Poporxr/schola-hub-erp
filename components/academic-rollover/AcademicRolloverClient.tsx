@@ -46,9 +46,14 @@ const emptyPreviewSummary: PreviewSummary = {
   blockers: [],
 };
 
-function buildInitialMappings(classes: ClassOption[]): PromotionMapping[] {
-  const nonTerminalClasses = classes
-    .filter((item) => !item.isTerminal)
+function buildInitialMappings(
+  classes: ClassOption[],
+  mode: "session_term" | "term_only"
+): PromotionMapping[] {
+  const sourceClasses =
+    mode === "term_only" ? classes : classes.filter((item) => !item.isTerminal);
+
+  const orderedClasses = sourceClasses
     .sort((a, b) => {
       if (a.promotionTrack !== b.promotionTrack) {
         return a.promotionTrack.localeCompare(b.promotionTrack);
@@ -59,11 +64,19 @@ function buildInitialMappings(classes: ClassOption[]): PromotionMapping[] {
       return a.name.localeCompare(b.name);
     });
 
-  if (!nonTerminalClasses.length) {
+  if (!orderedClasses.length) {
     return [{ id: "M01", fromClassId: "", toClassId: "" }];
   }
 
-  return nonTerminalClasses.map((fromClass, index) => {
+  return orderedClasses.map((fromClass, index) => {
+    if (mode === "term_only") {
+      return {
+        id: `M${String(index + 1).padStart(2, "0")}`,
+        fromClassId: fromClass.id,
+        toClassId: fromClass.id,
+      };
+    }
+
     const suggestedTarget = classes.find(
       (candidate) =>
         candidate.promotionTrack === fromClass.promotionTrack &&
@@ -102,7 +115,9 @@ export default function AcademicRolloverClient({
 
   const [promoteStudents, setPromoteStudents] = useState(true);
   const [carryTeacherAssignments, setCarryTeacherAssignments] = useState(true);
-  const [mappings, setMappings] = useState<PromotionMapping[]>(buildInitialMappings(initialClasses));
+  const [mappings, setMappings] = useState<PromotionMapping[]>(
+    buildInitialMappings(initialClasses, currentSession ? "term_only" : "session_term")
+  );
 
   const [preview, setPreview] = useState<PreviewSummary | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -111,6 +126,7 @@ export default function AcademicRolloverClient({
 
   function setMode(mode: "session_term" | "term_only") {
     setRolloverMode(mode);
+    setMappings(buildInitialMappings(initialClasses, mode));
     if (mode === "term_only" && currentSession) {
       setTargetSessionId(currentSession.id);
       setSessionCurrent(true);
@@ -409,7 +425,12 @@ export default function AcademicRolloverClient({
             <CheckboxRow label="Set this term as current" checked={termCurrent} onChange={setTermCurrent} />
           </StageCard>
 
-          <PromotionMappingCard mappings={mappings} classes={initialClasses} onMappingChange={handleMappingChange} />
+          <PromotionMappingCard
+            mappings={mappings}
+            classes={initialClasses}
+            onMappingChange={handleMappingChange}
+            disabled={rolloverMode === "term_only"}
+          />
 
           <StageCard stage="4" title="Rollover Options" description="Apply optional rollover behaviors.">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

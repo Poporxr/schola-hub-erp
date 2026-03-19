@@ -7,9 +7,15 @@ type Props = {
   mappings: PromotionMapping[];
   classes: ClassOption[];
   onMappingChange: (id: string, field: "fromClassId" | "toClassId", value: string) => void;
+  disabled?: boolean;
 };
 
-export default function PromotionMappingCard({ mappings, classes, onMappingChange }: Props) {
+export default function PromotionMappingCard({
+  mappings,
+  classes,
+  onMappingChange,
+  disabled = false,
+}: Props) {
   const completedCount = mappings.filter((item) => item.fromClassId && item.toClassId).length;
   const sortedClasses = [...classes].sort((a, b) => {
     if (a.promotionTrack !== b.promotionTrack) return a.promotionTrack.localeCompare(b.promotionTrack);
@@ -28,6 +34,11 @@ export default function PromotionMappingCard({ mappings, classes, onMappingChang
           <p className="mt-1 text-sm text-slate-500">
             Required mapping to prevent blind promotion during rollover.
           </p>
+          {disabled ? (
+            <p className="mt-1 text-xs font-medium text-slate-500">
+              Mapping is locked in Term-Only rollover mode.
+            </p>
+          ) : null}
         </div>
         <div className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
           {completedCount}/{mappings.length} rows complete
@@ -65,8 +76,9 @@ export default function PromotionMappingCard({ mappings, classes, onMappingChang
               <div className="space-y-2">
                 <select
                   value={mapping.fromClassId}
+                  disabled={disabled}
                   onChange={(event) => onMappingChange(mapping.id, "fromClassId", event.target.value)}
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
                 >
                   <option value="">From Class</option>
                   {sortedClasses.map((item) => (
@@ -77,8 +89,9 @@ export default function PromotionMappingCard({ mappings, classes, onMappingChang
                 </select>
                 <select
                   value={mapping.toClassId}
+                  disabled={disabled}
                   onChange={(event) => onMappingChange(mapping.id, "toClassId", event.target.value)}
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
                 >
                   <option value="">To Class</option>
                   {sortedClasses.map((item) => (
@@ -112,8 +125,9 @@ export default function PromotionMappingCard({ mappings, classes, onMappingChang
                   <td className="px-4 py-3">
                     <select
                       value={mapping.fromClassId}
+                      disabled={disabled}
                       onChange={(event) => onMappingChange(mapping.id, "fromClassId", event.target.value)}
-                      className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+                      className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
                     >
                       <option value="">Select class</option>
                       {sortedClasses.map((item) => (
@@ -126,8 +140,9 @@ export default function PromotionMappingCard({ mappings, classes, onMappingChang
                   <td className="px-4 py-3">
                     <select
                       value={mapping.toClassId}
+                      disabled={disabled}
                       onChange={(event) => onMappingChange(mapping.id, "toClassId", event.target.value)}
-                      className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+                      className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
                     >
                       <option value="">Select class</option>
                       {sortedClasses.map((item) => (
@@ -163,6 +178,6 @@ export default function PromotionMappingCard({ mappings, classes, onMappingChang
 }
 
 function formatClassOption(item: ClassOption) {
-  const terminal = item.isTerminal ? " | Terminal" : "";
-  return `${item.name} (${item.promotionTrack} R${item.promotionRank}${terminal})`;
+  const graduating = item.isTerminal ? " | Graduating" : "";
+  return `${item.name} (${item.promotionTrack} R${item.promotionRank}${graduating})`;
 }

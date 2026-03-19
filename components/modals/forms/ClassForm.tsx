@@ -116,7 +116,7 @@ export default function ClassForm({
               defaultChecked={Boolean(data?.isTerminal)}
               className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
             />
-            Mark as terminal class
+            Mark as graduating class
           </label>
         </div>
       </fieldset>

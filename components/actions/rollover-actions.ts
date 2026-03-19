@@ -130,7 +130,7 @@ async function buildPreviewSummary(data: RolloverPayload) {
   const warnings: string[] = [];
   const blockers: string[] = [];
 
-  const [targetSession, currentSession, currentTerm, promotableClasses] = await Promise.all([
+  const [targetSession, currentSession, currentTerm, promotableClasses, terminalClasses] = await Promise.all([
     data.targetSessionId === "new"
       ? Promise.resolve(null)
       : prisma.academicSession.findUnique({
@@ -149,6 +149,10 @@ async function buildPreviewSummary(data: RolloverPayload) {
       where: { isTerminal: false },
       select: { id: true },
     }),
+    prisma.class.findMany({
+      where: { isTerminal: true },
+      select: { id: true },
+    }),
   ]);
 
   if (data.targetSessionId !== "new" && !targetSession) {
@@ -160,6 +164,20 @@ async function buildPreviewSummary(data: RolloverPayload) {
     Boolean(currentSession) &&
     data.targetSessionId !== "new" &&
     data.targetSessionId === currentSession?.id;
+  const isSessionRollover =
+    Boolean(currentSession) && (data.targetSessionId === "new" || !isSameSessionTarget);
+  const terminalClassIds = new Set(terminalClasses.map((item) => item.id));
+
+  if (isSessionRollover && data.promoteStudents) {
+    const mappedTerminalRows = validMappings.filter((item) =>
+      terminalClassIds.has(item.fromClassId)
+    );
+    if (mappedTerminalRows.length) {
+      warnings.push(
+        `${mappedTerminalRows.length} graduating class mapping(s) detected. Graduating-class students will not be promoted and will be set to inactive on session rollover.`
+      );
+    }
+  }
 
   if (data.promoteStudents) {
     if (!isSameSessionTarget) {
@@ -250,18 +268,21 @@ async function buildPreviewSummary(data: RolloverPayload) {
   if (currentSession && sourceTermForPreview) {
     let fromIds: string[] | null = null;
     if (isSameSessionTarget) {
-      fromIds = validMappings.length
-        ? [...new Set(validMappings.map((item) => item.fromClassId))]
-        : null;
+      fromIds = null;
     } else if (data.promoteStudents && validMappings.length) {
       fromIds = [...new Set(validMappings.map((item) => item.fromClassId))];
     }
     if (fromIds !== null || isSameSessionTarget) {
+      const effectiveFromIds =
+        fromIds && isSessionRollover
+          ? fromIds.filter((id) => !terminalClassIds.has(id))
+          : fromIds;
+
       studentsToPromote = await prisma.studentClassHistory.count({
         where: {
           sessionId: currentSession.id,
           termId: sourceTermForPreview.id,
-          ...(fromIds ? { classId: { in: fromIds } } : {}),
+          ...(effectiveFromIds ? { classId: { in: effectiveFromIds } } : {}),
         },
       });
     }
@@ -287,9 +308,10 @@ export async function previewAcademicRolloverAction(payload: unknown): Promise<R
     const summary = await buildPreviewSummary(parsed.data);
     return { ok: true, summary };
   } catch (error) {
+    console.error("previewAcademicRolloverAction failed", error);
     return {
       ok: false,
-      message: error instanceof Error ? error.message : "Unable to generate rollover preview.",
+      message: "Unable to generate rollover preview. Please try again.",
     };
   }
 }
@@ -310,16 +332,49 @@ export async function executeAcademicRolloverAction(payload: unknown): Promise<R
     const validMappings = data.mappings.filter((item) => item.fromClassId && item.toClassId);
     const mappingMap = new Map(validMappings.map((item) => [item.fromClassId, item.toClassId]));
 
-    const result = await prisma.$transaction(async (tx) => {
-    const sourceSession = await tx.academicSession.findFirst({
+    const sourceSessionSnapshot = await prisma.academicSession.findFirst({
       where: { isCurrent: true },
       select: { id: true },
     });
 
-    const sourceTerm = await tx.term.findFirst({
+    const sourceTermSnapshot = await prisma.term.findFirst({
       where: { isCurrent: true },
       select: { id: true, sessionId: true },
     });
+    const isSessionRolloverTarget =
+      Boolean(sourceSessionSnapshot) &&
+      (data.targetSessionId === "new" || data.targetSessionId !== sourceSessionSnapshot?.id);
+
+    let terminalUserIdsToDeactivate: string[] = [];
+    if (isSessionRolloverTarget && data.promoteStudents && sourceSessionSnapshot && sourceTermSnapshot) {
+      const terminalClasses = await prisma.class.findMany({
+        where: { isTerminal: true },
+        select: { id: true },
+      });
+      const terminalClassIds = terminalClasses.map((row) => row.id);
+
+      if (terminalClassIds.length) {
+        const terminalRows = await prisma.studentClassHistory.findMany({
+          where: {
+            sessionId: sourceSessionSnapshot.id,
+            termId: sourceTermSnapshot.id,
+            classId: { in: terminalClassIds },
+          },
+          select: {
+            student: {
+              select: { userId: true },
+            },
+          },
+        });
+        terminalUserIdsToDeactivate = [
+          ...new Set(terminalRows.map((row) => row.student.userId).filter(Boolean)),
+        ];
+      }
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+    const sourceSession = sourceSessionSnapshot;
+    const sourceTerm = sourceTermSnapshot;
 
     let targetSessionId: string;
     if (data.targetSessionId === "new") {
@@ -422,6 +477,8 @@ export async function executeAcademicRolloverAction(payload: unknown): Promise<R
       Boolean(sourceTermForCopy) &&
       sourceSessionForCopy?.id === targetSessionId &&
       sourceTermForCopy?.id !== targetTerm.id;
+    const isSessionRollover =
+      Boolean(sourceSessionForCopy) && sourceSessionForCopy?.id !== targetSessionId;
 
     const shouldCopyStudentHistory =
       Boolean(sourceSessionForCopy && sourceTermForCopy) &&
@@ -429,13 +486,23 @@ export async function executeAcademicRolloverAction(payload: unknown): Promise<R
 
     if (shouldCopyStudentHistory && sourceSessionForCopy && sourceTermForCopy) {
       const fromClassIds = [...mappingMap.keys()];
+      const terminalClassRows = await tx.class.findMany({
+        where: { isTerminal: true },
+        select: { id: true },
+      });
+      const terminalClassIds = new Set(terminalClassRows.map((row) => row.id));
+      const effectiveFromClassIds =
+        isSessionRollover && data.promoteStudents
+          ? fromClassIds.filter((id) => !terminalClassIds.has(id))
+          : fromClassIds;
+
       const sourceClassHistoryRows = await tx.studentClassHistory.findMany({
         where: {
           sessionId: sourceSessionForCopy.id,
           termId: sourceTermForCopy.id,
-          ...(isSameSessionTermRollover && fromClassIds.length === 0
+          ...(isSameSessionTermRollover
             ? {}
-            : { classId: { in: fromClassIds } }),
+            : { classId: { in: effectiveFromClassIds } }),
         },
         select: {
           studentId: true,
@@ -466,6 +533,7 @@ export async function executeAcademicRolloverAction(payload: unknown): Promise<R
         });
         studentHistoryRowsCreated = createResult.count;
       }
+
     }
 
     if (data.carryTeacherAssignments && sourceSessionForCopy && sourceTermForCopy) {
@@ -531,7 +599,14 @@ export async function executeAcademicRolloverAction(payload: unknown): Promise<R
       classTeacherRowsCreated,
       subjectTeacherRowsCreated,
     };
-    });
+    }, { timeout: 20000 });
+
+    if (terminalUserIdsToDeactivate.length) {
+      await prisma.user.updateMany({
+        where: { id: { in: terminalUserIdsToDeactivate } },
+        data: { status: "INACTIVE" },
+      });
+    }
 
     revalidatePath("/admin/academic-rollover");
     revalidatePath("/admin/dashboard");
@@ -546,9 +621,10 @@ export async function executeAcademicRolloverAction(payload: unknown): Promise<R
       applied: result,
     };
   } catch (error) {
+    console.error("executeAcademicRolloverAction failed", error);
     return {
       ok: false,
-      message: error instanceof Error ? error.message : "Failed to execute academic rollover.",
+      message: "Failed to execute academic rollover. Please retry. If this persists, contact support.",
     };
   }
 }
