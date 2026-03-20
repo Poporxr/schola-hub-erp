@@ -7,6 +7,7 @@ import SubjectBreakdownTable from "@/components/student/results/SubjectBreakdown
 import ResultDomainCards from "@/components/student/results/ResultDomainCards";
 import ResultRemarkCard from "@/components/student/results/ResultRemarkCard";
 import { AffectiveData, OptionItem, PsychomotorData, SubjectResultRow, SummaryData } from "@/components/student/results/types";
+import { getStudentRemark } from "@/lib/get-student-remark";
 
 type SearchParams = {
   sessionId?: string | string[];
@@ -119,7 +120,6 @@ const Page = async ({
           exam: true,
           totalScore: true,
           grade: true,
-          position: true,
           teacherRemark: true,
           principalRemark: true,
           subject: { select: { id: true, name: true } },
@@ -146,15 +146,41 @@ const Page = async ({
       })
     : [];
 
-  const classSize = selectedHistory
-    ? await prisma.studentClassHistory.count({
+  const classHistoryRows = selectedHistory
+    ? await prisma.studentClassHistory.findMany({
         where: {
           classId: selectedHistory.classId,
           sessionId: selectedHistory.sessionId,
           termId: selectedHistory.termId,
         },
+        select: { id: true, studentId: true },
       })
-    : 0;
+    : [];
+
+  const classResultsForRank = classHistoryRows.length
+    ? await prisma.result.findMany({
+        where: {
+          classHistoryId: { in: classHistoryRows.map((row) => row.id) },
+        },
+        select: { studentId: true, totalScore: true },
+      })
+    : [];
+
+  const rankingMap = classResultsForRank.reduce((map, row) => {
+    const entry = map.get(row.studentId) ?? { sum: 0, count: 0 };
+    entry.sum += row.totalScore;
+    entry.count += 1;
+    map.set(row.studentId, entry);
+    return map;
+  }, new Map<string, { sum: number; count: number }>());
+
+  const rankedStudentIds = Array.from(rankingMap.entries())
+    .map(([studentId, entry]) => ({
+      studentId,
+      average: entry.count ? entry.sum / entry.count : 0,
+    }))
+    .sort((a, b) => b.average - a.average)
+    .map((row) => row.studentId);
 
   const totalSubjects = results.length;
   const totalScore = results.reduce((sum, row) => sum + row.totalScore, 0);
@@ -162,12 +188,14 @@ const Page = async ({
   const passedCount = results.filter((row) => row.totalScore >= 50).length;
   const status = totalSubjects && passedCount === totalSubjects ? "PASSED" : "IN PROGRESS";
   const maxScore = totalSubjects * 100;
-  const classPosition = results.find((row) => row.position !== null)?.position;
+  const classPosition = rankedStudentIds.length ? rankedStudentIds.indexOf(student.id) + 1 : null;
+  const classSize = classHistoryRows.length;
 
   const affective = results.find((r) => r.affectiveScores[0])?.affectiveScores[0];
   const psychomotor = results.find((r) => r.psychomotorScores[0])?.psychomotorScores[0];
-  const teacherRemark = results.find((r) => r.teacherRemark)?.teacherRemark;
-  const principalRemark = results.find((r) => r.principalRemark)?.principalRemark;
+  const autoRemark = totalSubjects ? getStudentRemark(overallAverage) : null;
+  const teacherRemark = results.find((r) => r.teacherRemark)?.teacherRemark ?? autoRemark?.teacherRemark;
+  const principalRemark = results.find((r) => r.principalRemark)?.principalRemark ?? autoRemark?.principalRemark;
   const summary: SummaryData = {
     overallAverage,
     totalScore,
@@ -182,7 +210,6 @@ const Page = async ({
     id: subject.id,
     subjectName: subject.subject.name,
     tests: (subject.ca1 ?? 0) + (subject.ca2 ?? 0),
-    assignments: subject.project ?? 0,
     exam: subject.exam ?? 0,
     totalScore: subject.totalScore,
     grade: subject.grade,
@@ -203,6 +230,8 @@ const Page = async ({
       <ResultHeroCard
         data={{
           studentId: student.id,
+          sessionId: selectedSessionId,
+          termId: selectedTermId,
           fullName: `${student.user.firstName} ${student.user.lastName}`,
           admissionNumber: student.admissionNumber,
           image: student.user.image,
@@ -214,7 +243,7 @@ const Page = async ({
       <ResultSummaryCards summary={summary} />
       <SubjectBreakdownTable rows={rows} />
       <ResultDomainCards affective={affectiveData} psychomotor={psychomotorData} />
-      <ResultRemarkCard remark={teacherRemark ?? principalRemark} />
+      <ResultRemarkCard teacherRemark={teacherRemark} principalRemark={principalRemark} />
     </div>
   );
 };

@@ -56,7 +56,6 @@ export default async function Page({
       id: true,
       teacherId: true,
       department: true,
-      classId: true,
       user: {
         select: {
           firstName: true,
@@ -66,13 +65,6 @@ export default async function Page({
           image: true,
           status: true,
           passwordHash: true,
-        },
-      },
-      class: {
-        select: {
-          id: true,
-          name: true,
-          level: { select: { name: true } },
         },
       },
       classTeachers: {
@@ -111,32 +103,26 @@ export default async function Page({
   }
 
   const fullName = `${teacher.user.firstName} ${teacher.user.lastName}`.trim() || "Teacher";
-  const primaryClass = teacher.class;
 
   const classMap = new Map<
     string,
-    { id: string; name: string; levelName: string | null; isPrimary: boolean }
+    { id: string; name: string; levelName: string | null }
   >();
-
-  if (primaryClass) {
-    classMap.set(primaryClass.id, {
-      id: primaryClass.id,
-      name: primaryClass.name,
-      levelName: primaryClass.level.name,
-      isPrimary: true,
-    });
-  }
 
   for (const row of teacher.classTeachers) {
     classMap.set(row.class.id, {
       id: row.class.id,
       name: row.class.name,
       levelName: row.class.level.name,
-      isPrimary: classMap.get(row.class.id)?.isPrimary ?? false,
     });
   }
 
-  const classIds = Array.from(classMap.keys());
+  const classIds = Array.from(
+    new Set([
+      ...Array.from(classMap.keys()),
+      ...teacher.subjectTeachers.map((row) => row.classId),
+    ])
+  );
 
   const classCounts = classIds.length
     ? await prisma.studentClassHistory.groupBy({
@@ -173,7 +159,10 @@ export default async function Page({
 
   const subjectSummary =
     teacher.subjectTeachers.length > 0
-      ? `${teacher.subjectTeachers.length} Subject${teacher.subjectTeachers.length === 1 ? "" : "s"}`
+      ? (() => {
+          const uniqueSubjectCount = new Set(teacher.subjectTeachers.map((row) => row.subjectId)).size;
+          return `${uniqueSubjectCount} Subject${uniqueSubjectCount === 1 ? "" : "s"}`;
+        })()
       : "No subject assignments";
 
   const statusLabel =
@@ -195,7 +184,7 @@ export default async function Page({
 
   const assignmentLabel =
     currentSession && currentTerm
-      ? `${currentTerm.name} • ${currentSession.name}`
+      ? `${currentTerm.name} - ${currentSession.name}`
       : "All recorded assignments";
 
   const assignmentCount = classRows.length + subjectRows.length;
@@ -247,9 +236,9 @@ export default async function Page({
               </div>
               <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
                 <Info label="Subjects" value={subjectSummary} />
-                <Info label="Department" value={teacher.department ?? "—"} />
-                <Info label="Phone" value={teacher.user.phone ?? "—"} />
-                <Info label="Email" value={teacher.user.email ?? "—"} />
+                <Info label="Department" value={teacher.department ?? "-"} />
+                <Info label="Phone" value={teacher.user.phone ?? "-"} />
+                <Info label="Email" value={teacher.user.email ?? "-"} />
               </div>
             </div>
           </div>
@@ -296,8 +285,7 @@ export default async function Page({
                     <div>
                       <p className="font-semibold text-gray-900">{row.name}</p>
                       <p className="text-xs text-gray-500">
-                        {row.levelName ?? "Class"} •{" "}
-                        {row.isPrimary ? "Primary Class" : "Class Teacher Assignment"}
+                        {row.levelName ?? "Class"} - Class Teacher Assignment
                       </p>
                     </div>
                     <span className="text-sm font-medium text-gray-700">
@@ -327,4 +315,5 @@ function Info({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
 

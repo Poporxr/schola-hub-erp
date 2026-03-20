@@ -5,6 +5,8 @@ export type OptionItem = {
 
 export type StudentResultHeaderData = {
   studentId: string;
+  sessionId?: string;
+  termId?: string;
   fullName: string;
   admissionNumber: string;
   image?: string | null;
@@ -28,7 +30,6 @@ export type SubjectResultRow = {
   id: string;
   subjectName: string;
   tests: number;
-  assignments: number;
   exam: number;
   totalScore: number;
   grade?: string | null;

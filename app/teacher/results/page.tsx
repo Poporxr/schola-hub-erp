@@ -113,6 +113,15 @@ async function getResultsEntryData({
         session: { select: { id: true, name: true, startDate: true } },
         term: { select: { id: true, name: true, startDate: true } },
         class: { select: { name: true } },
+        subject: {
+          select: {
+            id: true,
+            name: true,
+            assessmentMax: true,
+            projectMax: true,
+            examMax: true,
+          },
+        },
       },
       orderBy: [
         { session: { startDate: "desc" } },
@@ -248,9 +257,35 @@ async function getResultsEntryData({
       : undefined) ??
     classes[0]?.id;
 
-  const classSubjects = selectedClassId
+  const directSubjects = selectedClassId
+    ? subjectAssignments
+        .filter(
+          (row) =>
+            row.sessionId === selectedSessionId &&
+            row.termId === selectedTermId &&
+            row.classId === selectedClassId
+        )
+        .map((row) => ({
+          id: row.subject.id,
+          name: row.subject.name,
+          assessmentMax: row.subject.assessmentMax,
+          projectMax: row.subject.projectMax,
+          examMax: row.subject.examMax,
+        }))
+    : [];
+
+  const canUseClassTeacherFallback = Boolean(
+    selectedClassId &&
+      classTeacherRowsForTerm.some((row) => row.classId === selectedClassId) &&
+      teacherSubjectCatalogIds.length
+  );
+
+  const fallbackClassSubjects = canUseClassTeacherFallback
     ? await prisma.classSubject.findMany({
-        where: { classId: selectedClassId },
+        where: {
+          classId: selectedClassId,
+          subjectId: { in: teacherSubjectCatalogIds },
+        },
         select: {
           subject: {
             select: {
@@ -266,19 +301,19 @@ async function getResultsEntryData({
       })
     : [];
 
-  const subjects = classSubjects
-    .filter((row) =>
-      teacherSubjectCatalogIds.length
-        ? teacherSubjectCatalogIds.includes(row.subject.id)
-        : false
-    )
-    .map((row) => ({
-      id: row.subject.id,
-      name: row.subject.name,
-      assessmentMax: row.subject.assessmentMax,
-      projectMax: row.subject.projectMax,
-      examMax: row.subject.examMax,
-    }));
+  const fallbackSubjects = fallbackClassSubjects.map((row) => ({
+    id: row.subject.id,
+    name: row.subject.name,
+    assessmentMax: row.subject.assessmentMax,
+    projectMax: row.subject.projectMax,
+    examMax: row.subject.examMax,
+  }));
+
+  const subjects = Array.from(
+    new Map(
+      [...directSubjects, ...fallbackSubjects].map((item) => [item.id, item])
+    ).values()
+  ).sort((a, b) => a.name.localeCompare(b.name));
 
   const selectedSubjectId =
     (subjectIdParam && subjects.some((s) => s.id === subjectIdParam)
@@ -316,24 +351,7 @@ async function getResultsEntryData({
     };
   }
 
-  const fallbackHistoryTerm = await prisma.studentClassHistory.findFirst({
-    where: {
-      classId: selectedClassId,
-      sessionId: selectedSessionId,
-    },
-    orderBy: [{ createdAt: "desc" }],
-    select: { termId: true },
-  });
-
-  const fallbackTermId =
-    fallbackHistoryTerm && terms.some((term) => term.id === fallbackHistoryTerm.termId)
-      ? fallbackHistoryTerm.termId
-      : undefined;
-
-  const effectiveTermId =
-    termIdParam && selectedTermId
-      ? selectedTermId
-      : fallbackTermId ?? selectedTermId;
+  const effectiveTermId = selectedTermId;
 
   const classHistories = await prisma.studentClassHistory.findMany({
     where: {
@@ -469,7 +487,11 @@ export default async function Page({
         selectedClassId={filters.selectedClassId}
         selectedSubjectId={filters.selectedSubjectId}
       />
-      <ResultsEntryClient ctx={ctx} initialStudents={students} />
+      <ResultsEntryClient
+        key={[ctx.sessionId, ctx.termId, ctx.classId, ctx.subjectId].join(":")}
+        ctx={ctx}
+        initialStudents={students}
+      />
     </div>
   );
 }

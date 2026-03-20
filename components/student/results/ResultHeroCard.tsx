@@ -4,6 +4,11 @@ import UserAvatar from "@/components/UserAvatar";
 import Link from "next/link";
 
 const ResultHeroCard = ({ data }: { data: StudentResultHeaderData }) => {
+  const printHref =
+    data.sessionId && data.termId
+      ? `/print/${data.studentId}?studentId=${data.studentId}&sessionId=${data.sessionId}&termId=${data.termId}`
+      : `/print/${data.studentId}?studentId=${data.studentId}`;
+
   return (
     <div className="bg-linear-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden mt-6 mb-6">
       <div className="absolute right-4 top-4 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
@@ -37,7 +42,7 @@ const ResultHeroCard = ({ data }: { data: StudentResultHeaderData }) => {
 
         <div className="flex items-center gap-3">
           <Link
-            href={`/print/${data.studentId}`}
+            href={printHref}
             className="px-4 py-2 bg-white/10 border border-white/20 text-white rounded-lg text-sm font-medium hover:bg-white/20 transition-colors flex items-center gap-2"
           >
             <Printer className="w-4 h-4" />

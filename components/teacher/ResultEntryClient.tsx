@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { toast } from "sonner";
 import { AlertTriangle, CheckCircle2, Clock } from "lucide-react";
 
@@ -55,6 +55,15 @@ function clampToNumber(raw: string) {
   return Number.isFinite(n) ? n : 0;
 }
 
+async function parseApiResponse(res: Response) {
+  const contentType = res.headers.get("content-type") ?? "";
+  if (contentType.includes("application/json")) {
+    return (await res.json()) as { error?: string };
+  }
+  const text = await res.text();
+  return { error: text ? "Unexpected server response." : "Request failed." };
+}
+
 function StatusBadge({ status }: { status: ResultStatus }) {
   const map: Record<ResultStatus, { label: string; cls: string; dot: string }> = {
     draft: { label: "Draft", cls: "bg-amber-50 text-amber-700 border-amber-200", dot: "bg-amber-400" },
@@ -82,14 +91,16 @@ export default function ResultsEntryClient({
   initialStudents: ResultStudent[];
 }) {
   const maxTotal = ctx.maxTest + ctx.maxProject + ctx.maxExam;
-  const [students, setStudents] = useState<ResultStudent[]>(() =>
-    initialStudents.map((s) => {
+  const mapIncomingStudents = (rows: ResultStudent[]) =>
+    rows.map((s) => {
       const testOk = validateInput(s.test, ctx.maxTest);
+      const projectOk = validateInput(s.project, ctx.maxProject);
       const examOk = validateInput(s.exam, ctx.maxExam);
-      if (!testOk || !examOk) return { ...s, status: "error" };
+      if (!testOk || !projectOk || !examOk) return { ...s, status: "error" as const };
       return s;
-    })
-  );
+    });
+
+  const [students, setStudents] = useState<ResultStudent[]>(() => mapIncomingStudents(initialStudents));
 
   const [submitOpen, setSubmitOpen] = useState(false);
   const [busy, setBusy] = useState<"" | "save" | "submit">("");
@@ -99,13 +110,12 @@ export default function ResultsEntryClient({
 
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
-  const summary = useMemo(() => {
-    const total = students.length;
-    const changed = students.filter((s) => s.status === "draft").length;
-    const errors = students.filter((s) => s.status === "error").length;
-    const rowsToSubmit = students.filter((s) => s.status !== "submitted").length;
-    return { total, changed, errors, rowsToSubmit };
-  }, [students]);
+  const summary = {
+    total: students.length,
+    changed: students.filter((s) => s.status === "draft").length,
+    errors: students.filter((s) => s.status === "error").length,
+    rowsToSubmit: students.filter((s) => s.status !== "submitted").length,
+  };
 
   function updateScore(studentId: string, field: "test" | "project" | "exam", value: number) {
     setStudents((prev) =>
@@ -215,7 +225,7 @@ export default function ResultsEntryClient({
         body: JSON.stringify(payload),
       })
         .then(async (res) => {
-          const data = await res.json();
+          const data = await parseApiResponse(res);
           if (!res.ok) throw new Error(data?.error || "Failed to save results");
           setStudents((prev) =>
             prev.map((s) => (s.status === "draft" ? { ...s, status: "saved" } : s))
@@ -255,7 +265,7 @@ export default function ResultsEntryClient({
       body: JSON.stringify(payload),
     })
       .then(async (res) => {
-        const data = await res.json();
+        const data = await parseApiResponse(res);
         if (!res.ok) throw new Error(data?.error || "Failed to submit results");
         setStudents((prev) =>
           prev.map((s) => (s.status === "submitted" ? s : { ...s, status: "submitted" }))

@@ -80,7 +80,7 @@ const Page = async ({
                       select: {
                           id: true,
                           admissionNumber: true,
-                          user: { select: { firstName: true, lastName: true } },
+                          user: { select: { firstName: true, lastName: true, image: true } },
                       },
                   },
               },
@@ -127,12 +127,10 @@ const Page = async ({
                 studentId: h.student.id,
                 admissionNumber: h.student.admissionNumber,
                 name: `${h.student.user.firstName} ${h.student.user.lastName}`,
-                ca1: Math.round(stats.ca1),
-                ca2: Math.round(stats.ca2),
-                project: Math.round(stats.project),
-                exam: Math.round(stats.exam),
-                total: Math.round(avg),
+                image: h.student.user.image ?? null,
+                average: Math.round(avg),
                 grade: scoreToGrade(avg),
+                status: avg >= 50 ? "Pass" : "Fail",
             };
         })
         .filter((r): r is NonNullable<typeof r> => r !== null);
@@ -142,14 +140,14 @@ const Page = async ({
         ? rows.filter((r) => r.name.toLowerCase().includes(searchQuery) || r.admissionNumber.toLowerCase().includes(searchQuery))
         : rows;
 
-    const sorted = [...filteredRows].sort((a, b) => b.total - a.total);
+    const sorted = [...filteredRows].sort((a, b) => b.average - a.average);
     const ranked = sorted.map((row, idx) => ({ ...row, position: idx + 1 }));
 
     const totalStudentsEvaluated = ranked.length;
     const classAverage = totalStudentsEvaluated
-        ? Math.round(ranked.reduce((sum, r) => sum + r.total, 0) / totalStudentsEvaluated)
+        ? Math.round(ranked.reduce((sum, r) => sum + r.average, 0) / totalStudentsEvaluated)
         : 0;
-    const passCount = ranked.filter((r) => r.total >= 50).length;
+    const passCount = ranked.filter((r) => r.average >= 50).length;
     const passRate = totalStudentsEvaluated ? Math.round((passCount / totalStudentsEvaluated) * 100) : 0;
     const topPerformer = ranked[0];
 
@@ -220,7 +218,7 @@ const Page = async ({
                     />
                     <KpiCard
                         label="Top Performer"
-                        value={topPerformer ? `${topPerformer.total}%` : "-"}
+                        value={topPerformer ? `${topPerformer.average}%` : "-"}
                         icon={<Trophy className="h-4 w-4 text-amber-500" />}
                         subtext={topPerformer?.name ?? "-"}
                     />
@@ -257,13 +255,10 @@ const Page = async ({
                                 <tr className="border-b border-slate-200 text-xs uppercase tracking-wider text-slate-600 font-semibold">
                                     <th className="px-6 py-4">Student</th>
                                     <th className="px-6 py-4">ID</th>
-                                    <th className="px-6 py-4 text-center">Test</th>
-                                    <th className="px-6 py-4 text-center">Exam</th>
-                                    <th className="px-6 py-4 text-center">Assignment</th>
-                                    <th className="px-6 py-4 text-center">Project</th>
-                                    <th className="px-6 py-4 text-center">Total</th>
-                                    <th className="px-6 py-4 text-center">Grade</th>
                                     <th className="px-6 py-4 text-center">Rank</th>
+                                    <th className="px-6 py-4 text-center">Average</th>
+                                    <th className="px-6 py-4 text-center">Grade</th>
+                                    <th className="px-6 py-4 text-center">Status</th>
                                     <th className="px-6 py-4">Actions</th>
                                 </tr>
                             </thead>
@@ -273,7 +268,7 @@ const Page = async ({
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
                                                 <UserAvatar
-                                                    src={undefined}
+                                                    src={resultItem.image ?? undefined}
                                                     alt="Student"
                                                     size={40}
                                                     className="w-10 h-10 border-2 border-border"
@@ -282,12 +277,13 @@ const Page = async ({
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 font-mono text-xs text-slate-600">{resultItem.admissionNumber}</td>
-                                        <td className="px-6 py-4 text-center font-semibold text-slate-900">{resultItem.ca1}</td>
-                                        <td className="px-6 py-4 text-center font-semibold text-slate-900">{resultItem.ca2}</td>
-                                        <td className="px-6 py-4 text-center font-semibold text-slate-900">{resultItem.project}</td>
-                                        <td className="px-6 py-4 text-center font-semibold text-slate-900">{resultItem.exam}</td>
                                         <td className="px-6 py-4 text-center">
-                                            <span className="text-lg font-bold text-slate-900">{resultItem.total}</span>
+                                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 text-slate-700 font-bold text-sm">
+                                                {resultItem.position}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-center">
+                                            <span className="text-lg font-bold text-slate-900">{resultItem.average}%</span>
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
@@ -295,8 +291,14 @@ const Page = async ({
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-center">
-                                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 text-slate-700 font-bold text-sm">
-                                                {resultItem.position}
+                                            <span
+                                                className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    resultItem.status === "Pass"
+                                                        ? "bg-emerald-100 text-emerald-700"
+                                                        : "bg-rose-100 text-rose-700"
+                                                }`}
+                                            >
+                                                {resultItem.status}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
@@ -313,18 +315,6 @@ const Page = async ({
                         </table>
                     </div>
                     <Pagination page={page} count={total} />
-                </div>
-
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold text-slate-800">Score Distribution</h3>
-                        <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
-                            <BarChart3 className="w-4 h-4 text-slate-500" />
-                        </div>
-                    </div>
-                    <div className="h-64 overflow-hidden">
-                        <canvas id="scoreDistributionChart"></canvas>
-                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

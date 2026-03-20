@@ -2,39 +2,13 @@ import AffectiveDomain from "@/components/AffectiveDomain";
 import BackButton from "@/components/BackButton";
 import PsychomoDomain from "@/components/PsychomotorDomain";
 import ResultCardSummary from "@/components/ResultSummaryCard";
+import SubjectBreakdownTable from "@/components/student/results/SubjectBreakdownTable";
 import TeacherResultRemark from "@/components/TeacherResultRemark";
-import { Calendar, Download, Hash, Printer, School, Subscript } from "lucide-react";
+import { Calendar, Download, Hash, Printer, School } from "lucide-react";
 import UserAvatar from "@/components/UserAvatar";
 import Link from "next/link";
+import { getStudentRemark } from "@/lib/get-student-remark";
 import { prisma } from "@/lib/prisma";
-
-const formatGrade = (grade?: string | null) => {
-    if (!grade) return "-";
-    switch (grade) {
-        case "A_PLUS":
-            return "A+";
-        case "A":
-        case "B":
-        case "C":
-        case "D":
-        case "E":
-        case "F":
-            return grade;
-        default:
-            return grade;
-    }
-};
-
-const performanceForScore = (score?: number | null) => {
-    if (score === null || score === undefined) {
-        return { label: "N/A", status: "perf-unknown" };
-    }
-    if (score >= 70) return { label: "Excellent", status: "perf-excellent" };
-    if (score >= 60) return { label: "Very Good", status: "perf-good" };
-    if (score >= 50) return { label: "Good", status: "perf-average" };
-    if (score >= 45) return { label: "Fair", status: "perf-average" };
-    return { label: "Poor", status: "perf-poor" };
-};
 
 const Page = async ({ params }: { params: { Id: string } | Promise<{ Id: string }> }) => {
     const resolvedParams = await params;
@@ -155,7 +129,7 @@ const Page = async ({ params }: { params: { Id: string } | Promise<{ Id: string 
     const maxScore = subjectCount ? subjectCount * 100 : null;
     const passedSubjects = results.filter((row) => (row.totalScore ?? 0) >= 50).length;
 
-    const totalsByStudent = results.length && classHistories.length
+    const totalsByStudent = classHistories.length
         ? await prisma.result.findMany({
             where: { classHistoryId: { in: classHistories.map((row) => row.id) } },
             select: { studentId: true, totalScore: true },
@@ -163,13 +137,20 @@ const Page = async ({ params }: { params: { Id: string } | Promise<{ Id: string 
         : [];
 
     const totalsMap = totalsByStudent.reduce((map, row) => {
-        map.set(row.studentId, (map.get(row.studentId) ?? 0) + row.totalScore);
+        const entry = map.get(row.studentId) ?? { sum: 0, count: 0 };
+        entry.sum += row.totalScore;
+        entry.count += 1;
+        map.set(row.studentId, entry);
         return map;
-    }, new Map<string, number>());
+    }, new Map<string, { sum: number; count: number }>());
 
     const sortedTotals = Array.from(totalsMap.entries())
-        .sort((a, b) => b[1] - a[1])
-        .map(([id]) => id);
+        .map(([studentId, entry]) => ({
+            studentId,
+            average: entry.count ? entry.sum / entry.count : 0,
+        }))
+        .sort((a, b) => b.average - a.average)
+        .map((row) => row.studentId);
     const classPosition = sortedTotals.length ? sortedTotals.indexOf(student.id) + 1 : null;
 
     const affectiveScore = results.find((row) => row.affectiveScores.length)?.affectiveScores[0];
@@ -196,23 +177,29 @@ const Page = async ({ params }: { params: { Id: string } | Promise<{ Id: string 
                             : "Needs improvement",
     };
 
+    const autoRemark = overallAverage !== null ? getStudentRemark(overallAverage) : null;
     const remarkSource = results.find((row) => row.teacherRemark || row.principalRemark);
-    const teacherRemark = remarkSource?.teacherRemark ?? remarkSource?.principalRemark ?? "No teacher remark available for this result.";
+    const teacherRemark =
+        remarkSource?.teacherRemark ??
+        autoRemark?.teacherRemark ??
+        "No teacher remark available for this result.";
+    const principalRemark =
+        remarkSource?.principalRemark ??
+        autoRemark?.principalRemark ??
+        "No principal remark available for this result.";
     const teacherRemarkDate = remarkSource?.updatedAt ?? null;
     const classTeacherName = activeHistory?.class.teacher
         ? `${activeHistory.class.teacher.user.firstName} ${activeHistory.class.teacher.user.lastName}`.trim()
         : "Form Teacher";
 
     const subjectRows = results.map((result) => {
+        const total = result.totalScore ?? 0;
         return {
             id: result.id,
-            subject: result.subject.name,
-            tests: result.ca1 ?? 0,
-            assignments: result.ca2 ?? 0,
+            subjectName: result.subject.name,
+            tests: (result.ca1 ?? 0) + (result.ca2 ?? 0),
             exam: result.exam ?? 0,
-            total: result.totalScore,
-            grade: formatGrade(result.grade),
-            performance: performanceForScore(result.totalScore),
+            totalScore: total,
         };
     });
 
@@ -229,7 +216,7 @@ const Page = async ({ params }: { params: { Id: string } | Promise<{ Id: string 
                             className="w-20 h-20 rounded-2xl border-4 border-white/20 shadow-sm"
                         />
                         <div>
-                            <h1 className="text-2xl font-bold">{student.user.firstName} {student.user.lastName}</h1>
+                            <h1 className="text-2xl font-bold text-white/90">{student.user.firstName} {student.user.lastName}</h1>
                             <div className="lg:flex items-center gap-4 text-white/80 text-sm mt-2">
                                 <span className="flex items-center gap-1">
                                     <Hash className="w-4 h-4" />
@@ -273,67 +260,7 @@ const Page = async ({ params }: { params: { Id: string } | Promise<{ Id: string 
 
             <ResultCardSummary summary={summary} />
 
-            <div className="grid grid-cols-1 gap-6">
-                <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm">
-                    <div className="px-6 py-4 border-b border-slate-100">
-                        <h3 className="text-lg font-semibold text-slate-800">Subject Performance Breakdown</h3>
-                        <p className="text-xs text-slate-500 mt-1">Detailed scores across all subjects</p>
-                    </div>
-
-                    <div className="overflow-x-auto custom-scrollbar">
-                        <table className="w-full text-left border-collapse">
-                            <thead className="sticky top-0 bg-slate-50/95 backdrop-blur-sm z-10">
-                                <tr className="border-b border-slate-200 text-xs uppercase tracking-wider text-slate-600 font-semibold">
-                                    <th className="px-6 py-4">Subject</th>
-                                    <th className="px-6 py-4 text-center">Tests</th>
-                                    <th className="px-6 py-4 text-center">Assignments</th>
-                                    <th className="px-6 py-4 text-center">Exam</th>
-                                    <th className="px-6 py-4 text-center">Total</th>
-                                    <th className="px-6 py-4 text-center">Grade</th>
-                                    <th className="px-6 py-4 text-center">Performance</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 text-sm">
-                                {subjectRows.length ? (
-                                    subjectRows.map((subject) => (
-                                        <tr className="hover:bg-slate-50 transition-colors" key={subject.id}>
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center">
-                                                        <Subscript className="w-4 h-4" />
-                                                    </div>
-                                                    <span className="font-semibold text-slate-900">{subject.subject}</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-center font-semibold text-slate-900">{subject.tests}</td>
-                                            <td className="px-6 py-4 text-center font-semibold text-slate-900">{subject.assignments}</td>
-                                            <td className="px-6 py-4 text-center font-semibold text-slate-900">{subject.exam}</td>
-                                            <td className="px-6 py-4 text-center">
-                                                <span className="text-lg font-bold text-slate-900">{subject.total}</span>
-                                            </td>
-                                            <td className="px-6 py-4 text-center">
-                                                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">{subject.grade}</span>
-                                            </td>
-                                            <td className="px-6 py-4 text-center">
-                                                <div className="flex items-center justify-center gap-1">
-                                                    <i data-lucide="trending-up" className={`w-4 h-4 ${subject.performance.status}`}></i>
-                                                    <span className={`text-xs font-medium ${subject.performance.status}`}>{subject.performance.label}</span>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td className="px-6 py-6 text-center text-sm text-slate-500" colSpan={7}>
-                                            No results available for this student.
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+            <SubjectBreakdownTable rows={subjectRows} emptyMessage="No results available for this student." />
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <AffectiveDomain scores={affectiveScore ?? null} />
@@ -341,6 +268,7 @@ const Page = async ({ params }: { params: { Id: string } | Promise<{ Id: string 
             </div>
             <TeacherResultRemark
                 remark={teacherRemark}
+                principalRemark={principalRemark}
                 teacherName={classTeacherName}
                 className={activeHistory?.class.name ?? "Class"}
                 date={teacherRemarkDate ?? undefined}
