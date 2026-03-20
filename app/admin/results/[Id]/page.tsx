@@ -187,7 +187,7 @@ const Page = async ({ params }: { params: { Id: string } | Promise<{ Id: string 
         remarkSource?.principalRemark ??
         autoRemark?.principalRemark ??
         "No principal remark available for this result.";
-    const teacherRemarkDate = remarkSource?.updatedAt ?? null;
+    const teacherRemarkDate = new Date();
     const classTeacherName = activeHistory?.class.teacher
         ? `${activeHistory.class.teacher.user.firstName} ${activeHistory.class.teacher.user.lastName}`.trim()
         : "Form Teacher";

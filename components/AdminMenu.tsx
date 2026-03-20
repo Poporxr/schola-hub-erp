@@ -14,6 +14,7 @@ import {
   PanelRightOpen,
   ShieldAlert,
   CalendarDays,
+  BellRing,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 
@@ -171,6 +172,15 @@ const AdminMenu = ({ open, onClose }: AdminMenuProps) => {
         >
           <ShieldAlert className="w-5 h-5" />
           <span>Academic Rollover</span>
+        </Link>
+
+        <Link
+          href="/admin/notices"
+          onClick={closeOnMobile}
+          className={linkClass("/admin/notices")}
+        >
+          <BellRing className="w-5 h-5" />
+          <span>Notices</span>
         </Link>
       </nav>
 

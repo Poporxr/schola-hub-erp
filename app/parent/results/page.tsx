@@ -212,7 +212,7 @@ const Page = async ({ searchParams }: { searchParams?: { studentId?: string, ses
     const teacherRemarkSource = results.find((row) => row.teacherRemark || row.principalRemark);
     const teacherRemark = teacherRemarkSource?.teacherRemark ?? autoRemark?.teacherRemark ?? null;
     const principalRemark = teacherRemarkSource?.principalRemark ?? autoRemark?.principalRemark ?? null;
-    const teacherRemarkDate = teacherRemarkSource?.updatedAt ?? null;
+    const teacherRemarkDate = new Date();
     const classTeacherName = classHistory?.class.teacher
         ? `${classHistory.class.teacher.user.firstName} ${classHistory.class.teacher.user.lastName}`.trim()
         : "Form Teacher";

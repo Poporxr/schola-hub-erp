@@ -221,6 +221,7 @@ export default async function PrintResultPage({
   const teacherRemarkSource = results.find((row) => row.teacherRemark || row.principalRemark);
   const teacherRemark = teacherRemarkSource?.teacherRemark ?? autoRemark?.teacherRemark;
   const principalRemark = teacherRemarkSource?.principalRemark ?? autoRemark?.principalRemark;
+  const displayDate = new Date();
 
   const classTeacherName = classHistory.class.teacher
     ? `${classHistory.class.teacher.user.firstName} ${classHistory.class.teacher.user.lastName}`.trim()
@@ -419,7 +420,7 @@ export default async function PrintResultPage({
                 </p>
                 <div className="mt-3 border-t border-slate-200 pt-3 text-xs">
                   <p className="font-semibold">Principal</p>
-                  <p className="text-[11px] text-slate-500">Issued on {formatDate(teacherRemarkSource?.updatedAt)}</p>
+                  <p className="text-[11px] text-slate-500">Issued on {formatDate(displayDate)}</p>
                 </div>
               </div>
             </div>
