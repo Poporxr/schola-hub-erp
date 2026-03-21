@@ -13,6 +13,7 @@ import {
     Calendar,
     ClipboardCheck,
     FileText,
+    HeartPulse,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
@@ -137,6 +138,14 @@ const TeacherMenu = ({ open, onClose }: AdminMenuProps) => {
                 </Link>
 
                 <Link
+                    href={"/teacher/domains"}
+                    onClick={closeOnMobile}
+                    className={linkClass("/teacher/domains")}>
+                    <HeartPulse className="w-5 h-5" />
+                    Enter Domains
+                </Link>
+
+                <Link
                     href={"/teacher/subjects"}
                     onClick={closeOnMobile}
                     className={linkClass("/teacher/subjects")}>
@@ -167,7 +176,7 @@ const TeacherMenu = ({ open, onClose }: AdminMenuProps) => {
                         try {
                             await signOut();
                             toast.success("Logged out successfully");
-                        } catch (error) {
+                        } catch {
                             toast.error("Failed to log out");
                         }
                     }}

@@ -58,12 +58,6 @@ export default async function Page({
         status: true,
       },
     },
-    class: {
-      select: {
-        id: true,
-        name: true,
-      },
-    },
     classTeachers: {
       where: assignmentWhere,
       select: {
@@ -100,16 +94,7 @@ export default async function Page({
   ]);
 
   const totalAssignments = teachers.reduce((sum, teacher) => {
-    const classIds = new Set<string>();
-
-    if (teacher.class?.id) {
-      classIds.add(teacher.class.id);
-    }
-
-    for (const row of teacher.classTeachers) {
-      classIds.add(row.class.id);
-    }
-
+    const classIds = new Set(teacher.classTeachers.map((row) => row.class.id));
     return sum + classIds.size + teacher.subjectTeachers.length;
   }, 0);
 
@@ -133,7 +118,10 @@ export default async function Page({
     fullName: `${teacher.user.firstName} ${teacher.user.lastName}`.trim() || "Teacher",
     phone: teacher.user.phone,
     department: teacher.department,
-    className: teacher.class?.name ?? teacher.classTeachers[0]?.class.name ?? "Unassigned",
+    className:
+      teacher.classTeachers.length > 0
+        ? teacher.classTeachers.map((row) => row.class.name).join(", ")
+        : "Unassigned",
     status: teacher.user.status,
     image: teacher.user.image,
     formData: toTeacherFormData(teacher),

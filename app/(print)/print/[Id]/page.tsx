@@ -4,6 +4,7 @@ import { getStudentRemark } from "@/lib/get-student-remark";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { GraduationCap } from "lucide-react";
+import { domainScaleToLabel } from "@/lib/domain-scale";
 
 export const dynamic = "force-dynamic";
 
@@ -147,24 +148,6 @@ export default async function PrintResultPage({
       orderBy: [{ subject: { name: "asc" } }],
       include: {
         subject: { select: { id: true, name: true } },
-        affectiveScores: {
-          select: {
-            punctuality: true,
-            neatness: true,
-            politeness: true,
-            honesty: true,
-            relationshipWithOthers: true,
-          },
-        },
-        psychomotorScores: {
-          select: {
-            handwriting: true,
-            sportsAndGames: true,
-            drawingAndPainting: true,
-            musicalSkills: true,
-            verbalFluency: true,
-          },
-        },
       },
     }),
     prisma.studentClassHistory.findMany({
@@ -215,9 +198,47 @@ export default async function PrintResultPage({
   const subjectCount = results.length;
   const averageScore = subjectCount ? Number((totalScore / subjectCount).toFixed(1)) : null;
   const autoRemark = averageScore !== null ? getStudentRemark(averageScore) : null;
+  const domainRecord = await prisma.studentDomainRecord.findUnique({
+    where: {
+      studentId_classId_sessionId_termId: {
+        studentId: classHistory.student.id,
+        classId: classHistory.class.id,
+        sessionId: classHistory.sessionId,
+        termId: classHistory.termId,
+      },
+    },
+    select: {
+      punctuality: true,
+      neatness: true,
+      politeness: true,
+      honesty: true,
+      relationshipWithOthers: true,
+      handwriting: true,
+      sportsAndGames: true,
+      drawingAndPainting: true,
+      musicalSkills: true,
+      verbalFluency: true,
+    },
+  });
 
-  const affectiveScore = results.find((row) => row.affectiveScores.length)?.affectiveScores[0] ?? null;
-  const psychomotorScore = results.find((row) => row.psychomotorScores.length)?.psychomotorScores[0] ?? null;
+  const affectiveScore = domainRecord
+    ? {
+        punctuality: domainScaleToLabel(domainRecord.punctuality),
+        neatness: domainScaleToLabel(domainRecord.neatness),
+        politeness: domainScaleToLabel(domainRecord.politeness),
+        honesty: domainScaleToLabel(domainRecord.honesty),
+        relationshipWithOthers: domainScaleToLabel(domainRecord.relationshipWithOthers),
+      }
+    : null;
+  const psychomotorScore = domainRecord
+    ? {
+        handwriting: domainScaleToLabel(domainRecord.handwriting),
+        sportsAndGames: domainScaleToLabel(domainRecord.sportsAndGames),
+        drawingAndPainting: domainScaleToLabel(domainRecord.drawingAndPainting),
+        musicalSkills: domainScaleToLabel(domainRecord.musicalSkills),
+        verbalFluency: domainScaleToLabel(domainRecord.verbalFluency),
+      }
+    : null;
   const teacherRemarkSource = results.find((row) => row.teacherRemark || row.principalRemark);
   const teacherRemark = teacherRemarkSource?.teacherRemark ?? autoRemark?.teacherRemark;
   const principalRemark = teacherRemarkSource?.principalRemark ?? autoRemark?.principalRemark;

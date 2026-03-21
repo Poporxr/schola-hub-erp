@@ -88,7 +88,9 @@ model Teacher {
   timetableEntries   TimetableEntry[]
   attendanceRecords  Attendance[]
   resultEntries      Result[]
-  notices            Notice[]
+    notices            Notice[]
+    createdDomainRecords StudentDomainRecord[] @relation("DomainCreatedBy")
+    updatedDomainRecords StudentDomainRecord[] @relation("DomainUpdatedBy")
 
   @@index([teacherId])
   @@index([department])
@@ -113,8 +115,9 @@ model Student {
   attendanceRecords   Attendance[]
   results             Result[]
   payments            Payment[]
-  affectiveScores     AffectiveDomainScore[]
-  psychomotorScores   PsychomotorDomainScore[]
+    affectiveScores     AffectiveDomainScore[]
+    psychomotorScores   PsychomotorDomainScore[]
+    domainRecords       StudentDomainRecord[]
 
   @@index([admissionNumber])
 }
@@ -173,8 +176,9 @@ model AcademicSession {
   notices            Notice[]
   classFeeAssignments ClassFeeAssignment[]
   classTeachers      ClassTeacher[]
-  subjectTeachers    SubjectTeacher[]
-  attendances        Attendance[] @relation("SessionAttendances")
+    subjectTeachers    SubjectTeacher[]
+    attendances        Attendance[] @relation("SessionAttendances")
+    domainRecords      StudentDomainRecord[]
 
   @@index([name])
   @@index([isCurrent])
@@ -200,8 +204,9 @@ model Term {
   timetableEntries   TimetableEntry[]
   classFeeAssignments ClassFeeAssignment[]
   classTeachers      ClassTeacher[]
-  subjectTeachers    SubjectTeacher[]
-  attendances        Attendance[] @relation("TermAttendances")
+    subjectTeachers    SubjectTeacher[]
+    attendances        Attendance[] @relation("TermAttendances")
+    domainRecords      StudentDomainRecord[]
 
   @@unique([sessionId, type])
   @@index([sessionId, type])
@@ -244,8 +249,9 @@ model Class {
   classHistories     StudentClassHistory[]
   timetableEntries   TimetableEntry[]
   feeAssignments     ClassFeeAssignment[]
-  subjects           ClassSubject[]
-  attendanceRecords  Attendance[]
+    subjects           ClassSubject[]
+    attendanceRecords  Attendance[]
+    domainRecords      StudentDomainRecord[]
 
   @@unique([levelId, name])
   @@index([levelId])
@@ -478,6 +484,42 @@ model PsychomotorDomainScore {
 
   @@unique([resultId])
   @@index([studentId])
+}
+
+model StudentDomainRecord {
+  id        String   @id @default(cuid())
+  studentId String
+  classId   String
+  sessionId String
+  termId    String
+
+  punctuality            Int?
+  neatness               Int?
+  politeness             Int?
+  honesty                Int?
+  relationshipWithOthers Int?
+
+  handwriting       Int?
+  sportsAndGames    Int?
+  drawingAndPainting Int?
+  musicalSkills     Int?
+  verbalFluency     Int?
+
+  createdByTeacherId String
+  updatedByTeacherId String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  class   Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+  session AcademicSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  term    Term    @relation(fields: [termId], references: [id], onDelete: Cascade)
+  createdByTeacher Teacher @relation("DomainCreatedBy", fields: [createdByTeacherId], references: [id], onDelete: Restrict)
+  updatedByTeacher Teacher? @relation("DomainUpdatedBy", fields: [updatedByTeacherId], references: [id], onDelete: SetNull)
+
+  @@unique([studentId, classId, sessionId, termId])
+  @@index([classId, sessionId, termId])
+  @@index([studentId, sessionId, termId])
 }
 
 // ============================================

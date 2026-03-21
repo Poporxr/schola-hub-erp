@@ -10,6 +10,7 @@ import { auth } from "@clerk/nextjs/server";
 import { Calendar, Download, Hash, Printer, School } from "lucide-react";
 import UserAvatar from "@/components/UserAvatar";
 import Link from "next/link";
+import { domainScaleToLabel } from "@/lib/domain-scale";
 
 export const dynamic = "force-dynamic";
 
@@ -121,24 +122,6 @@ const Page = async ({ searchParams }: { searchParams?: { studentId?: string, ses
                 include: {
                     subject: { select: { id: true, name: true } },
                     teachers: { select: { user: { select: { firstName: true, lastName: true } } } },
-                    affectiveScores: {
-                        select: {
-                            punctuality: true,
-                            neatness: true,
-                            politeness: true,
-                            honesty: true,
-                            relationshipWithOthers: true,
-                        },
-                    },
-                    psychomotorScores: {
-                        select: {
-                            handwriting: true,
-                            sportsAndGames: true,
-                            drawingAndPainting: true,
-                            musicalSkills: true,
-                            verbalFluency: true,
-                        },
-                    },
                 },
             })
             : Promise.resolve([]),
@@ -153,6 +136,31 @@ const Page = async ({ searchParams }: { searchParams?: { studentId?: string, ses
             })
             : Promise.resolve([]),
     ]);
+
+    const domainRecord = classHistory
+        ? await prisma.studentDomainRecord.findUnique({
+            where: {
+                studentId_classId_sessionId_termId: {
+                    studentId: selectedStudent.id,
+                    classId: classHistory.class.id,
+                    sessionId: selectedSessionId,
+                    termId: selectedTermId,
+                },
+            },
+            select: {
+                punctuality: true,
+                neatness: true,
+                politeness: true,
+                honesty: true,
+                relationshipWithOthers: true,
+                handwriting: true,
+                sportsAndGames: true,
+                drawingAndPainting: true,
+                musicalSkills: true,
+                verbalFluency: true,
+            },
+        })
+        : null;
 
     const totalScore = results.reduce((sum, row) => sum + row.totalScore, 0);
     const subjectCount = results.length;
@@ -184,8 +192,24 @@ const Page = async ({ searchParams }: { searchParams?: { studentId?: string, ses
         .map((row) => row.studentId);
     const classPosition = sortedTotals.length ? sortedTotals.indexOf(selectedStudent.id) + 1 : null;
 
-    const affectiveScore = results.find((row) => row.affectiveScores.length)?.affectiveScores[0];
-    const psychomotorScore = results.find((row) => row.psychomotorScores.length)?.psychomotorScores[0];
+    const affectiveScore = domainRecord
+        ? {
+            punctuality: domainScaleToLabel(domainRecord.punctuality),
+            neatness: domainScaleToLabel(domainRecord.neatness),
+            politeness: domainScaleToLabel(domainRecord.politeness),
+            honesty: domainScaleToLabel(domainRecord.honesty),
+            relationshipWithOthers: domainScaleToLabel(domainRecord.relationshipWithOthers),
+        }
+        : null;
+    const psychomotorScore = domainRecord
+        ? {
+            handwriting: domainScaleToLabel(domainRecord.handwriting),
+            sportsAndGames: domainScaleToLabel(domainRecord.sportsAndGames),
+            drawingAndPainting: domainScaleToLabel(domainRecord.drawingAndPainting),
+            musicalSkills: domainScaleToLabel(domainRecord.musicalSkills),
+            verbalFluency: domainScaleToLabel(domainRecord.verbalFluency),
+        }
+        : null;
 
     const summary = {
         overallAverage,

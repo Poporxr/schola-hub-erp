@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { clerkClient } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { z } from "zod";
 import { parentSchema } from "@/components/modals/zod-schemas/parentForm";
 import { subjectSchema } from "@/components/modals/zod-schemas/subjectForm";
@@ -67,6 +67,29 @@ const timetableEntrySchema = z
       });
     }
   });
+
+const domainScaleSchema = z.number().int().min(1).max(5).nullable();
+
+const teacherDomainEntrySchema = z.object({
+  classId: z.string().min(1, "Class is required."),
+  sessionId: z.string().min(1, "Session is required."),
+  termId: z.string().min(1, "Term is required."),
+  rows: z.array(
+    z.object({
+      studentId: z.string().min(1, "Student id is required."),
+      punctuality: domainScaleSchema,
+      neatness: domainScaleSchema,
+      politeness: domainScaleSchema,
+      honesty: domainScaleSchema,
+      relationshipWithOthers: domainScaleSchema,
+      handwriting: domainScaleSchema,
+      sportsAndGames: domainScaleSchema,
+      drawingAndPainting: domainScaleSchema,
+      musicalSkills: domainScaleSchema,
+      verbalFluency: domainScaleSchema,
+    })
+  ),
+});
 
 function getString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -1312,5 +1335,183 @@ export async function unlinkSubjectTeacherAction(
   } catch (error) {
     console.error("unlinkSubjectTeacherAction failed", error);
     return { ok: false, message: "Failed to remove teacher from subject." };
+  }
+}
+
+export async function upsertTeacherDomainScoresAction(
+  payload: z.infer<typeof teacherDomainEntrySchema>
+): Promise<ActionState> {
+  const parsed = teacherDomainEntrySchema.safeParse(payload);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      message: parsed.error.issues[0]?.message ?? "Invalid score payload.",
+    };
+  }
+
+  const { userId } = await auth();
+  if (!userId) {
+    return { ok: false, message: "Unauthorized." };
+  }
+
+  const { classId, sessionId, termId, rows } = parsed.data;
+
+  try {
+    const teacher = await prisma.teacher.findFirst({
+      where: { OR: [{ id: userId }, { userId }] },
+      select: { id: true },
+    });
+
+    if (!teacher) {
+      return { ok: false, message: "Teacher profile not found." };
+    }
+
+    const classTeacher = await prisma.classTeacher.findFirst({
+      where: {
+        teacherId: teacher.id,
+        classId,
+        sessionId,
+        termId,
+      },
+      select: { id: true },
+    });
+
+    if (!classTeacher) {
+      return {
+        ok: false,
+        message:
+          "Only the assigned class teacher can enter affective and psychomotor scores for this class.",
+      };
+    }
+
+    const validRows = rows.filter((row) => {
+      const values = [
+        row.punctuality,
+        row.neatness,
+        row.politeness,
+        row.honesty,
+        row.relationshipWithOthers,
+        row.handwriting,
+        row.sportsAndGames,
+        row.drawingAndPainting,
+        row.musicalSkills,
+        row.verbalFluency,
+      ];
+      return values.some((value) => value !== null);
+    });
+
+    if (!validRows.length) {
+      return { ok: false, message: "No scores to save." };
+    }
+
+    const studentIds = validRows.map((row) => row.studentId);
+
+    const classHistories = await prisma.studentClassHistory.findMany({
+      where: {
+        classId,
+        sessionId,
+        termId,
+        studentId: { in: studentIds },
+      },
+      select: { studentId: true },
+    });
+
+    const allowedStudentIds = new Set(classHistories.map((history) => history.studentId));
+
+    let savedCount = 0;
+    let skippedCount = 0;
+
+    await prisma.$transaction(async (tx) => {
+      for (const row of validRows) {
+        if (!allowedStudentIds.has(row.studentId)) {
+          skippedCount += 1;
+          continue;
+        }
+
+        const existing = await tx.studentDomainRecord.findUnique({
+          where: {
+            studentId_classId_sessionId_termId: {
+              studentId: row.studentId,
+              classId,
+              sessionId,
+              termId,
+            },
+          },
+          select: { id: true },
+        });
+
+        if (!existing) {
+          await tx.studentDomainRecord.create({
+            data: {
+              studentId: row.studentId,
+              classId,
+              sessionId,
+              termId,
+              punctuality: row.punctuality,
+              neatness: row.neatness,
+              politeness: row.politeness,
+              honesty: row.honesty,
+              relationshipWithOthers: row.relationshipWithOthers,
+              handwriting: row.handwriting,
+              sportsAndGames: row.sportsAndGames,
+              drawingAndPainting: row.drawingAndPainting,
+              musicalSkills: row.musicalSkills,
+              verbalFluency: row.verbalFluency,
+              createdByTeacherId: teacher.id,
+            },
+          });
+          savedCount += 1;
+          continue;
+        }
+
+        await tx.studentDomainRecord.update({
+          where: { id: existing.id },
+          data: {
+            punctuality: row.punctuality,
+            neatness: row.neatness,
+            politeness: row.politeness,
+            honesty: row.honesty,
+            relationshipWithOthers: row.relationshipWithOthers,
+            handwriting: row.handwriting,
+            sportsAndGames: row.sportsAndGames,
+            drawingAndPainting: row.drawingAndPainting,
+            musicalSkills: row.musicalSkills,
+            verbalFluency: row.verbalFluency,
+            updatedByTeacherId: teacher.id,
+          },
+        });
+
+        savedCount += 1;
+      }
+    });
+
+    revalidatePath("/teacher/domains");
+    revalidatePath("/teacher/results");
+    revalidatePath("/student/result");
+    revalidatePath("/parent/results");
+    revalidatePath("/admin/results");
+
+    if (!savedCount && skippedCount > 0) {
+      return {
+        ok: false,
+        message:
+          "No scores were saved because selected students are not in this current class term.",
+      };
+    }
+
+    const message =
+      skippedCount > 0
+        ? `Saved ${savedCount} student domain record(s). Skipped ${skippedCount} student(s).`
+        : `Saved ${savedCount} student domain record(s).`;
+    return { ok: true, message };
+  } catch (error) {
+    console.error("upsertTeacherDomainScoresAction failed", error);
+    if (isDatabaseUnavailableError(error)) {
+      return {
+        ok: false,
+        message: "Database is temporarily unavailable. Please try again shortly.",
+      };
+    }
+    return { ok: false, message: "Unable to save domain scores right now." };
   }
 }

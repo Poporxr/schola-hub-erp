@@ -8,6 +8,7 @@ import ResultDomainCards from "@/components/student/results/ResultDomainCards";
 import ResultRemarkCard from "@/components/student/results/ResultRemarkCard";
 import { AffectiveData, OptionItem, PsychomotorData, SubjectResultRow, SummaryData } from "@/components/student/results/types";
 import { getStudentRemark } from "@/lib/get-student-remark";
+import { domainScaleToLabel } from "@/lib/domain-scale";
 
 type SearchParams = {
   sessionId?: string | string[];
@@ -123,28 +124,35 @@ const Page = async ({
           teacherRemark: true,
           principalRemark: true,
           subject: { select: { id: true, name: true } },
-          affectiveScores: {
-            select: {
-              punctuality: true,
-              neatness: true,
-              politeness: true,
-              honesty: true,
-              relationshipWithOthers: true,
-            },
-          },
-          psychomotorScores: {
-            select: {
-              handwriting: true,
-              sportsAndGames: true,
-              drawingAndPainting: true,
-              musicalSkills: true,
-              verbalFluency: true,
-            },
-          },
         },
         orderBy: [{ subject: { name: "asc" } }],
       })
     : [];
+
+  const domainRecord = selectedHistory
+    ? await prisma.studentDomainRecord.findUnique({
+        where: {
+          studentId_classId_sessionId_termId: {
+            studentId: student.id,
+            classId: selectedHistory.classId,
+            sessionId: selectedHistory.sessionId,
+            termId: selectedHistory.termId,
+          },
+        },
+        select: {
+          punctuality: true,
+          neatness: true,
+          politeness: true,
+          honesty: true,
+          relationshipWithOthers: true,
+          handwriting: true,
+          sportsAndGames: true,
+          drawingAndPainting: true,
+          musicalSkills: true,
+          verbalFluency: true,
+        },
+      })
+    : null;
 
   const classHistoryRows = selectedHistory
     ? await prisma.studentClassHistory.findMany({
@@ -191,8 +199,24 @@ const Page = async ({
   const classPosition = rankedStudentIds.length ? rankedStudentIds.indexOf(student.id) + 1 : null;
   const classSize = classHistoryRows.length;
 
-  const affective = results.find((r) => r.affectiveScores[0])?.affectiveScores[0];
-  const psychomotor = results.find((r) => r.psychomotorScores[0])?.psychomotorScores[0];
+  const affective = domainRecord
+    ? {
+        punctuality: domainScaleToLabel(domainRecord.punctuality),
+        neatness: domainScaleToLabel(domainRecord.neatness),
+        politeness: domainScaleToLabel(domainRecord.politeness),
+        honesty: domainScaleToLabel(domainRecord.honesty),
+        relationshipWithOthers: domainScaleToLabel(domainRecord.relationshipWithOthers),
+      }
+    : null;
+  const psychomotor = domainRecord
+    ? {
+        handwriting: domainScaleToLabel(domainRecord.handwriting),
+        sportsAndGames: domainScaleToLabel(domainRecord.sportsAndGames),
+        drawingAndPainting: domainScaleToLabel(domainRecord.drawingAndPainting),
+        musicalSkills: domainScaleToLabel(domainRecord.musicalSkills),
+        verbalFluency: domainScaleToLabel(domainRecord.verbalFluency),
+      }
+    : null;
   const autoRemark = totalSubjects ? getStudentRemark(overallAverage) : null;
   const teacherRemark = results.find((r) => r.teacherRemark)?.teacherRemark ?? autoRemark?.teacherRemark;
   const principalRemark = results.find((r) => r.principalRemark)?.principalRemark ?? autoRemark?.principalRemark;

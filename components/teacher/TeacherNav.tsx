@@ -13,6 +13,7 @@ function getTitleFromPath(pathname: string) {
   if (path === "/teacher/subjects") return "My Subjects";
   if (path === "/teacher/classes") return "Class Overview";
   if (path === "/teacher/results") return "Enter Results";
+  if (path === "/teacher/domains") return "Enter Domains";
   if (path === "/teacher/attendance") return "Record Attendance";
   if (path === "/teacher/profile") return "Profile Overview";
 
@@ -21,9 +22,7 @@ function getTitleFromPath(pathname: string) {
 
 const TeacherNav = ({ onToggleSidebar }: { onToggleSidebar: () => void }) => {
   const pathname = usePathname();
-  const [teacherName, setTeacherName] = useState<string | null>(null);
   const [termLabel, setTermLabel] = useState<string | null>(null);
-  const [isAuth, setIsAuth] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
@@ -31,15 +30,7 @@ const TeacherNav = ({ onToggleSidebar }: { onToggleSidebar: () => void }) => {
     async function fetchTeacher() {
       const res = await fetch("/api/teacherData");
       if (!res.ok) {
-        if (isMounted) setIsAuth(false);
         return;
-      }
-      const data = await res.json();
-      if (isMounted) {
-        const name = [data?.firstName, data?.lastName]
-          .filter(Boolean)
-          .join(" ");
-        setTeacherName(name || "Teacher");
       }
     }
 
