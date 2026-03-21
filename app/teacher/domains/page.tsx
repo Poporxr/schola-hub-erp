@@ -11,6 +11,13 @@ type SearchParams = {
 const firstParam = (value?: string | string[]) =>
   Array.isArray(value) ? value[0] : value;
 
+function toScale(value: number | null): 1 | 2 | 3 | 4 | 5 | null {
+  if (value === 1 || value === 2 || value === 3 || value === 4 || value === 5) {
+    return value;
+  }
+  return null;
+}
+
 export default async function TeacherDomainsPage({
   searchParams,
 }: {
@@ -168,16 +175,16 @@ export default async function TeacherDomainsPage({
       admissionNumber: history.student.admissionNumber,
       fullName: `${history.student.user.lastName} ${history.student.user.firstName}`.trim(),
       image: history.student.user.image,
-      punctuality: existing?.punctuality ?? null,
-      neatness: existing?.neatness ?? null,
-      politeness: existing?.politeness ?? null,
-      honesty: existing?.honesty ?? null,
-      relationshipWithOthers: existing?.relationshipWithOthers ?? null,
-      handwriting: existing?.handwriting ?? null,
-      sportsAndGames: existing?.sportsAndGames ?? null,
-      drawingAndPainting: existing?.drawingAndPainting ?? null,
-      musicalSkills: existing?.musicalSkills ?? null,
-      verbalFluency: existing?.verbalFluency ?? null,
+      punctuality: toScale(existing?.punctuality ?? null),
+      neatness: toScale(existing?.neatness ?? null),
+      politeness: toScale(existing?.politeness ?? null),
+      honesty: toScale(existing?.honesty ?? null),
+      relationshipWithOthers: toScale(existing?.relationshipWithOthers ?? null),
+      handwriting: toScale(existing?.handwriting ?? null),
+      sportsAndGames: toScale(existing?.sportsAndGames ?? null),
+      drawingAndPainting: toScale(existing?.drawingAndPainting ?? null),
+      musicalSkills: toScale(existing?.musicalSkills ?? null),
+      verbalFluency: toScale(existing?.verbalFluency ?? null),
     };
   });
 
