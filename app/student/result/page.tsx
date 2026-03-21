@@ -207,7 +207,7 @@ const Page = async ({
         honesty: domainScaleToLabel(domainRecord.honesty),
         relationshipWithOthers: domainScaleToLabel(domainRecord.relationshipWithOthers),
       }
-    : null;
+    : undefined;
   const psychomotor = domainRecord
     ? {
         handwriting: domainScaleToLabel(domainRecord.handwriting),
@@ -216,7 +216,7 @@ const Page = async ({
         musicalSkills: domainScaleToLabel(domainRecord.musicalSkills),
         verbalFluency: domainScaleToLabel(domainRecord.verbalFluency),
       }
-    : null;
+    : undefined;
   const autoRemark = totalSubjects ? getStudentRemark(overallAverage) : null;
   const teacherRemark = results.find((r) => r.teacherRemark)?.teacherRemark ?? autoRemark?.teacherRemark;
   const principalRemark = results.find((r) => r.principalRemark)?.principalRemark ?? autoRemark?.principalRemark;
